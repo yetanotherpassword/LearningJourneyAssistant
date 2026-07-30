@@ -1,0 +1,16 @@
+# Conda environment for the Learning Journey Assistant extraction layer.
+#   conda env create -f environment.yml
+#   conda activate lja
+name: lja
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - requests
+  - pandas
+  - psycopg2
+  - python-dotenv
+  - pytest
+  - pip
+  - pip:
+      - types-requests
