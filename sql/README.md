@@ -62,10 +62,21 @@ current attainment.
 
 Status constants: `0` needs update, `1` active, `2` incomplete, `3` archived.
 
+## How this feeds the pipeline
+
+Query 2's output loads into the assistant's own `lja_criterion_score` table,
+joins to `lja_criterion_silo_map` (defined in this file — staff-editable data,
+not code), and Query 6 aggregates the pair into per-SILO attainment and gap
+classifications. That chain is the walking skeleton's spine.
+
 ## Open decisions for the project owner
+
+Both items are tracked, with the rest of the dataset request, in the
+data-fixtures README checklist.
 
 - The gap-classification thresholds in query 6 (currently 50 and 65) are
   placeholders. Confirm with Scott.
 - Queries 3 and 4 represent the two competency mechanisms. Run both against the
   supplied dataset; whichever returns rows tells us which one La Trobe actually
-  uses in production, and that should drive the architecture.
+  uses in production, and that should drive the architecture. If neither
+  returns rows, the bridging table is not a workaround — it is the product.

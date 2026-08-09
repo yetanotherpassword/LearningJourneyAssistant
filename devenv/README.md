@@ -73,6 +73,27 @@ Generating plausible criterion-level feedback text is a legitimate use of an LLM
 here: a few hundred varied remarks give the parsing engine something realistic
 to chew on, which is better trade show material than three hand-written samples.
 
+## Restoring supplied course backups (.mbz)
+
+The dataset we requested from the project owner arrives as Moodle course
+backups exported without user data (see the data-fixtures README for the full
+checklist). Restoring one gives us the real assessments and rubrics in place —
+no re-keying.
+
+UI path: Site administration → Courses → Restore course → upload the `.mbz` →
+"Restore as a new course". Verify on the restore-settings page that user data
+is excluded; the backup should already have been made with "Include enrolled
+users" unticked.
+
+After restoring:
+
+1. Run `python/moodle_probe.py` — the restored subjects should appear in the
+   course list and the token should reach their grade items.
+2. Run SQL Query 1 (rubric definitions) — its output is the vocabulary the
+   criterion-to-SILO mapping has to cover.
+3. Seed synthetic students into the restored courses (enrolment + marks +
+   rubric fills), since the backups deliberately contain none.
+
 ## Bulk import paths worth knowing
 
 - Users: Site administration → Users → Upload users (CSV)

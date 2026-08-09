@@ -1,10 +1,44 @@
 # LJA — Data fixtures bundle
 
+Import fixtures, plus the tracking checklist for the dataset we have requested
+from the project owner.
+
 ## Contents
 
 | File | Purpose |
 | --- | --- |
 | `competency_framework_cse5idp.csv` | Moodle competency framework import fixture. CSE5IDP's own SILOs, as a worked example. |
+
+## Incoming dataset — what we asked the project owner for
+
+We never receive student data; we generate that ourselves. What we need is the
+subject-side structure, and this checklist tracks what has been requested and
+what has arrived. Tick items off and note the arrival date as they land.
+
+- [ ] **Course backups (.mbz) of 3–4 candidate subjects**, exported with
+      "include enrolled users" unticked. Restoring these into the devenv Moodle
+      gives us real assessments and rubrics with no re-keying — see the
+      devenv README for the restore procedure.
+- [ ] **Subjects chosen to form a progression sequence** (a first-year subject
+      feeding a later one), so the persistent-vs-isolated gap classification in
+      SQL Query 6 is actually demonstrable.
+- [ ] **SILOs for those subjects, with stable ID numbers** — the target side of
+      `lja_criterion_silo_map` and the competency framework CSVs. Usually just
+      the Subject Learning Guides / handbook entries.
+- [ ] **Fallback if backups are refused: the rubric documents themselves**
+      (assessment briefs with criteria, level descriptors, and scores), to be
+      re-entered into Moodle by hand.
+- [ ] **A few de-identified exemplar marker remarks per rubric level** — real
+      examples calibrate the LLM-generated synthetic remarks so tone and
+      vocabulary are plausible.
+- [ ] **Decision: which mechanism production uses** — legacy Outcomes, the
+      Competency subsystem, or neither. Drives whether we build on Moodle's
+      model or ship our own bridging table as the product.
+- [ ] **Decision: gap-classification thresholds** — the 50 / 65 in SQL Query 6
+      are placeholders awaiting the project owner's confirmation.
+
+When the real frameworks arrive, swap them in for the CSE5IDP worked example
+below — that file exists to prove the import path, not to ship.
 
 ## Why this exists
 

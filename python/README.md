@@ -79,8 +79,54 @@ Recommendation: option 1 now to unblock the model, option 2 as a stretch item if
 Sprint 3 or 4 has capacity. Option 2 is the one that would stand out at the
 showcase.
 
+## Planned structure
+
+The probe grows into the assistant's application layer. Intended shape:
+
+```
+python/
+  moodle_probe.py       # spike (kept until the extraction module supersedes it)
+  lja/
+    extraction/         # Web Services client + read-only SQL for rubric fills
+    model/              # typed models; competency mapping; gap engine
+    llm/                # provider-agnostic LLM layer (below)
+    dashboard/          # web UI serving the mastery views
+```
+
+### LLM layer — provider-agnostic
+
+All AI features (feedback parsing, learning-plan and quiz generation, synthetic
+remark generation for the seeder) go through one internal `LLMClient` interface.
+Feature code never imports a vendor SDK directly. Two backends, switched by
+`.env`:
+
+| Backend | Client | Use case |
+| --- | --- | --- |
+| Anthropic (Claude) | Official `anthropic` SDK | Student-facing generation quality |
+| OpenAI-compatible | Any local server speaking the OpenAI chat API — LM Studio, Ollama | Free development, offline demos |
+
+```bash
+LJA_LLM_PROVIDER=anthropic            # or: openai_compatible
+
+ANTHROPIC_API_KEY=sk-ant-...
+LJA_ANTHROPIC_MODEL=claude-sonnet-5   # claude-haiku-4-5 for cheap bulk tasks
+
+LJA_OPENAI_BASE_URL=http://localhost:1234/v1   # LM Studio default
+LJA_OPENAI_MODEL=your-loaded-model-name
+LJA_OPENAI_API_KEY=lm-studio          # LM Studio accepts any non-empty string
+```
+
+Two rules: each backend gets its native client (Claude is not routed through an
+OpenAI-compatibility shim), and every generation call is grounded in structured
+gap/rubric data — the prompt forbids inventing marks or feedback, per the
+proposal's anti-hallucination constraint. Model choice is per-task, not global:
+bulk synthetic-data generation can run locally while student-facing plans use a
+stronger model.
+
 ## Not yet written
 
+- The `lja/` package itself — everything above is target structure.
 - Typed models for grade items and rubric fills.
 - Loader that populates `lja_criterion_score` (see the SQL bundle).
 - Synthetic data seeder — see the devenv bundle for the approach.
+- `.env.example` entries for the `LJA_LLM_*` variables above.
