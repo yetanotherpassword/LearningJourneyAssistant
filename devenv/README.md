@@ -23,8 +23,12 @@ sudo usermod -aG docker "$USER"      # log out and back in
 ./seed.sh
 ```
 
-Moodle then answers on `http://localhost:8000`, admin password `Devpass1!`.
-Development credentials only — never reuse them anywhere.
+Moodle then answers on `http://localhost:${MOODLE_DOCKER_WEB_PORT}`, admin
+password `Devpass1!`. `env.sh` defaults `MOODLE_DOCKER_WEB_PORT` to `8081`,
+not `8000` — 8000 is commonly taken by something else on a dev machine (the
+port-clash gotcha below exists precisely because 8000 collides often). Check
+`env.sh` for your team's actual default before assuming the port. Development
+credentials only — never reuse them anywhere.
 
 ## Why moodle-docker
 
@@ -53,6 +57,21 @@ container environment variables via `getenv()`.
 
 **Port clashes.** If 8000 or 5432 are taken, override `MOODLE_DOCKER_WEB_PORT`
 and `MOODLE_DOCKER_DB_PORT` in `env.sh`.
+
+**Plugin CLI scripts live under `public/`, not `admin/cli/`.** Moodle 5.x
+split the codebase: everything Apache actually serves moved into `public/`,
+while `config.php` and a handful of core CLI scripts (`install_database.php`,
+`cron.php`, `upgrade.php`, ...) kept a compatibility copy at the old top-level
+`admin/cli/` path — that split is why `install_database.php` in
+`bootstrap.sh` still works unmodified. **Plugin** CLI scripts, such as
+`admin/tool/generator/cli/maketestcourse.php` used by `seed.sh`, did **not**
+get that compatibility copy. Any `php admin/tool/...` invocation from inside
+the webserver container needs a `public/` prefix:
+`php public/admin/tool/generator/cli/maketestcourse.php`. This will matter
+again the day someone writes a CLI entry point for the custom rubric-fills
+plugin (see the python bundle's stretch goal) — check whether the target
+script is core (top-level `admin/cli/` works) or a plugin
+(`public/admin/...` required) before wiring it up.
 
 **Machine-specific overrides** belong in a gitignored `local.yml`, not in
 `env.sh`. `env.sh` is shared so all six of us run an identical stack.

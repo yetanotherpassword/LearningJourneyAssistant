@@ -7,6 +7,7 @@ sprint artefacts.
 
 | Path | Purpose |
 | --- | --- |
+| `sprint-plan.md` | Active specification for Sprints 1–5: workload allocation, per-sprint engineering/documentation requirements, descope policy. Update it as sprints close, don't let it go stale. |
 | `TradeShow/Learning_Journey_Assistant_-_Trade_Show_Deck.pptx` | Trade show booth deck. Draft — needs more content, and should be re-cut from the live demo once the walking skeleton runs. |
 
 ## Conventions

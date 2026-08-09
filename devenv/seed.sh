@@ -9,17 +9,32 @@
 #
 set -euo pipefail
 
-cd "${HOME}/dev/moodle-docker"
-# shellcheck source=/dev/null
-source "$(dirname "$(readlink -f "$0")")/env.sh"
+# Same fix as bootstrap.sh: resolve the script's own directory before any cd,
+# because readlink -f on a relative $0 follows the current working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=./env.sh
+source "${SCRIPT_DIR}/env.sh"
+
+# The working directory now comes from env.sh rather than being hardcoded here,
+# so bootstrap.sh and seed.sh cannot drift apart.
+cd "$MOODLE_DOCKER_WORKDIR"
 
 # tool_generator creates a course populated with users S1..Sn plus activities
 # and content. Sizes run XS through XL; S is enough for development.
 # --fixeddataset makes the output reproducible across team members.
+#
+# Path note: Moodle 5.x moved the web-served codebase into public/, splitting
+# it from config.php and friends which stay at the repo root for security.
+# A handful of core CLI scripts (install_database.php, cron.php, ...) kept a
+# compatibility copy at the old top-level admin/cli/ path -- that is why
+# bootstrap.sh's install step still works unmodified. Plugin CLI scripts like
+# tool_generator's did NOT get that compatibility copy; they only exist under
+# public/. Any future admin/tool/* CLI invocation needs the public/ prefix too.
 for SUBJECT in CSE1IOI CSE2CWA CSE1PES; do
     echo "==> Generating ${SUBJECT}"
     bin/moodle-docker-compose exec webserver \
-        php admin/tool/generator/cli/maketestcourse.php \
+        php public/admin/tool/generator/cli/maketestcourse.php \
             --shortname="${SUBJECT}" \
             --size=S \
             --fixeddataset
