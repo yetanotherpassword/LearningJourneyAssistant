@@ -3,6 +3,15 @@
 Read-only extraction queries for a self-hosted Moodle instance, plus the schema
 for the assistant's own criterion-to-outcome mapping table.
 
+**Status: production path, not yet wired to code.** The project owner
+supplied a ready-extracted Excel workbook on 2026-08-11
+(`data-fixtures/CSE_results_150_students_3_Subjects.xlsx`) that this queries'
+`lja_criterion_score` output would otherwise have to produce — see
+`python/README.md`. That Excel path is what `python/lja` actually runs
+against today. These queries remain the plan for when the system reads a
+live Moodle instance directly instead of a supplied export; nothing here is
+wasted, it just isn't on the critical path this sprint.
+
 ## Contents
 
 | File | Purpose |
@@ -13,7 +22,16 @@ for the assistant's own criterion-to-outcome mapping table.
 
 - Moodle 5.2.x (current stable, released 20 April 2026)
 - PostgreSQL backend
-- Default table prefix `mdl_` — check `$CFG->prefix` in `config.php` if unsure
+- Default table prefix `mdl_` — check `$CFG->prefix` in `config.php` if unsure.
+  **Confirmed discrepancy:** our own `devenv/` Docker install actually uses
+  `m_`, not `mdl_` — moodle-docker's `config.docker-template.php` sets it,
+  and it was caught by querying the live devenv Postgres directly. These
+  queries are written against `mdl_` because that's Moodle's own documented
+  default and what a hosted/production instance more commonly runs, but
+  **do not assume either prefix** — check the actual instance before running
+  anything here. Whoever writes the Moodle-path loader in `python/lja`
+  should make the prefix a config value, not a hardcoded string, given we've
+  already seen it vary between our own two environments.
 
 ## Before you run anything
 
@@ -75,7 +93,11 @@ Both items are tracked, with the rest of the dataset request, in the
 data-fixtures README checklist.
 
 - The gap-classification thresholds in query 6 (currently 50 and 65) are
-  placeholders. Confirm with Scott.
+  placeholders. On the 2026-08-11 call Scott said he isn't sure how the
+  existing "at risk" band is determined either — there may be no
+  institutional number to confirm against, meaning this could be a decision
+  the team gets to make and justify, not one to keep chasing an answer for.
+  `python/lja/model/gap_detection.py` uses the same two placeholders.
 - Queries 3 and 4 represent the two competency mechanisms. Run both against the
   supplied dataset; whichever returns rows tells us which one La Trobe actually
   uses in production, and that should drive the architecture. If neither

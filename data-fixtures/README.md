@@ -7,35 +7,57 @@ from the project owner.
 
 | File | Purpose |
 | --- | --- |
+| `CSE_results_150_students_3_Subjects.xlsx` | **The real dataset**, supplied by Scott Mann on the 2026-08-11 call. Three sheets: `Assessment Map` (SILOs + assessment weights per subject), `Results` (1650 rows — 150 synthetic students × 11 assessments, scored, with feedback), `Student Summary` (per-subject totals + performance band). See `python/README.md` — this is what `lja.cli` actually runs against. |
+| `CSE_results_300_students_3_Subjects_synthetic.xlsx` | **Generated, not supplied** — the 150 real students above plus 150 more from `lja/data/synth_generator.py`, same shape, same subjects/SILOs/assessments. 11 of the new students have a deliberately planted, known gap on `CSE1OOF:SILO2` + `CSE2ALG:SILO2`/`SILO3`. Running the pipeline against this file and checking that those exact students come back as a persistent gap is a real correctness test — see `python/README.md`'s "Generating more synthetic data" section. Regenerable; not load-bearing to keep in git if the team would rather `.gitignore` it and regenerate on demand. |
+| `backup-moodle2-course-2-demo101-20260809-1200-nu.mbz` | A small external sample Moodle backup used to prove the restore path (see `devenv/README.md`). Not from Scott, no rubric-graded activities — kept as a restore-mechanics reference only, not sample data. |
 | `competency_framework_cse5idp.csv` | Moodle competency framework import fixture. CSE5IDP's own SILOs, as a worked example. |
 
-## Incoming dataset — what we asked the project owner for
+## Incoming dataset — what we asked for, and what actually arrived
 
-We never receive student data; we generate that ourselves. What we need is the
-subject-side structure, and this checklist tracks what has been requested and
-what has arrived. Tick items off and note the arrival date as they land.
+We never receive real student data; every student in the xlsx above is
+synthetic (`STU0001`...`STU0150`), per the proposal. Checklist below, updated
+against the 2026-08-11 call transcript.
 
-- [ ] **Course backups (.mbz) of 3–4 candidate subjects**, exported with
-      "include enrolled users" unticked. Restoring these into the devenv Moodle
-      gives us real assessments and rubrics with no re-keying — see the
-      devenv README for the restore procedure.
-- [ ] **Subjects chosen to form a progression sequence** (a first-year subject
-      feeding a later one), so the persistent-vs-isolated gap classification in
-      SQL Query 6 is actually demonstrable.
-- [ ] **SILOs for those subjects, with stable ID numbers** — the target side of
-      `lja_criterion_silo_map` and the competency framework CSVs. Usually just
-      the Subject Learning Guides / handbook entries.
-- [ ] **Fallback if backups are refused: the rubric documents themselves**
-      (assessment briefs with criteria, level descriptors, and scores), to be
-      re-entered into Moodle by hand.
-- [ ] **A few de-identified exemplar marker remarks per rubric level** — real
-      examples calibrate the LLM-generated synthetic remarks so tone and
-      vocabulary are plausible.
-- [ ] **Decision: which mechanism production uses** — legacy Outcomes, the
-      Competency subsystem, or neither. Drives whether we build on Moodle's
-      model or ship our own bridging table as the product.
-- [ ] **Decision: gap-classification thresholds** — the 50 / 65 in SQL Query 6
-      are placeholders awaiting the project owner's confirmation.
+- [x] **Structured subject/assessment/SILO/score data for 3 subjects** — not
+      the `.mbz` backup route originally planned; Scott instead supplied a
+      pre-extracted Excel workbook directly. Simpler for this phase, and the
+      one now driving `python/lja`. The `.mbz` restore path in `devenv/` is
+      still real (and still worth knowing), just not the thing currently
+      feeding the pipeline.
+- [x] **Subjects forming a progression sequence** — confirmed real subjects:
+      `CSE1OOF` (first year, object-oriented programming), `CSE2ALG` (second
+      year, algorithms & data structures), `CSE3CAP` (capstone). Exactly the
+      "gap in first year, consequence in third year" narrative Scott
+      described — this is not a coincidence, it's the point of the demo set.
+- [x] **SILOs, with stable IDs** — in the `Assessment Map` sheet, `SILO1`
+      through `SILO5` **numbered locally per subject** (CSE1OOF has 4,
+      CSE2ALG has 5, CSE3CAP has 4 — 13 total). The same number means
+      different things in different subjects; only `(subject_code,
+      silo_local_id)` together is a stable key. This is the exact problem
+      Scott described wanting semantic (not keyword) matching for.
+- [x] **Exemplar feedback per assessment** — present in `Results`, but
+      **templated**: only 45 unique feedback strings across 1650 rows,
+      confirmed by inspection. Scott named this directly on the call
+      ("cut and paste... automated rubrics") and separately offered to try
+      sourcing real custom feedback, flagging a student re-identification
+      risk if he does — expect a sanitised version, not raw text, if it
+      arrives at all.
+- [ ] **Decision: which mechanism production Moodle uses** — Outcomes,
+      Competency subsystem, or neither. Still open; this Excel dataset
+      sidesteps it entirely, since it was extracted from Moodle already
+      structured rather than requiring us to read the mechanism ourselves.
+      Still relevant for the production Moodle-integration path.
+- [ ] **Decision: gap-classification thresholds** — Scott explicitly said on
+      the call he doesn't know how "at risk" is currently determined
+      ("I'm not sure how we determined at risk"). The 50/65 in
+      `sql/moodle_attainment_extraction.sql` Query 6 and
+      `lja/model/gap_detection.py` remain placeholders — there is no
+      existing institutional number to match, so this is now an open design
+      decision for the team, not a confirmation to chase.
+- [ ] **Scale, at production**: Scott was explicit this canned 3-subject,
+      150-student set is deliberately small — "the power will come at scale
+      when we do this across all of our, what, 30-plus subjects." Nothing to
+      action now; a note for when this moves toward production.
 
 When the real frameworks arrive, swap them in for the CSE5IDP worked example
 below — that file exists to prove the import path, not to ship.

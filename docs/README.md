@@ -9,6 +9,10 @@ sprint artefacts.
 | --- | --- |
 | `sprint-plan.md` | Active specification for Sprints 1–5: workload allocation, per-sprint engineering/documentation requirements, descope policy. Update it as sprints close, don't let it go stale. |
 | `TradeShow/Learning_Journey_Assistant_-_Trade_Show_Deck.pptx` | Trade show booth deck. Draft — needs more content, and should be re-cut from the live demo once the walking skeleton runs. |
+| [Pipeline architecture diagram](https://claude.ai/code/artifact/3c9d410a-f89e-4bdb-bfe5-38acb3cf6c9a) ([PDF](<LJA — Data & Algorithm Pipeline.pdf>)) | Six-stage data-flow diagram (Moodle/Excel → extraction → mapping → gap detection → LLM layer → dashboard) plus a field-level "zoom" showing exactly which Moodle/Excel fields feed `lja_criterion_score`. |
+| [UML use case & sequence diagrams](https://claude.ai/code/artifact/1e066a27-42dc-45dc-9e5d-22a6e1f9b1ec) ([PDF](<LJA — UML Use Case & Sequence Diagrams.pdf>)) | Who interacts with the system (built vs. planned use cases, visually distinguished) and two sequence diagrams for code that actually runs: the CLI pipeline, and the SILO coverage-validation failure it was built to catch. |
+
+**On the two diagram entries above:** the live link is a Claude Artifact — private by default, use its share menu if the whole team needs access without going through whoever generated it, and it stays interactive/re-renderable. The PDF alongside each is a static export committed to this folder, so the repo has a copy that doesn't depend on claude.ai access. If they go stale relative to the code, regenerate rather than hand-edit either one — a hand-edited PDF has no source to keep in sync.
 
 ## Conventions
 
