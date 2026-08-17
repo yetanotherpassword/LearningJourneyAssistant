@@ -52,22 +52,26 @@ owner (see each bundle's README for detail):
 ## What it is going to become
 
 The MVP is a thin vertical slice, working end-to-end before anything is
-polished. The extraction → clustering → gap-detection spine now runs on the
-Excel path; the dashboard is the next real gap.
+polished. The extraction → clustering → gap-detection spine runs on the
+Excel path, and a first dashboard slice now renders it live.
 
 ```
 data-fixtures/CSE_results_*.xlsx  (real data)  ─┐
-                                                  ├─▶ SILO clustering (LLM) ─▶ Gap detection ─▶ LLM layer ─▶ [Dashboard — not built]
+                                                  ├─▶ SILO clustering (LLM) ─▶ Gap detection ─▶ Dashboard (read-only)
 Moodle (production path — sql/, moodle_probe.py) ─┘
 ```
 
 Planned in order (must-haves from the project proposal, sequenced by dependency):
 
 1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with 18 passing
-   tests. Still missing: a rendered view (currently a CLI + CSV).
-2. **Dashboard** — render the gap report; multiple subjects, the four
-   dashboard views from the proposal.
+   → detect gaps → CSV report, running against real data with 54 passing
+   tests.
+2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
+   Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
+   rendered live from `compute_gaps()`, not a hardcoded example. Still
+   missing: the other three dashboard views from the proposal (strengths,
+   progress trends — only the gap view exists so far) and multi-subject
+   comparison; see `python/README.md`'s "Dashboard" section.
 3. **Staff confirmation workflow** for the LLM's SILO clustering — right now
    nothing gates an unreviewed clustering from driving a gap report, unlike
    the Moodle path's `confirmed_by_staff` design.

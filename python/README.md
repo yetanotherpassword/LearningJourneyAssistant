@@ -17,8 +17,8 @@ clustering → gap-detection → LLM stages; only the extraction step differs.
 
 ```
 data-fixtures/CSE_results_*.xlsx  ──┐
-                                     ├──▶ lja.model (clustering, gaps) ──▶ lja.llm
-Moodle (moodle_probe.py + sql/)  ──┘         [not yet: dashboard]
+                                     ├──▶ lja.model (clustering [via lja.llm], gaps) ──▶ lja.dashboard
+Moodle (moodle_probe.py + sql/)  ──┘
 ```
 
 ## Contents
@@ -32,9 +32,10 @@ Moodle (moodle_probe.py + sql/)  ──┘         [not yet: dashboard]
 | `lja/model/silo_clustering.py` | LLM-driven cross-subject SILO clustering — the semantic-matching step Scott asked for, with automatic retry on a validation failure |
 | `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + gap classification |
 | `lja/cli.py` | `python -m lja.cli <xlsx path>` — runs the whole pipeline, writes a gap report |
-| `tests/` | pytest — 49 tests, all offline (no live LLM call needed) |
+| `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
+| `tests/` | pytest — 54 tests, all offline (no live LLM call needed) |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
-| `environment.yml` | Conda environment: `pandas`, `openpyxl`, `psycopg2`, `anthropic`, `openai`, `pydantic`, `pytest` |
+| `environment.yml` | Conda environment: `pandas`, `openpyxl`, `psycopg2`, `anthropic`, `openai`, `pydantic`, `pytest`, `fastapi`, `uvicorn`, `jinja2` |
 | `.env.example` | Template for credentials and LLM config. Copy to `.env` and fill in |
 
 ## Setup
@@ -62,6 +63,52 @@ Run the tests:
 ```bash
 python -m pytest tests/
 ```
+
+## Dashboard
+
+Read-only view over an already-computed pipeline run — FastAPI + Jinja2 +
+Chart.js, per `docs/sprint-plan.md`'s Sprint 1 recommendation. It never
+calls the LLM and never writes anything; it only reads the dataset plus
+whatever clustering `python -m lja.cli` already cached.
+
+```bash
+cd python
+conda activate lja
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --refresh-clustering   # once, if you haven't already
+python -m lja.dashboard
+```
+
+Then open http://127.0.0.1:8000/ — a student list (with a persistent-gap
+count per row) linking to a per-student page: an attainment chart plus a
+classification-badged gap table, both colored from the same semantic
+palette (`lja/dashboard/static/style.css`) so the chart and the badges
+never disagree about what a color means.
+
+If `output/silo_clustering.json` doesn't exist yet, `python -m lja.dashboard`
+fails fast with the exact `lja.cli` command to run first, rather than
+silently trying to call the LLM itself — the dashboard should never be the
+thing that triggers a billed API call.
+
+`create_app(dataset, gaps)` in `lja/dashboard/app.py` is a factory that
+takes data as arguments instead of loading it itself; `lja/dashboard/__main__.py`
+is the only place that touches disk (the Excel file and the clustering
+cache). `tests/test_dashboard.py` builds tiny in-memory `LjaDataset` /
+`CompetencyGap` fixtures and drives the app via FastAPI's `TestClient` — no
+real Excel file, no LLM, no dependency on whatever happens to be in
+`output/` when the tests run.
+
+**Known caveat, flagged rather than silently accepted:** the chart loads
+Chart.js from a CDN (`lja/dashboard/templates/base.html`), which needs
+internet access. Everything else on the page — tables, badges, the student
+list — still works if that request fails; only the chart itself won't
+render. Vendor `chart.js` into `lja/dashboard/static/` if this needs to run
+fully offline, matching the rest of the project's local-first stance (the
+whole point of the Ollama path).
+
+**Not yet built:** a `confirmed_by_staff` review action on this page — see
+"Not yet written" below. For now this dashboard is read-only, matching
+Sprint 2's scope in `docs/sprint-plan.md`; the natural place for that
+action is a "confirm" control on each competency once it exists.
 
 ## The LLM layer — provider-agnostic, actually built now
 
@@ -376,12 +423,20 @@ before it drives a real intervention: see the module's docstring.
 
 ## Not yet written
 
-- `lja/dashboard/` — a rendered view of the gap report. The CLI currently
-  writes a CSV; there is no web UI yet (Sprint 2/3 per `docs/sprint-plan.md`).
 - Staff confirmation workflow for the LLM's SILO clustering (the
   `confirmed_by_staff` gate that exists conceptually in `sql/`'s
   `lja_criterion_silo_map` has no equivalent here yet — right now nothing
-  stops an unreviewed clustering from being used).
+  stops an unreviewed clustering from being used). Per `docs/sprint-plan.md`
+  (M2, Sprint 3), MVP scope is a CLI/admin script, not a full UI — and the
+  gate should be advisory (three states: pending/confirmed/rejected), not a
+  hard block on the pipeline; a `rejected` cluster still needs a real
+  rework path (`--extra-instructions` + `--refresh-clustering`, or a manual
+  override), not a silent dead end.
+- Confirmation UI on the dashboard (see "Dashboard" above) — deferred until
+  the CLI/admin version above exists.
+- Reload-on-change for `python -m lja.dashboard` — restart the process to
+  pick up template/CSS edits; wiring `uvicorn`'s `--reload` through the
+  `create_app()` factory pattern is more machinery than this slice needed.
 - Loader that populates `lja_criterion_score` for the **Moodle** path (the
   Excel path has its own loader — `lja/data/excel_loader.py` — already done).
 - Synthetic data seeder for the Moodle path — see the devenv bundle.
