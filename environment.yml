@@ -1,0 +1,14 @@
+name: lja
+channels:
+  - defaults
+dependencies:
+  - pandas
+  - python-dotenv
+  - psycopg2
+  - pip
+  - requests
+  - pytest
+  - python=3.12
+  - pydantic
+  - openpyxl
+prefix: /home/acampton/miniconda3/envs/lja
