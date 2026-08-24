@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Students &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<h1>Students</h1>
+<p class="dek">One row per student, computed live from the cached SILO clustering &mdash; not a hardcoded example.</p>
+
+<div class="stat-strip">
+  <div class="stat">
+    <div class="num">{{ student_count }}</div>
+    <div class="label">students</div>
+  </div>
+  <div class="stat">
+    <div class="num">{{ students_with_persistent_gaps }}</div>
+    <div class="label">with a persistent gap</div>
+  </div>
+</div>
+
+{% if rows %}
+<table>
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th>Average</th>
+      <th>Band</th>
+      <th>Persistent gaps</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>
+        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
+          {{ row.student_id }}
+        </a>
+      </td>
+      <td>{{ "%.1f"|format(row.average_total) }}%</td>
+      <td>{{ row.performance_band }}</td>
+      <td>
+        {% if row.persistent_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No students in this dataset.</p>
+{% endif %}
+{% endblock %}

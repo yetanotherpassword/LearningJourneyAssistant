@@ -1,0 +1,215 @@
+:root {
+  --bg: #eef1ee;
+  --surface: #f8f9f7;
+  --surface-2: #e4e8e3;
+  --ink: #181b18;
+  --muted: #5b625c;
+  --line: #c7ccc6;
+  --accent: #c07520;
+
+  --status-persistent: #b3261e;
+  --status-persistent-bg: #fbe3e1;
+  --status-isolated: #a15c00;
+  --status-isolated-bg: #f7e6cc;
+  --status-developing: #1c5fa8;
+  --status-developing-bg: #dde9f7;
+  --status-proficient: #2f7a4f;
+  --status-proficient-bg: #dcf0e2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171a;
+    --surface: #1b1f1d;
+    --surface-2: #222723;
+    --ink: #eef1ee;
+    --muted: #98a199;
+    --line: #333b35;
+    --accent: #e0912f;
+
+    --status-persistent: #ff8a80;
+    --status-persistent-bg: #3a1613;
+    --status-isolated: #f2b258;
+    --status-isolated-bg: #3a2a11;
+    --status-developing: #7fb0e8;
+    --status-developing-bg: #142433;
+    --status-proficient: #7fd7a0;
+    --status-proficient-bg: #12291c;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+header.site-header {
+  border-bottom: 1px solid var(--line);
+  padding: 20px 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+header.site-header a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 1.15rem; }
+
+header.site-header .tag {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+main { max-width: 1000px; margin: 0 auto; padding: 32px; }
+
+h1 { font-size: 1.5rem; margin: 0 0 6px; }
+h2 { font-size: 1.1rem; margin: 28px 0 12px; }
+.dek { color: var(--muted); margin: 0 0 28px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+tr:last-child td { border-bottom: none; }
+
+th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+tbody tr:hover { background: var(--surface-2); }
+td a { color: var(--accent); text-decoration: none; font-weight: 600; }
+td a:hover { text-decoration: underline; }
+td a.at-risk { color: var(--status-persistent); }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge.persistent-gap { color: var(--status-persistent); background: var(--status-persistent-bg); }
+.badge.isolated-gap { color: var(--status-isolated); background: var(--status-isolated-bg); }
+.badge.developing { color: var(--status-developing); background: var(--status-developing-bg); }
+.badge.proficient { color: var(--status-proficient); background: var(--status-proficient-bg); }
+
+.stat-strip { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 20px;
+  min-width: 140px;
+}
+
+.stat .num { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .label { color: var(--muted); font-size: 0.85rem; }
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.back-link { display: inline-block; margin-bottom: 20px; color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+.back-link:hover { color: var(--ink); }
+
+.empty-state { color: var(--muted); padding: 24px; text-align: center; }
+
+/* --- per-competency evidence cards (student.html) --- */
+
+.gap-list { display: flex; flex-direction: column; gap: 12px; }
+
+.gap-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0;
+}
+
+.gap-card summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gap-card summary::-webkit-details-marker { display: none; }
+
+.gap-card summary::before {
+  content: "\25B8";
+  color: var(--muted);
+  font-size: 0.8rem;
+  transition: transform 0.15s ease;
+}
+
+.gap-card[open] summary::before { transform: rotate(90deg); }
+
+.gap-card summary .competency-name { font-weight: 600; flex: 1 1 auto; min-width: 160px; }
+.gap-card summary .attainment { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
+
+.gap-card-body {
+  padding: 4px 18px 18px 40px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.evidence-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.evidence-table th, .evidence-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.evidence-table th { text-align: left; color: var(--muted); font-weight: 500; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.evidence-table tr:last-child td { border-bottom: none; }
+
+.trend-line { font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+
+.trend-badge { padding: 2px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
+.trend-badge.improving { color: var(--status-proficient); background: var(--status-proficient-bg); }
+.trend-badge.stable { color: var(--status-developing); background: var(--status-developing-bg); }
+.trend-badge.declining { color: var(--status-persistent); background: var(--status-persistent-bg); }
+.trend-badge.insufficient-evidence { color: var(--muted); background: var(--surface-2); }
+
+.future-subjects {
+  border: 1px solid var(--status-isolated-bg);
+  background: var(--status-isolated-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+}
+
+.future-subjects strong { color: var(--status-isolated); }
+
+.future-subjects.empty {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}

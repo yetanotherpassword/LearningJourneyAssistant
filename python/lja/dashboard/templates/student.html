@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ summary.student_id }} &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/">&larr; all students</a>
+<h1>{{ summary.student_id }}</h1>
+<p class="dek">
+  {{ summary.performance_band }} &middot;
+  {{ "%.1f"|format(summary.average_total) }}% average across {{ summary.subject_totals|length }} subjects
+</p>
+
+<div class="chart-card">
+  <canvas id="attainment-chart" height="90"></canvas>
+</div>
+
+<h2>Competency gaps</h2>
+{% if gap_details %}
+<div class="gap-list">
+  {% for detail in gap_details %}
+  {% set gap = detail.gap %}
+  <details class="gap-card" {% if gap.classification in ["persistent gap", "isolated gap"] %}open{% endif %}>
+    <summary>
+      <span class="competency-name">{{ gap.competency_label }}</span>
+      <span class="attainment">{{ "%.1f"|format(gap.attainment_pct) }}%</span>
+      <span class="badge {{ gap.classification|replace(' ', '-') }}">{{ gap.classification }}</span>
+    </summary>
+    <div class="gap-card-body">
+      <table class="evidence-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Year</th>
+            <th>Attainment</th>
+            <th>Observations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in detail.evidence %}
+          <tr>
+            <td>{{ e.subject_code }}</td>
+            <td>{{ e.year_level if e.year_level is not none else "?" }}</td>
+            <td>{{ "%.1f"|format(e.attainment_pct) }}%</td>
+            <td>{{ e.n_observations }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="trend-line">
+        <span>Trend across subjects:</span>
+        <span class="trend-badge {{ detail.trend|replace(' ', '-') }}">{{ detail.trend }}</span>
+        {% if detail.trend == "insufficient evidence" %}
+        <span style="color: var(--muted); font-size: 0.85rem;">
+          &mdash; fewer than two subjects with a known year level evidence this competency
+        </span>
+        {% endif %}
+      </div>
+
+      {% if detail.future_subjects is not none %}
+        {% if detail.future_subjects %}
+        <div class="future-subjects">
+          <strong>Flag for intervention</strong> if {{ summary.student_id }} takes
+          {{ detail.future_subjects|join(", ") }} &mdash; {{ "it shares" if detail.future_subjects|length == 1 else "they share" }}
+          this competency and {{ summary.student_id }} hasn't demonstrated it there yet.
+        </div>
+        {% else %}
+        <div class="future-subjects empty">
+          No other subject in this dataset draws on this competency that {{ summary.student_id }}
+          hasn't already taken. Becomes meaningful once more subjects/cohorts are loaded.
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">No competency evidence for this student.</p>
+{% endif %}
+
+<script>
+  const chartData = {{ chart_data|safe }};
+  const statusVar = {
+    "persistent gap": "--status-persistent",
+    "isolated gap": "--status-isolated",
+    "developing": "--status-developing",
+    "proficient": "--status-proficient",
+  };
+  const styles = getComputedStyle(document.documentElement);
+  const colors = chartData.classifications.map((c) => styles.getPropertyValue(statusVar[c]).trim());
+
+  new Chart(document.getElementById("attainment-chart"), {
+    type: "bar",
+    data: {
+      labels: chartData.labels,
+      datasets: [{
+        label: "Attainment %",
+        data: chartData.values,
+        backgroundColor: colors,
+      }],
+    },
+    options: {
+      scales: { y: { beginAtZero: true, max: 100 } },
+      plugins: { legend: { display: false } },
+    },
+  });
+</script>
+{% endblock %}
