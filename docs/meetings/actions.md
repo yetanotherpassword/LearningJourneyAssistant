@@ -28,7 +28,8 @@ Owners use the tender §10 numbering: T1 Allan · T2 Ayesha · T3 Istiaque · T4
 
 | ID | Decision | Owner | Agenda | State | Notes |
 |---|---|---|---|---|---|
-| A-01 | Ratify or replace WP2's four thresholds — floor 50%, ceiling 75%, relative cut-off −1.0 MAD, minimum 4 competencies | ALL | A1 | **OPEN** | Blocks WP2, therefore WP4 part 2 and A-02. Shipped as `LJA_*` config so a later change costs nothing — but these defaults are what gets demoed. |
+| A-01 | Ratify or replace WP2's **seven** `LJA_GAP_*` thresholds | ALL | A1 | **OPEN** | Now implemented and measured — see the box below. Shipped as config so a later change costs nothing, but these defaults are what gets demoed. |
+| A-26 | Decide whether the near-flat profiles in the supplied dataset are an artefact or a fact about students | ALL | A1 | **OPEN** | Raised by the WP2 measurement. Determines whether A-01 can be answered on this data at all, and whether a better dataset is a Sprint 4 ask of Scott. |
 | A-02 | Define the "At Risk" cohort | ALL | A2 | **OPEN** | Scott confirmed no institutional number exists. Mechanism built; `/cohort/at-risk` is 404 and a test asserts that. Implementing the decision includes deleting that test. |
 | A-06 | Decide which sprint calendar is authoritative | ALL | B1 | **OPEN** | Runbook says Sprint 3 = 24 Aug–6 Sep; `sprint-plan.md` says 7–20 Sep and calls that range Sprint 2. |
 | A-08 | Confirm `Refs IOLG-<n>` as the commit trailer convention | ALL | B2 | **OPEN** | `S3-<n>` is the runbook's shorthand for work packages, not a Jira key. |
@@ -39,6 +40,45 @@ Owners use the tender §10 numbering: T1 Allan · T2 Ayesha · T3 Istiaque · T4
 | A-15 | Authorise the `devenv/env.sh` correction ("all six of us" → five) | ALL | C2 | **OPEN** | Blocked by a contradiction *inside* the runbook: §8 asks for it, §9 puts `devenv/` out of scope until Sprint 4. Needs an explicit go-ahead, then A-24. |
 | A-17 | Strike the "create GitHub Issues backlog" item, or confirm it as a second tracker | ALL | C4 | **OPEN** | An M5 Sprint 1 deliverable never done; the team is evidently on Jira. |
 | A-22 | Agree the corrected coverage target — 80% on core mapping and gap logic is **already met** | ALL | C1 | **OPEN** | Core modules are at 98–100%. The 70% headline is `cli.py` and `dashboard/__main__.py` at 0%, which is 62% of all uncovered statements. Decide that Sprint 5 targets entry-point wiring, then A-25. |
+
+### Background for A-01 and A-26 — the seven thresholds, and what measuring them showed
+
+Set as `LJA_GAP_*` environment variables in `python/lja/config.py`, and mirrored as flags on
+`python -m lja.cli` so they can be swept without editing a `.env`. There is no UI — that is A-27.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `LJA_GAP_ABSOLUTE_FLOOR` | 50.0 | Below this is a gap regardless of profile — catches the uniformly weak student |
+| `LJA_GAP_ABSOLUTE_CEILING` | 75.0 | At or above this is never a gap — catches the uniformly strong student |
+| `LJA_GAP_RELATIVE_GAP_CUTOFF` | −1.0 | MAD units below the student's own median at which it becomes a gap |
+| `LJA_GAP_RELATIVE_STRONG_CUTOFF` | +1.0 | MAD units above at which it counts as proficient |
+| `LJA_GAP_MIN_COMPETENCIES` | 4 | Below this many, fall back to absolute and record that |
+| `LJA_GAP_MIN_SPREAD` | 1.0 | MAD below this is a flat profile; fall back to absolute |
+| `LJA_GAP_FALLBACK_PROFICIENT` | 65.0 | On the fallback path only, at or above this is proficient |
+
+**Two findings the meeting needs before it can ratify anything.**
+
+*The first draft of `MIN_SPREAD` was wrong, and only measuring caught it.* At 2.0, **60% of all
+classifications fell back to "insufficient data"** and the relative path — the whole point of
+tender requirement 4 — fired for **4.8%** of them. Measured MAD across all 150 profiles is median
+**0.90** (Q1 0.52, Q3 1.40, max 3.80), so 2.0 excluded nine students in ten. It is now 1.0, which
+gives relative 27.5% / ceiling 29.1% / insufficient 37.6% / floor 5.9%.
+
+*The more important finding is about the data, not the threshold.* These profiles are nearly flat
+**by construction** — each competency's attainment averages several assessments of a single
+per-student baseline plus independent noise, with no per-competency ability term at all. Of the 71
+gaps found relatively, the distance below the student's own median is: min 1.0, median 2.2, max
+6.8 percentage points, and **25 of 71 sit under two points below their own median**. On this data
+"your weakest competency" is often a difference too small to act on.
+
+That is an argument about the dataset rather than the algorithm, and a warning against tuning
+`MIN_SPREAD` down to manufacture gaps — 0.5 would classify 89% of students relatively while making
+a one-point difference a confident verdict. Full workings in
+[`docs/adr/0001-relative-gap-detection.md`](../adr/0001-relative-gap-detection.md).
+
+**Note the blast radius before ratifying:** on the supplied dataset the change moves
+students-with-at-least-one-gap from **20 to 58 of 150**. That is a large shift driven by numbers
+nobody has agreed yet, which is why this should be settled before the project owner sees a demo.
 
 ## 2. Administrative follow-ups — no code, no ticket
 
@@ -55,12 +95,52 @@ Owners use the tender §10 numbering: T1 Allan · T2 Ayesha · T3 Istiaque · T4
 
 | ID | Raise a ticket for | Owner | Agenda | State | Notes |
 |---|---|---|---|---|---|
-| A-18 | Viewer-adjustable chart parameters, starting with histogram bin size | T5 | C5 | **OPEN** | Requested 2026-08-26. Scope to WP4 part 2. `histogram()` already takes `bin_width`/`lower`/`upper`, so the Python side needs no change. Must preserve cross-cohort comparability — that is why bins are fixed today. |
+| A-18 | Viewer-adjustable **chart** parameters, starting with histogram bin size | T5 | C5 | **OPEN** | Requested 2026-08-26. Scope to WP4 part 2. Presentation only — no recomputation. `histogram()` already takes `bin_width`/`lower`/`upper`, so the Python side needs no change; the work is a control plus client-side rebinning. Must preserve cross-cohort comparability, which is why bins are fixed today. |
+| A-27 | Viewer-adjustable **gap-detection thresholds**, with a re-evaluation run that updates the page when it finishes | T5 + T1 | A1 | **OPEN** | Requested 2026-08-26. **Bigger than A-18 and should be a separate ticket** — see the note below. |
 | A-19 | Bump `actions/checkout@v4` and `setup-python@v5` off deprecated Node 20 | T2 | C5 | **OPEN** | Warning only, non-breaking. |
 | A-20 | Vendor Chart.js into `static/` instead of the CDN | T5 | C5 | **OPEN** | Charts currently need internet; the rest of the page degrades gracefully. Matches the local-first stance. |
 | A-23 | Stop hardcoding the test count in the root README — derive it or drop it | T4 | C3 | **OPEN** | Wrong three times already: 18 → 54 → 69 → 87. |
 | A-24 | Correct `devenv/env.sh` to five team members | T2 | C2 | **BLOCKED** | Blocked by A-15. One line. |
 | A-25 | Correct the coverage narrative in `sprint-plan.md` and the READMEs | T4 | C1 | **BLOCKED** | Blocked by A-22 agreeing what the corrected target is. |
+
+### Background for A-27 — why the threshold controls are not just another slider
+
+A-18 changes how existing numbers are *drawn*. A-27 changes what the numbers *are*, and that is an
+architectural shift worth naming before someone starts it.
+
+**Today** the seven thresholds are environment variables read once at import, or CLI flags on
+`python -m lja.cli`. Changing one means editing `.env` or passing a flag, re-running the pipeline,
+and restarting the dashboard. There is no way to see the effect of a different cut-off without
+leaving the browser.
+
+**The good news:** re-running gap detection does **not** need the LLM. Clustering is the expensive
+step and it is already cached in `output/silo_clustering.json`; `compute_gaps()` is pure and runs
+over the full 150-student dataset in well under a second. So a "re-evaluate" button is genuinely
+cheap — this is not a long-running job needing a queue, and the "updates when finished" behaviour
+the request asks for may be simpler than expected.
+
+**The catch, and the thing to decide deliberately:** `lja/dashboard/app.py`'s module docstring
+currently promises the dashboard is *read-only over an already-computed run*, and
+`create_app(dataset, gaps, clustering)` receives its gaps rather than producing them. Accepting
+thresholds from a viewer makes the dashboard a thing that *computes* gaps, which:
+
+- changes what a URL means — two people on the same page could be looking at different
+  classifications, so any threshold state must be visible and shareable (query parameters rather
+  than hidden session state), or figures stop being reproducible between team members;
+- interacts directly with **A-01** — if thresholds become viewer-adjustable, "the default" still
+  needs ratifying, and arguably matters more, because it is what everyone sees first;
+- interacts with **WP3** — a page that recomputes on demand needs to keep saying, loudly, that the
+  clustering underneath it is unreviewed;
+- needs a guard against being used as an accidental grade-changing tool. The tender's guardrail is
+  that mastery estimates are formative indicators, never official evaluations, and a UI that lets
+  someone slide a threshold until a student stops having gaps is exactly the misreading to prevent.
+  Whatever ships should make it obvious the viewer is exploring sensitivity, not setting policy.
+
+**Suggested scope for the ticket:** thresholds in the URL as query parameters, a "re-evaluate"
+control rather than live-on-drag (the recompute is cheap, but re-rendering on every pixel of a
+slider is not), the active values displayed alongside every affected figure, and a one-click reset
+to the ratified defaults. This also gives Sprint 5's sensitivity testing (S4-8's successor) a
+usable interface rather than a shell loop — which may be the strongest argument for building it.
 
 ## 4. Closed
 
