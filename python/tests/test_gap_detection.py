@@ -7,7 +7,12 @@ and should be testable as such.
 from __future__ import annotations
 
 from lja.data.excel_loader import LjaDataset, ResultRow
-from lja.model.gap_detection import DEFAULT_HIGH_THRESHOLD, DEFAULT_LOW_THRESHOLD, build_silo_to_competency_map, compute_gaps
+from lja.model.gap_detection import (
+    DEFAULT_HIGH_THRESHOLD,
+    DEFAULT_LOW_THRESHOLD,
+    build_silo_to_competency_map,
+    compute_gaps,
+)
 from lja.model.silo_clustering import CompetencyCluster, SiloClusteringResult, SiloRef
 
 

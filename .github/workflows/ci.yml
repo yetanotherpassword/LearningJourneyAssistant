@@ -1,0 +1,146 @@
+# Continuous integration for the Learning Journey Assistant.
+#
+# Three independent jobs -- lint, test, security -- deliberately not chained,
+# so a lint failure still tells you whether the tests pass. All three must be
+# green for a pull request to merge, but that enforcement is a *repository
+# setting*, not something this file can assert: see the branch-protection note
+# at the bottom of the CI section in README.md. A workflow with no branch
+# protection in front of it is advisory only.
+#
+# Jira: S3-3 (Sprint 3, WP1)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege, consistent with the DevSecOps posture the project README
+# claims (read-only DB roles, least-privilege API tokens). No job here writes
+# anything back to the repository.
+permissions:
+  contents: read
+
+# A second push to the same PR makes the first run's result irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"   # matches python/environment.yml
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Pinned rather than floating: a ruff minor release that adds a rule
+      # would otherwise turn someone else's unrelated PR red for reasons they
+      # did not cause and cannot fix.
+      - name: Install ruff
+        run: pip install "ruff==0.16.4"
+
+      # Run from python/ so ruff picks up python/pyproject.toml. Rule
+      # selection and the line-length rationale live there, not here.
+      - name: ruff check
+        working-directory: python
+        run: ruff check --output-format=github .
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      # requirements.txt pins psycopg2 (not psycopg2-binary), which ships as
+      # an sdist only and therefore compiles against libpq at install time.
+      # Without these headers the install fails on a runner with a bare
+      # "pg_config executable not found", which reads as a broken workflow
+      # rather than a missing system package. Switching the pin to
+      # psycopg2-binary would also fix it, but that is a dependency decision
+      # for whoever owns the Moodle path (Sprint 4), not for CI to make.
+      - name: Install libpq headers (psycopg2 builds from source)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      # Coverage is REPORTED, not gated. The tender commits to 80% on the core
+      # mapping and gap logic, but that is Sprint 5 work; a threshold that
+      # fails on the day it lands is a threshold someone deletes by the end of
+      # the week. Add --cov-fail-under only when the number is actually met.
+      - name: Run tests with coverage
+        working-directory: python
+        run: pytest -q --cov=lja --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: python/coverage.xml
+          if-no-files-found: warn
+
+  security:
+    name: Security scanning
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: a secret that was committed and later "removed" is still
+      # in the objects, and scanning only the tip commit would report clean on
+      # exactly the case that matters. A full-history scan was confirmed clean
+      # on 24 August 2026 -- the value of this job is that it stays that way.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          curl -sSfL \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      # Blocking, and meant to be. Tender requirement 9 names secret scanning
+      # as Mandatory, the history is known clean, so any finding here is new
+      # and is a genuine stop-the-line event. --redact keeps the secret itself
+      # out of the public build log.
+      - name: Secret scan (full history)
+        run: gitleaks detect --source . --redact --verbose --exit-code 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      # NON-BLOCKING for now, and this is a decision worth re-taking rather
+      # than inheriting. Unlike the secret scan, this job's result depends on
+      # the CVE feed rather than on anything in the diff: a advisory published
+      # overnight against a pinned transitive dependency would block every
+      # unrelated PR the next morning. Report first, triage the initial
+      # findings, then flip continue-on-error to false and mean it.
+      - name: Dependency audit
+        continue-on-error: true
+        run: pip-audit --requirement requirements.txt --desc
