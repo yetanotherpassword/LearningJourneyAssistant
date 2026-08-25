@@ -16,6 +16,11 @@ Agendas and the running actions register for team meetings.
   decision trail survives.
 - Every agenda item that produces an outcome gets an action row, even if the outcome is "no
   change" — otherwise the next meeting re-litigates it from scratch.
+- **`actions.md` is not a backlog.** It holds *decide, confirm, authorise, assign* and *raise a
+  ticket* — actions that close when a decision is made or a ticket exists. Engineering work that
+  produces code belongs in Jira (IOLG), and the meeting action is "raise it". Tracking the
+  engineering to completion here as well would create a second backlog competing with the board,
+  which is the fragmentation the register is partly meant to stop.
 - Decisions with an engineering consequence also belong in the code or its README, not only
   here. This folder records *that* a decision was made; the code records *what* it means.
 
