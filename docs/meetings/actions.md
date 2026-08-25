@@ -100,6 +100,7 @@ nobody has agreed yet, which is why this should be settled before the project ow
 | A-19 | Bump `actions/checkout@v4` and `setup-python@v5` off deprecated Node 20 | T2 | C5 | **OPEN** | Warning only, non-breaking. |
 | A-20 | Vendor Chart.js into `static/` instead of the CDN | T5 | C5 | **OPEN** | Charts currently need internet; the rest of the page degrades gracefully. Matches the local-first stance. |
 | A-23 | Stop hardcoding the test count in the root README — derive it or drop it | T4 | C3 | **OPEN** | Wrong three times already: 18 → 54 → 69 → 87. |
+| A-28 | Generate synthetic data with **measurable** SILOs — more students, more subjects, more assessments, and genuine per-competency ability variation | T4 + T1 | A1 | **OPEN** | The practical answer to A-26. Current generator cannot produce a profile relative gap detection can act on — the missing term is identified below, along with candidate libraries to investigate. |
 | A-24 | Correct `devenv/env.sh` to five team members | T2 | C2 | **BLOCKED** | Blocked by A-15. One line. |
 | A-25 | Correct the coverage narrative in `sprint-plan.md` and the READMEs | T4 | C1 | **BLOCKED** | Blocked by A-22 agreeing what the corrected target is. |
 
@@ -141,6 +142,67 @@ control rather than live-on-drag (the recompute is cheap, but re-rendering on ev
 slider is not), the active values displayed alongside every affected figure, and a one-click reset
 to the ratified defaults. This also gives Sprint 5's sensitivity testing (S4-8's successor) a
 usable interface rather than a shell loop — which may be the strongest argument for building it.
+
+### Background for A-28 — what "measurable SILOs" actually requires
+
+This is the practical answer to A-26. Relative gap detection needs students who are genuinely
+**better at some competencies than others**. The supplied dataset does not contain such students,
+and neither does anything `lja/data/synth_generator.py` can currently produce.
+
+**The precise defect.** The generator draws one baseline per student and adds independent noise per
+assessment:
+
+```
+score(student, assessment) = baseline(student) + noise
+```
+
+There is no term indexed by *competency*. Every competency is therefore an estimate of the same
+underlying number, and within-profile variation is pure measurement noise — which is why the
+measured MAD is a median of 0.90 percentage points, and why averaging several assessments per
+competency shrinks it further. **Relative detection cannot work on data generated this way**, no
+matter how the thresholds are set. Any gap it finds is noise, by construction.
+
+**What is needed** is a student × competency interaction — a per-student *ability vector* rather
+than a scalar:
+
+```
+score(student, competency, assessment)
+    = μ  +  student_effect(student)          # overall ability
+       +  competency_effect(competency)      # some competencies are harder for everyone
+       +  ability(student, competency)       # ← THE MISSING TERM: individual strengths
+       +  noise
+```
+
+The third term is the entire feature. Its standard deviation relative to the noise term is the
+knob that decides whether gap detection has anything to detect, and it should be a generator
+parameter so the team can produce datasets that are deliberately easy or hard. That also gives the
+Sprint 4 validation harness (S4-8) real ground truth: the generator knows each student's true
+weakest competency, so recovery rate becomes measurable rather than asserted. The existing
+`--planted-gap-silos` mechanism is a crude special case of this and should be subsumed by it.
+
+**Scale wanted alongside it:** more students (the current 150 is thin for distribution work), more
+subjects than three, more assessments per subject, and more competencies per student than the
+current uniform five — a varying count would also exercise `MIN_COMPETENCIES`, which currently
+excludes nobody and is therefore untested against real data.
+
+#### Candidate libraries and references to investigate
+
+Listed as starting points from prior knowledge, **not verified against their current
+documentation** — checking they are alive and suitable is part of this action.
+
+| Candidate | Where | Why it is on the list |
+|---|---|---|
+| **Item Response Theory** — `mirt` (R), `py-irt`, `girth` (Python) | `philchalmers.github.io/mirt`, `eribean.github.io/girth` | The established psychometric model for exactly this problem: a latent ability per trait, plus item difficulty and discrimination. Nearest thing to a principled, defensible answer, and it is *the* literature an examiner will expect to see cited. **Highest priority.** |
+| **Hierarchical / multilevel simulation** — PyMC, NumPyro | `pymc.io`, `num.pyro.ai` | Lets the model above be written down directly as random effects, with the student×competency term explicit and tunable. Most transparent option: the generating model is the documentation. |
+| **Synthetic Data Vault (SDV)** | `sdv.dev` | Learns a joint distribution from real data and samples more of it. Useful *later*, once there is genuinely varied data to learn from — it cannot invent structure the source lacks, so it does not solve today's problem. |
+| **copulas / CTGAN / TVAE** (within SDV) | `sdv.dev` | Preserve correlation structure between columns. Same caveat: only as good as the input's structure. |
+| **scikit-learn** `make_*` generators | `scikit-learn.org` | Quick controlled covariance structures for unit-test fixtures. Not realistic enough for a demo dataset, but cheap. |
+| **Faker** | `faker.readthedocs.io` | Names, IDs, dates only. **Explicitly not suitable for correlated numerics** — noted here so nobody reaches for it expecting scores. |
+
+**Before building anything, ask Scott whether real de-identified attainment data can be obtained.**
+Calibrating the generator's parameters against even a small sample of real profiles would settle
+A-26 outright, and no amount of synthetic sophistication substitutes for knowing what real
+within-student variation looks like. That question is cheap to ask and gates the rest.
 
 ## 4. Closed
 
