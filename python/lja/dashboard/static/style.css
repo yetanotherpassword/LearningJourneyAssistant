@@ -192,6 +192,22 @@ td a.at-risk { color: var(--status-persistent); }
 
 .trend-line { font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
 
+/* How a classification was reached (gap_detection.py's BASIS_* values).
+   Neutral by design: the basis is metadata about the verdict, not a second
+   verdict, so it must not compete with the classification badge's colour. */
+.basis-line { font-size: 0.9rem; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+.basis-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.basis-detail { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
 .trend-badge { padding: 2px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; }
 .trend-badge.improving { color: var(--status-proficient); background: var(--status-proficient-bg); }
 .trend-badge.stable { color: var(--status-developing); background: var(--status-developing-bg); }

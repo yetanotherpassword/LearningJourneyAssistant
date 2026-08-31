@@ -23,7 +23,7 @@ from pathlib import Path
 
 from .data.excel_loader import load_dataset
 from .llm.factory import get_llm_client
-from .model.gap_detection import compute_gaps
+from .model.gap_detection import GapThresholds, compute_gaps
 from .model.silo_clustering import SiloClusteringResult, cluster_silos
 
 
@@ -68,8 +68,22 @@ def main(argv: list[str] | None = None) -> int:
         default="output/clusters.csv",
         help="Where to write the SILO clustering as CSV, one row per SILO (default: %(default)s)",
     )
-    parser.add_argument("--low-threshold", type=float, default=50.0)
-    parser.add_argument("--high-threshold", type=float, default=65.0)
+    # Gap-detection tunables. Defaults come from lja/config.py (LJA_GAP_*),
+    # which is the single source of truth; these flags exist so Sprint 5 can
+    # sensitivity-test without editing a .env between runs.
+    _defaults = GapThresholds()
+    parser.add_argument("--absolute-floor", type=float, default=_defaults.absolute_floor,
+                        help="Below this is a gap regardless of profile (default: %(default)s)")
+    parser.add_argument("--absolute-ceiling", type=float, default=_defaults.absolute_ceiling,
+                        help="At or above this is never a gap (default: %(default)s)")
+    parser.add_argument("--relative-gap-cutoff", type=float, default=_defaults.relative_gap_cutoff,
+                        help="MAD units below the student's own median at which a competency is a gap (default: %(default)s)")
+    parser.add_argument("--relative-strong-cutoff", type=float, default=_defaults.relative_strong_cutoff,
+                        help="MAD units above the median at which a competency counts as proficient (default: %(default)s)")
+    parser.add_argument("--min-competencies", type=int, default=_defaults.min_competencies,
+                        help="Below this many competencies, fall back to absolute classification (default: %(default)s)")
+    parser.add_argument("--min-spread", type=float, default=_defaults.min_spread,
+                        help="MAD below this counts as a flat profile; fall back to absolute (default: %(default)s)")
     parser.add_argument(
         "--extra-instructions",
         default=None,
@@ -169,20 +183,36 @@ def main(argv: list[str] | None = None) -> int:
     gaps = compute_gaps(
         dataset,
         clustering,
-        low_threshold=args.low_threshold,
-        high_threshold=args.high_threshold,
+        thresholds=GapThresholds(
+            absolute_floor=args.absolute_floor,
+            absolute_ceiling=args.absolute_ceiling,
+            relative_gap_cutoff=args.relative_gap_cutoff,
+            relative_strong_cutoff=args.relative_strong_cutoff,
+            min_competencies=args.min_competencies,
+            min_spread=args.min_spread,
+        ),
     )
 
     out_path = Path(args.gaps_out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", newline="") as f:
         writer = csv.writer(f)
+        # classification_basis and relative_position travel with every row:
+        # tender requirement 5 asks that a displayed figure be traceable, and
+        # a verdict in a CSV with no record of how it was reached is not.
         writer.writerow(
-            ["student_id", "competency_label", "attainment_pct", "subjects_evidencing", "n_observations", "classification"]
+            [
+                "student_id", "competency_label", "attainment_pct", "subjects_evidencing",
+                "n_observations", "classification", "classification_basis", "relative_position",
+            ]
         )
         for gap in gaps:
             writer.writerow(
-                [gap.student_id, gap.competency_label, gap.attainment_pct, gap.subjects_evidencing, gap.n_observations, gap.classification]
+                [
+                    gap.student_id, gap.competency_label, gap.attainment_pct, gap.subjects_evidencing,
+                    gap.n_observations, gap.classification, gap.classification_basis,
+                    "" if gap.relative_position is None else gap.relative_position,
+                ]
             )
     print(f"\nWrote {len(gaps)} gap rows to {out_path}")
 
