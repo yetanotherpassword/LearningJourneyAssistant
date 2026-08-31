@@ -45,6 +45,20 @@
         </tbody>
       </table>
 
+      {# Tender requirement 5: a displayed figure must be traceable to a
+         source record. "You have a gap here" with no visible basis is not,
+         so every verdict states how it was reached. #}
+      <div class="basis-line">
+        <span>Classified by:</span>
+        <span class="basis-badge">{{ gap.classification_basis }}</span>
+        {% if gap.relative_position is not none %}
+        <span class="basis-detail">
+          {{ "%+.2f"|format(gap.relative_position) }} MAD from this student's own median
+          across all their competencies
+        </span>
+        {% endif %}
+      </div>
+
       <div class="trend-line">
         <span>Trend across subjects:</span>
         <span class="trend-badge {{ detail.trend|replace(' ', '-') }}">{{ detail.trend }}</span>

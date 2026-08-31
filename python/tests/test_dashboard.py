@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from lja.dashboard.app import create_app
 from lja.data.excel_loader import LjaDataset, ResultRow, StudentSummary
-from lja.model.gap_detection import CompetencyGap
+from lja.model.gap_detection import BASIS_CEILING, BASIS_FLOOR, BASIS_RELATIVE, CompetencyGap
 from lja.model.silo_clustering import CompetencyCluster, SiloClusteringResult, SiloRef
 
 
@@ -61,10 +61,12 @@ def test_index_counts_only_students_with_a_persistent_gap() -> None:
         CompetencyGap(
             student_id="STU0002", competency_label="Data Structures", attainment_pct=35.0,
             subjects_evidencing=2, n_observations=4, classification="persistent gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=90.0,
             subjects_evidencing=2, n_observations=4, classification="proficient",
+            classification_basis=BASIS_CEILING, relative_position=None,
         ),
     ]
     response = _client(dataset, gaps).get("/")
@@ -84,6 +86,7 @@ def test_index_marks_at_risk_students_link_with_the_at_risk_class() -> None:
         CompetencyGap(
             student_id="STU0002", competency_label="Data Structures", attainment_pct=35.0,
             subjects_evidencing=2, n_observations=4, classification="persistent gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
     ]
     body = _client(dataset, gaps).get("/").text
@@ -99,6 +102,7 @@ def test_student_detail_shows_its_gaps() -> None:
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=42.0,
             subjects_evidencing=2, n_observations=3, classification="persistent gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
     ]
     response = _client(dataset, gaps).get("/student/STU0001")
@@ -127,10 +131,12 @@ def test_worst_classification_renders_first() -> None:
         CompetencyGap(
             student_id="STU0001", competency_label="Proficient Thing", attainment_pct=95.0,
             subjects_evidencing=2, n_observations=3, classification="proficient",
+            classification_basis=BASIS_CEILING, relative_position=None,
         ),
         CompetencyGap(
             student_id="STU0001", competency_label="Persistent Thing", attainment_pct=30.0,
             subjects_evidencing=2, n_observations=3, classification="persistent gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
     ]
     body = _client(dataset, gaps).get("/student/STU0001").text
@@ -157,6 +163,7 @@ def test_student_detail_shows_per_subject_evidence_and_trend() -> None:
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=50.0,
             subjects_evidencing=2, n_observations=2, classification="persistent gap",
+            classification_basis=BASIS_RELATIVE, relative_position=-1.5,
         ),
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
@@ -175,6 +182,7 @@ def test_student_detail_flags_future_subjects_for_an_at_risk_gap() -> None:
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=40.0,
             subjects_evidencing=1, n_observations=1, classification="isolated gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
@@ -193,6 +201,7 @@ def test_student_detail_shows_honest_empty_state_when_no_future_subjects() -> No
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=40.0,
             subjects_evidencing=1, n_observations=1, classification="isolated gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
@@ -207,6 +216,7 @@ def test_student_detail_never_flags_future_subjects_for_a_non_gap() -> None:
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=90.0,
             subjects_evidencing=1, n_observations=1, classification="proficient",
+            classification_basis=BASIS_CEILING, relative_position=None,
         ),
     ]
     body = _client(dataset, gaps).get("/student/STU0001").text
