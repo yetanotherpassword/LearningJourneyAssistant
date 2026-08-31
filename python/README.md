@@ -105,10 +105,22 @@ render. Vendor `chart.js` into `lja/dashboard/static/` if this needs to run
 fully offline, matching the rest of the project's local-first stance (the
 whole point of the Ollama path).
 
-**Not yet built:** a `confirmed_by_staff` review action on this page — see
-"Not yet written" below. For now this dashboard is read-only, matching
-Sprint 2's scope in `docs/sprint-plan.md`; the natural place for that
-action is a "confirm" control on each competency once it exists.
+### Staff confirmation gate
+
+LLM-generated competency clusters now require staff review before they are
+trusted for gap generation. Each cluster has one of three states:
+`pending`, `confirmed`, or `rejected`.
+
+Review decisions are stored separately from the regenerable clustering cache
+in `output/silo_clustering.review.json`. Review clusters with:
+
+```bash
+python -m lja.review
+```
+
+`python -m lja.cli` blocks gap generation when clusters are pending unless
+`--allow-unconfirmed` is explicitly supplied. Rejected clusters always block
+gap generation and must be returned through the documented rework path.
 
 ## Gap detection — relative, not absolute
 
