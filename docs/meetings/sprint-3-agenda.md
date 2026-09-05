@@ -65,6 +65,8 @@ Allan. #5 in particular is meant to be Sui Lung's entry point into the codebase.
 
 ## B. Conventions that are actively causing errors
 
+> **B1, B2 and B3 are resolved by Sprint Plan Rev 5** (§3 calendar, §10 `Refs IOLG-nn`, §1 M-slots retired) — see actions A-06/A-08/A-10, now closed. They stay here so the meeting can *confirm* rather than re-decide. B4 and B5 remain live.
+
 ### B1. Sprint dates disagree by a full sprint
 
 The runbook header says *Sprint 3, 24 Aug – 6 Sep 2026*. `sprint-plan.md` §5 dates Sprint 3 as

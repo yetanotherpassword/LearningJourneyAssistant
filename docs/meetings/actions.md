@@ -31,13 +31,9 @@ Owners use the tender §10 numbering: T1 Allan · T2 Ayesha · T3 Istiaque · T4
 | A-01 | Ratify or replace WP2's **seven** `LJA_GAP_*` thresholds | ALL | A1 | **OPEN** | Now implemented and measured — see the box below. Shipped as config so a later change costs nothing, but these defaults are what gets demoed. |
 | A-26 | Decide whether the near-flat profiles in the supplied dataset are an artefact or a fact about students | ALL | A1 | **OPEN** | Raised by the WP2 measurement. Determines whether A-01 can be answered on this data at all, and whether a better dataset is a Sprint 4 ask of Scott. |
 | A-02 | Define the "At Risk" cohort | ALL | A2 | **OPEN** | Scott confirmed no institutional number exists. Mechanism built; `/cohort/at-risk` is 404 and a test asserts that. Implementing the decision includes deleting that test. |
-| A-06 | Decide which sprint calendar is authoritative | ALL | B1 | **OPEN** | Runbook says Sprint 3 = 24 Aug–6 Sep; `sprint-plan.md` says 7–20 Sep and calls that range Sprint 2. |
-| A-08 | Confirm `Refs IOLG-<n>` as the commit trailer convention | ALL | B2 | **OPEN** | `S3-<n>` is the runbook's shorthand for work packages, not a Jira key. |
-| A-10 | Adopt one people-numbering scheme, M1–M5 or T1–T5 | ALL | B3 | **OPEN** | No stated mapping between them. Nothing should assume they correspond. |
 | A-11 | Decide whether `docs/adr/` exists, and what goes there versus in bundle READMEs | ALL | B4 | **OPEN** | WP2 is briefed to create it; `docs/README.md` says decision records live beside the code. Decide *before* WP2 lands. |
 | A-12 | Ratify `pip-audit` as non-blocking, or make it blocking | ALL | B5 | **OPEN** | First real run found nothing, so tightening is cheap right now. |
 | A-13 | Ratify deferring `E501`, or schedule the reformat | ALL | B5 | **OPEN** | Enforcing today means reformatting 41 lines in files no work package is touching. |
-| A-15 | Authorise the `devenv/env.sh` correction ("all six of us" → five) | ALL | C2 | **OPEN** | Blocked by a contradiction *inside* the runbook: §8 asks for it, §9 puts `devenv/` out of scope until Sprint 4. Needs an explicit go-ahead, then A-24. |
 | A-17 | Strike the "create GitHub Issues backlog" item, or confirm it as a second tracker | ALL | C4 | **OPEN** | An M5 Sprint 1 deliverable never done; the team is evidently on Jira. |
 | A-22 | Agree the corrected coverage target — 80% on core mapping and gap logic is **already met** | ALL | C1 | **OPEN** | Core modules are at 98–100%. The 70% headline is `cli.py` and `dashboard/__main__.py` at 0%, which is 62% of all uncovered statements. Decide that Sprint 5 targets entry-point wiring, then A-25. |
 
@@ -80,16 +76,21 @@ a one-point difference a confident verdict. Full workings in
 students-with-at-least-one-gap from **20 to 58 of 150**. That is a large shift driven by numbers
 nobody has agreed yet, which is why this should be settled before the project owner sees a demo.
 
+| A-32 | Decide whether the confirmation gate **warns** or **blocks** on pending clusters | ALL | — | **OPEN** | PR #8 (IOLG-82) blocks by default: `python -m lja.cli <xlsx>` exits 2 with no gap report until `--allow-unconfirmed` is passed. Runbook §6 said *warn, don't block*; Rev 5 S3-5 says *warns … --allow-unconfirmed required in scripts*, which reads either way. **Concrete collision:** S3-4 requires Anup's fresh clone to run `lja.cli` and *pass unassisted* — with #8 merged and the README's quick-start unchanged, it will not. Pick one before merging #8, then make README and S3-4 agree with it. |
+| A-34 | Reconcile the Jira epic structure with the plan | ALL | — | **OPEN** | Rev 3 §4 defines **seven** epics (E1 Engineering Foundations … E7 Compliance/Security/Handover) as sprint-spanning themes — *"an epic is not a big task"*. The board instead has the five themes E3–E7 **each created three times** (IOLG-63–67, 68–72, 73–77, all 25 Aug), which only makes sense if they are per-sprint containers — the anti-pattern Rev 3 warns against, and it makes "Done" on one copy (IOLG-64) ambiguous. E2 maps to the pre-existing IOLG-53; **E1 has no epic at all**, so S3-1/2/3/10 (landing, review, CI, stale PRs) have no parent. Decide: seven theme epics with Jira Sprints for time, or keep the copies and rename them so the sprint is in the title. |
+
 ## 2. Administrative follow-ups — no code, no ticket
 
 | ID | Action | Owner | Agenda | State | Notes |
 |---|---|---|---|---|---|
-| A-03 | Enable branch protection on `main` — no direct pushes, ≥1 approving review, CI must pass | GitHub admin | A3 | **OPEN** | **S3-3 cannot close without this.** A repository setting; no code can apply it. |
+| A-03 | Enable branch protection on `main` — no direct pushes, ≥1 approving review, CI must pass | GitHub admin | A3 | **OPEN** | **Confirmed NOT enabled 2026-09-05** — GitHub API returns 404 for branch protection and there are no rulesets. **S3-3 cannot close without this.** A repository setting; no code can apply it. |
 | A-04 | Verify protection: throwaway PR with a failing test, confirm the merge is blocked, close it | T2 | A3 | **BLOCKED** | Blocked by A-03. Acceptance evidence for the CI ticket, not a ticket itself. |
-| A-05 | Assign reviewers to PRs #4, #5, #6 | ALL | A4 | **OPEN** | DoD requires a reviewer other than the author; all three are Allan's. #5 is meant to be T5's entry point. |
+| A-05 | Assign reviewers to PRs #4, #5, #6 | ALL | A4 | **OPEN** | PR #7 (WP2) was merged 31 Aug — check it had a non-author review, see the audit. PRs #4 and #5 were repaired 5 Sep after WP2's merge broke them (a text conflict and a semantic one). DoD requires a reviewer other than the author. #5 is meant to be T5's entry point. |
 | A-07 | State at the review that WP1 (CI) is a slipped **Sprint 1** item, not new delivery | T1 | B1 | **OPEN** | `sprint-plan.md` §3 had it as an M5 Sprint 1 task. Cheap honesty point. |
-| A-09 | Supply the IOLG issue numbers for WP1, WP4 and the docs work | T1 | B2 | **OPEN** | Three commits carry `Refs S3-3`/`S3-7`/`S3-4` and will not link. Left as-is rather than force-pushing over open, green PRs; real keys go into the PR descriptions. |
+| A-09 | Supply the IOLG issue numbers for WP1, WP4 and the docs work | T1 | B2 | **OPEN** | Known so far: IOLG-64 = Mastery Dashboard (Sprint 3 epic), IOLG-82 = S3-5, IOLG-88 = S3-9; IOLG-11/12 are legacy. The rest are still needed. Three commits carry `Refs S3-3`/`S3-7`/`S3-4` and will not link. Left as-is rather than force-pushing over open, green PRs; real keys go into the PR descriptions. |
 | A-21 | Merge, close or assign PR #2 ("Apple Silicon setup guide") | ALL | C5 | **OPEN** | Open since 2026-08-16. |
+
+| A-35 | Attach acceptance evidence to IOLG-64, or reopen it | T1 | — | **OPEN** | Marked Done 2026-09-05 with nothing under it merged since 25 Aug. If Done reflects the existing student page satisfying S3-7's literal criteria (all competencies rendered, existing pipeline, semantic palette, existing fixtures), say so in the ticket — DoD requires evidence attached. If it was meant to cover PR #5 (cohorts/statistics/sorting) that PR is not merged, and it is not S3-7 or S3-13 anyway. S3-13 strengths view (pulled into Sprint 3) is not started. |
 
 ## 3. Jira tickets to raise — closes when the ticket exists, not when the work is done
 
@@ -206,8 +207,14 @@ Calibrating the generator's parameters against even a small sample of real profi
 A-26 outright, and no amount of synthetic sophistication substitutes for knowing what real
 within-student variation looks like. That question is cheap to ask and gates the rest.
 
+| A-33 | Gate the dashboard entry point on review state too | T3 | — | **OPEN** | Sprint 3 goal: *no gap report can be produced from unreviewed LLM clustering without saying so.* PR #8 gates `lja.cli` only; `python -m lja.dashboard` renders the same unreviewed clustering with no warning. Rev 5 §8 cuts the confirmation **UI** on the dashboard, not a warning banner — a one-line notice in `base.html` reading the review file meets the goal without reopening the cut. |
+
 ## 4. Closed
 
 | ID | Action | Owner | Agenda | Outcome |
 |---|---|---|---|---|
-| — | — | — | — | *Nothing closed yet — register opened 2026-08-26.* |
+| A-06 | Decide which sprint calendar is authoritative | ALL | B1 | **RESOLVED 2026-09-05** — Sprint Plan Rev 5 §3 is the calendar: Sprint 3 = 24 Aug–6 Sep, 4 = 7–20 Sep, 5 = 21 Sep–4 Oct, 6 = 5–18 Oct. Numbering follows the tender; `docs/sprint-plan.md` §4–§7 are superseded (Rev 3 header). |
+| A-08 | Confirm `Refs IOLG-<n>` as the commit trailer convention | ALL | B2 | **RESOLVED 2026-09-05** — Sprint Plan Rev 5 §10: *Reference Jira keys in commit messages (`Refs IOLG-nn`)*. `S3-n` is the plan's own item ref, never a Jira key. |
+| A-10 | Adopt one people-numbering scheme, M1–M5 or T1–T5 | ALL | B3 | **RESOLVED 2026-09-05** — Sprint Plan Rev 5 §1: *Sprint-plan slots M1–M5 are retired; work is now assigned to people* (T1–T5 from tender §10). |
+| A-15 | Authorise the `devenv/env.sh` correction ("all six of us" → five) | ALL | C2 | **RESOLVED 2026-09-05** — Authorised by Sprint Plan Rev 5, box *Three inconsistencies*: *devenv/env.sh also says "all six of us" and should be corrected in the same commit that fixes the repo.* Unblocks A-24. |
+| A-31 | Commit the authoritative sprint plan (Rev 5) and the epic/terminology plan (Rev 3) into `docs/` | T1 | — | **DONE 2026-09-05** — `docs/LJA_Sprint_Plan_3-6_rev5.pdf`, `docs/LJA_Sprint_Plan_A-C_rev3.pdf`. Both had lived only in one person's Downloads folder while the runbook cited them as its companion — the exact bus-factor failure Rev 5 §4 describes. |

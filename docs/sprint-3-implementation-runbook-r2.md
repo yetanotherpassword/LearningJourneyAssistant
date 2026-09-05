@@ -42,6 +42,16 @@ the outcome this rule exists to produce. Keep it.
 
 ### A.2 Contradictions found in r1, not yet resolved
 
+> **Revised 2026-09-05.** This section was written against `docs/sprint-plan.md` and r1 only. The
+> actual authority — *Sprint Plan Rev 5, 24 Aug* — was never in the repository, and it had already
+> settled three of the four items below the day before r2 was written: the calendar (Rev 5 §3),
+> the `Refs IOLG-nn` trailer convention (§10), and the retirement of M1–M5 (§1). It also records the
+> tender's six-vs-five inconsistency itself and authorises the `devenv/env.sh` fix. Both plans are
+> now committed: [`LJA_Sprint_Plan_3-6_rev5.pdf`](LJA_Sprint_Plan_3-6_rev5.pdf) (binding Sprint 3,
+> indicative 4–6) and [`LJA_Sprint_Plan_A-C_rev3.pdf`](LJA_Sprint_Plan_A-C_rev3.pdf) (epic
+> structure and Jira terminology). **Read Rev 5 before this file.** The one item Rev 5 does not
+> resolve is the §8/§9 conflict on `devenv/` — it authorises the fix, which is enough.
+
 r1's §1 says "the code is the truth… if what you find contradicts this document, say so." Three did.
 
 **The sprint dates disagree with the sprint plan.** r1's header says *IOLG Sprint 3, 24 Aug – 6 Sep 2026*.
