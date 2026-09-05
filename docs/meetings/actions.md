@@ -77,7 +77,35 @@ students-with-at-least-one-gap from **20 to 58 of 150**. That is a large shift d
 nobody has agreed yet, which is why this should be settled before the project owner sees a demo.
 
 | A-32 | Decide whether the confirmation gate **warns** or **blocks** on pending clusters | ALL | — | **OPEN** | PR #8 (IOLG-82) blocks by default: `python -m lja.cli <xlsx>` exits 2 with no gap report until `--allow-unconfirmed` is passed. Runbook §6 said *warn, don't block*; Rev 5 S3-5 says *warns … --allow-unconfirmed required in scripts*, which reads either way. **Concrete collision:** S3-4 requires Anup's fresh clone to run `lja.cli` and *pass unassisted* — with #8 merged and the README's quick-start unchanged, it will not. Pick one before merging #8, then make README and S3-4 agree with it. |
-| A-34 | Reconcile the Jira epic structure with the plan | ALL | — | **OPEN** | Rev 3 §4 defines **seven** epics (E1 Engineering Foundations … E7 Compliance/Security/Handover) as sprint-spanning themes — *"an epic is not a big task"*. The board instead has the five themes E3–E7 **each created three times** (IOLG-63–67, 68–72, 73–77, all 25 Aug), which only makes sense if they are per-sprint containers — the anti-pattern Rev 3 warns against, and it makes "Done" on one copy (IOLG-64) ambiguous. E2 maps to the pre-existing IOLG-53; **E1 has no epic at all**, so S3-1/2/3/10 (landing, review, CI, stale PRs) have no parent. Decide: seven theme epics with Jira Sprints for time, or keep the copies and rename them so the sprint is in the title. |
+| A-34 | Reconcile the Jira epic structure with the plan | ALL | — | **OPEN** — softened: stories *are* attached to epics, but split between Ayesha's pre-plan Epic 0/1 and the new stream epics; IOLG-99 sits under the wrong one. | Rev 3 §4 defines **seven** epics (E1 Engineering Foundations … E7 Compliance/Security/Handover) as sprint-spanning themes — *"an epic is not a big task"*. The board instead has the five themes E3–E7 **each created three times** (IOLG-63–67, 68–72, 73–77, all 25 Aug), which only makes sense if they are per-sprint containers — the anti-pattern Rev 3 warns against, and it makes "Done" on one copy (IOLG-64) ambiguous. E2 maps to the pre-existing IOLG-53; **E1 has no epic at all**, so S3-1/2/3/10 (landing, review, CI, stale PRs) have no parent. Decide: seven theme epics with Jira Sprints for time, or keep the copies and rename them so the sprint is in the title. |
+
+
+### Sprint 3 board audit — 2026-09-05, against code and GitHub
+
+Backlog view shows 12 items in `IOLG Sprint 3`, 42 points, 31 shown Done. **Checked against `main`, the
+open PRs and GitHub's branch-protection API, only 5–10 of those 31 points meet the Definition of Done**
+("merged into `main` via a reviewed PR"). Corrections before anyone presses *Complete sprint*:
+
+| Plan | Jira | Board says | Reality | Should be |
+|---|---|---|---|---|
+| S3-1 | IOLG-78 | Done | `eb93a01` landed | ✅ Done |
+| S3-6 | **IOLG-86** | In Progress | **PR #7 merged 31 Aug, reviewed by Istiaque** | → **Done** |
+| S3-3 | **IOLG-80** | Done | PR #4 unmerged; **branch protection OFF** (API 404) | → In Review |
+| S3-5 | **IOLG-82** | Done | PR #8 open, not merged; A-32 pending | → In Review |
+| S3-9 | **IOLG-88** | Done | PR #9 open, ready, not merged | → In Review (merge it, then Done) |
+| S3-10 | **IOLG-81** | Done | PR #3 merged; **PR #2 still open since 16 Aug** | → In Progress |
+| S3-2 | IOLG-79 | Done, unassigned | Reshaped to "raise findings as Jira issues"; none visible; subtasks 94–98 exist | Verify or revert |
+| S3-7 | IOLG-83 | Done | Existing student page meets the literal AC; PR #5 unmerged and is a different feature | Attach evidence (A-35) |
+| S3-4 | IOLG-99 | Done | Not verifiable from repo; **wrong epic** (Grounded Generation → Compliance) | Attach evidence; move epic |
+| S3-12 | IOLG-102 | Done | Not verifiable from repo | Attach evidence |
+| S3-8 | IOLG-87 | In Progress | `sql/README.md` still future tense | ✅ honest |
+| S3-11 | IOLG-101 | To Do | file absent | ✅ honest |
+| S3-13 | **none** | — | Strengths view, pulled into Sprint 3 at 3 pts, never ticketed, not started | Create; carry to Sprint 4 |
+| S4-3 | IOLG-85 | Backlog | Sprint 4 item, correctly parked | ✅ |
+
+Rev 5 §10, *Burndown honesty*: an honestly explained bad chart costs nothing; a fabricated good one
+is not acceptable. Fix the six status rows above **before** completing the sprint, then let Jira carry
+the incomplete items into Sprint 4.
 
 ## 2. Administrative follow-ups — no code, no ticket
 
@@ -87,10 +115,10 @@ nobody has agreed yet, which is why this should be settled before the project ow
 | A-04 | Verify protection: throwaway PR with a failing test, confirm the merge is blocked, close it | T2 | A3 | **BLOCKED** | Blocked by A-03. Acceptance evidence for the CI ticket, not a ticket itself. |
 | A-05 | Assign reviewers to PRs #4, #5, #6 | ALL | A4 | **OPEN** | PR #7 (WP2) was merged 31 Aug — check it had a non-author review, see the audit. PRs #4 and #5 were repaired 5 Sep after WP2's merge broke them (a text conflict and a semantic one). DoD requires a reviewer other than the author. #5 is meant to be T5's entry point. |
 | A-07 | State at the review that WP1 (CI) is a slipped **Sprint 1** item, not new delivery | T1 | B1 | **OPEN** | `sprint-plan.md` §3 had it as an M5 Sprint 1 task. Cheap honesty point. |
-| A-09 | Supply the IOLG issue numbers for WP1, WP4 and the docs work | T1 | B2 | **OPEN** | Known so far: IOLG-64 = Mastery Dashboard (Sprint 3 epic), IOLG-82 = S3-5, IOLG-88 = S3-9; IOLG-11/12 are legacy. The rest are still needed. Three commits carry `Refs S3-3`/`S3-7`/`S3-4` and will not link. Left as-is rather than force-pushing over open, green PRs; real keys go into the PR descriptions. |
+| A-09 | ~~Supply the IOLG issue numbers~~ Mapping now known — see box below | T1 | B2 | **RESOLVED 2026-09-05** | Every Sprint 3 item already exists as a story/task under `IOLG Sprint 3` (78–102). Only S3-13 has no ticket. The three landed commits still carry `Refs S3-n`; the real keys go in the PR descriptions. |
 | A-21 | Merge, close or assign PR #2 ("Apple Silicon setup guide") | ALL | C5 | **OPEN** | Open since 2026-08-16. |
 
-| A-35 | Attach acceptance evidence to IOLG-64, or reopen it | T1 | — | **OPEN** | Marked Done 2026-09-05 with nothing under it merged since 25 Aug. If Done reflects the existing student page satisfying S3-7's literal criteria (all competencies rendered, existing pipeline, semantic palette, existing fixtures), say so in the ticket — DoD requires evidence attached. If it was meant to cover PR #5 (cohorts/statistics/sorting) that PR is not merged, and it is not S3-7 or S3-13 anyway. S3-13 strengths view (pulled into Sprint 3) is not started. |
+| A-35 | Attach acceptance evidence to IOLG-83 (story) / IOLG-64 (epic), or reopen | T1 | — | **OPEN** | Marked Done 2026-09-05 with nothing under it merged since 25 Aug. If Done reflects the existing student page satisfying S3-7's literal criteria (all competencies rendered, existing pipeline, semantic palette, existing fixtures), say so in the ticket — DoD requires evidence attached. If it was meant to cover PR #5 (cohorts/statistics/sorting) that PR is not merged, and it is not S3-7 or S3-13 anyway. S3-13 strengths view (pulled into Sprint 3) is not started. |
 
 ## 3. Jira tickets to raise — closes when the ticket exists, not when the work is done
 

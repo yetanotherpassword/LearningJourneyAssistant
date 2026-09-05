@@ -5,7 +5,7 @@ Agendas and the running actions register for team meetings.
 | File | Purpose |
 | --- | --- |
 | `sprint-3-agenda.md` | Items needing a team decision, raised during Sprint 3 implementation. Prepared 2026-08-26; meeting date TBC. |
-| `IOLG-sprint3-import.csv` | Every Sprint 3 item from Sprint Plan Rev 5 as a Jira CSV-import file: summary, type, points, suggested epic, acceptance criteria as description, and status on 2026-09-05. Rev 5's `S3-n` refs are **not** Jira keys — this is how the missing ones get created. Check existing epic children first to avoid duplicates. |
+| `IOLG-sprint3-import.csv` | Every Sprint 3 item from Sprint Plan Rev 5 as a Jira CSV-import file: summary, type, points, suggested epic, acceptance criteria as description, and status on 2026-09-05. **Superseded the same day:** the Backlog view showed every Sprint 3 item already exists (IOLG-78–102). Only the **S3-13 row** is still needed. Kept as the S3-n → IOLG mapping and the status-on-5-Sep record; see the board audit in `actions.md`. |
 | `actions.md` | **Running register** across all meetings — one row per action, with an owner and a state. Not per-meeting; actions outlive the meeting that raised them. |
 
 ## Convention
