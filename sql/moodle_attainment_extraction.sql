@@ -306,6 +306,34 @@ CREATE INDEX IF NOT EXISTS idx_criterion_silo_map_silo
 --
 -- Tune the two thresholds with the project owner; do not hardcode them in
 -- application logic.
+--
+-- -----------------------------------------------------------------------------
+-- DIVERGENCE NOTICE (2026-08-26, Sprint 3 WP2 / S3-6) -- READ BEFORE USING THIS
+--
+-- The 50 / 65 thresholds below are now LEGACY. Classification semantics moved
+-- to Python in lja/model/gap_detection.py, and they are no longer absolute:
+-- a competency is judged against the variability within that individual
+-- student's own profile -- median and median absolute deviation across their
+-- competencies -- which is what the lodged tender's requirement 4 actually
+-- promises ("rather than raw pass or fail thresholds"). Two absolute guards
+-- remain, a floor and a ceiling, to catch the uniformly weak and uniformly
+-- strong students that pure relative logic handles badly.
+--
+-- This query was DELIBERATELY NOT UPDATED. The Moodle path is not wired to
+-- code until Sprint 4, and porting an algorithm whose thresholds the team has
+-- not yet ratified would mean maintaining two implementations of a moving
+-- target. An annotated divergence is fine; a silent one is not.
+--
+-- Consequence: running this query and running `python -m lja.cli` against the
+-- same underlying data WILL produce different gap_classification values. That
+-- is expected, not a bug, until the reconciliation below happens.
+--
+-- Reconciling the two is a SPRINT 4 TASK, owned with the rest of the Moodle
+-- extraction work. Whoever picks it up should read
+-- docs/adr/0001-relative-gap-detection.md first -- in particular the finding
+-- that the supplied dataset's profiles are nearly flat, which affects whether
+-- a SQL port is even worth doing before there is better data.
+-- -----------------------------------------------------------------------------
 -- =============================================================================
 
 WITH scored AS (
