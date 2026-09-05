@@ -238,10 +238,12 @@ def _two_students_one_with_a_persistent_gap() -> tuple[LjaDataset, list[Competen
         CompetencyGap(
             student_id="STU0002", competency_label="Data Structures", attainment_pct=35.0,
             subjects_evidencing=2, n_observations=4, classification="persistent gap",
+            classification_basis=BASIS_FLOOR, relative_position=None,
         ),
         CompetencyGap(
             student_id="STU0001", competency_label="Data Structures", attainment_pct=90.0,
             subjects_evidencing=2, n_observations=4, classification="proficient",
+            classification_basis=BASIS_CEILING, relative_position=None,
         ),
     ]
     return dataset, gaps
