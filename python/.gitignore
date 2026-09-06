@@ -3,3 +3,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 output/
+
+# Coverage output from the CI test job, and from running pytest --cov locally
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/

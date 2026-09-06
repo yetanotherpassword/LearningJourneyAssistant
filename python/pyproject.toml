@@ -1,0 +1,39 @@
+# Tooling configuration for the LJA Python package.
+#
+# This file exists for ruff's benefit and deliberately declares no
+# [build-system] or [project] table: `lja` is run in place via `python -m
+# lja.cli`, not pip-installed, and adding packaging metadata here would imply
+# a distribution story the team hasn't agreed to. pytest's rootdir resolution
+# anchors on this file, which is why `pytest` must still be run from python/.
+
+[tool.ruff]
+target-version = "py312"
+
+# 120, not ruff's default 88. Chosen by measurement, not preference: at 88 the
+# existing codebase reports 208 E501s, at 120 it reports 41. The 88 default
+# also produces seven *spurious* I001 findings, because isort only wants to
+# explode those single-line imports into parenthesised blocks when they
+# overflow the configured width -- at 120 they fit and the findings evaporate.
+# Setting the width to match the code that is actually here keeps the import
+# rule meaningful instead of making it a proxy for line length.
+line-length = 120
+
+[tool.ruff.lint]
+# Modest on purpose, per the sprint runbook: pycodestyle errors, pyflakes,
+# and import sorting. Anything broader on a codebase with no prior linting
+# produces a finding count nobody triages, and an ignored gate is worse than
+# no gate.
+select = ["E", "F", "I"]
+
+# E501 (line too long) is measured but not enforced *yet*. Enforcing it today
+# would mean reformatting 41 lines across modules that no Sprint 3 work
+# package is otherwise touching, and the sprint ground rules forbid drive-by
+# reformatting precisely because it destroys the diff for reviewers. The
+# line-length above is still doing real work -- it is what makes the I rule
+# sane -- so this is a deferral, not an abandonment. Remove this ignore in the
+# same change that brings the existing lines to width, and expect that change
+# to touch nothing else.
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lja"]
