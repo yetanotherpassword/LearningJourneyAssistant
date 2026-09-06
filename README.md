@@ -1,5 +1,7 @@
 # Learning Journey Assistant (LJA)
 
+[![CI](https://github.com/yetanotherpassword/LearningJourneyAssistant/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yetanotherpassword/LearningJourneyAssistant/actions/workflows/ci.yml)
+
 An AI-powered system that helps La Trobe University students understand their own
 learning. LJA builds a dynamic model of each student's academic profile from
 assessment results, rubrics, and marker feedback, then identifies knowledge
@@ -19,7 +21,7 @@ dataset. The dashboard and the generation features built on top of gap data
 | Bundle | Contents | Status |
 | --- | --- | --- |
 | [devenv/](devenv/) | One-shot Dockerised Moodle 5.2 dev environment (`bootstrap.sh`), shared config, synthetic-data seeding via `tool_generator`, `.mbz` restore path | Working |
-| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — 18 passing tests, runs end-to-end against real data** |
+| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — 69 passing tests, runs end-to-end against real data** |
 | [sql/](sql/) | Read-only extraction queries for the production Moodle path: rubric definitions, per-criterion fills, outcomes/competency attainment, cross-subject gap detection | Written, not yet wired to code — superseded for now by the Excel path below |
 | [data-fixtures/](data-fixtures/) | **The real dataset** — 150 students × 3 subjects × 11 assessments, supplied by the project owner. Plus a competency-framework import CSV and a Moodle backup used only to prove the restore mechanics | Real data in hand |
 | [docs/](docs/) | Sprint plan, trade show deck | Active |
@@ -64,7 +66,7 @@ Moodle (production path — sql/, moodle_probe.py) ─┘
 Planned in order (must-haves from the project proposal, sequenced by dependency):
 
 1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with 54 passing
+   → detect gaps → CSV report, running against real data with 69 passing
    tests.
 2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
    Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
@@ -167,6 +169,52 @@ sql/             Read-only Moodle extraction queries + LJA schema (production pa
 data-fixtures/   The real Excel dataset, competency-framework CSV, a backup-restore sample
 docs/            Sprint plan and trade show deck
 ```
+
+## Continuous integration
+
+Every push to `main` and every pull request targeting it runs
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) — three independent jobs,
+deliberately not chained so that a lint failure still tells you whether the
+tests pass:
+
+| Job | What it does | Blocking? |
+| --- | --- | --- |
+| **lint** | `ruff check` over `python/`, rules `E`/`F`/`I`, configured in [`python/pyproject.toml`](python/pyproject.toml) | Yes |
+| **test** | Python 3.12, `pip install -r requirements.txt`, `pytest` with coverage reported to the job log and uploaded as an artifact | Yes, on test failure |
+| **security** | `gitleaks` secret scan across **full git history**, plus `pip-audit` dependency scanning | Secret scan yes; dependency audit not yet |
+
+Two of those gates are deliberately softer than they will eventually be, and
+both are recorded here so nobody has to reverse-engineer the intent later:
+
+- **Coverage is reported, not enforced.** The tender commits to 80% on the core
+  mapping and gap logic; that is Sprint 5 work. A threshold that fails on the
+  day it lands is a threshold somebody deletes by the end of the week. Add
+  `--cov-fail-under` when the number is actually met.
+- **`pip-audit` does not block yet.** Unlike the secret scan, its result
+  depends on the CVE feed rather than on anything in the diff, so an advisory
+  published overnight against a pinned transitive dependency would block every
+  unrelated PR the next morning. Triage the initial findings, then flip
+  `continue-on-error` to `false`.
+- **`E501` (line length) is measured but not enforced.** Turning it on today
+  would mean reformatting 41 lines in modules no current work package is
+  touching, and drive-by reformatting destroys the diff for reviewers. The
+  reasoning, including why `line-length` is 120 rather than ruff's default 88,
+  is in `python/pyproject.toml`.
+
+Run the same checks locally before opening a PR:
+
+```bash
+cd python
+ruff check .          # pip install ruff==0.16.4
+pytest -q             # 69 tests
+```
+
+> **Branch protection is a repository setting, not a file.** This workflow
+> cannot enforce itself: until someone with admin rights on the GitHub repo
+> turns on branch protection for `main` — no direct pushes, at least one
+> approving review, CI required to pass — these jobs are advisory, and a red
+> build can still be merged. That switch is the actual deliverable of this
+> work package; the YAML is just what it enforces.
 
 ## Team & process
 
