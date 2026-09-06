@@ -33,7 +33,7 @@ Moodle (moodle_probe.py + sql/)  ──┘
 | `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + **relative** gap classification — see "Gap detection" below |
 | `lja/cli.py` | `python -m lja.cli <xlsx path>` — runs the whole pipeline, writes a gap report |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
-| `tests/` | pytest — 54 tests, all offline (no live LLM call needed) |
+| `tests/` | pytest — all offline (no live LLM call needed). The count is whatever CI reports; it is no longer quoted here because it went stale four times in a fortnight. |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
 | `environment.yml` | Conda environment: `pandas`, `openpyxl`, `psycopg2`, `anthropic`, `openai`, `pydantic`, `pytest`, `fastapi`, `uvicorn`, `jinja2` |
 | `.env.example` | Template for credentials and LLM config. Copy to `.env` and fill in |
@@ -78,18 +78,51 @@ python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --re
 python -m lja.dashboard
 ```
 
-Then open http://127.0.0.1:8000/ — a student list (with a persistent-gap
-count per row) linking to a per-student page: an attainment chart plus a
-classification-badged gap table, both colored from the same semantic
-palette (`lja/dashboard/static/style.css`) so the chart and the badges
-never disagree about what a color means.
+Then open http://127.0.0.1:8000/ — a student list (with persistent- and
+isolated-gap counts per row) linking to a per-student page: an attainment
+chart plus a classification-badged gap table, both colored from the same
+semantic palette (`lja/dashboard/static/style.css`) so the chart and the
+badges never disagree about what a color means. `--port` and `--host` are
+both flags on `python -m lja.dashboard`; neither has an `LJA_*` environment
+variable yet.
+
+**Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
+same student table and statistics over just that subset, with a sentence
+stating what put those students in it. Cohorts are registered in
+`_COHORTS` in `app.py`, so adding one is a registry entry rather than a new
+route and a new template. Two exist today: `all` and `persistent-gap`.
+
+> **No "At Risk" cohort yet, and that is a decision.** The Sprint 3 runbook
+> (§9) lists the at-risk threshold as a stop-and-ask: the project owner
+> confirmed there is no institutional "at risk" number to match, so the
+> definition is the team's to choose and defend, and it is due at WP2
+> planning alongside the relative-gap thresholds it will most likely be
+> expressed in terms of. `/cohort/at-risk` returns 404 until then, and
+> `test_at_risk_cohort_is_not_registered_yet` asserts that absence so the
+> decision cannot be made silently by whoever adds the tile.
+
+**Statistics.** Mean, median, population variance and standard deviation,
+min/max and quartiles over each student's average total, plus a
+distribution histogram and a competency-classification breakdown. The
+arithmetic lives in `lja/dashboard/stats.py` as pure functions over lists of
+floats, tested independently in `tests/test_dashboard_stats.py` with the
+working shown in each test's docstring. These are *population* statistics,
+not sample statistics — a cohort is every student it describes, not a
+sample drawn from a larger body.
+
+**Sorting.** Every column heading on those tables sorts, ascending then
+descending. That is client-side progressive enhancement
+(`lja/dashboard/static/sort.js`): the server always renders rows in student-id
+order, so the table is still correct with JavaScript disabled. Cells carry a
+`data-sort-value` with the raw figure, because sorting the *rendered* text
+would order "100.0%" before "20.0%".
 
 If `output/silo_clustering.json` doesn't exist yet, `python -m lja.dashboard`
 fails fast with the exact `lja.cli` command to run first, rather than
 silently trying to call the LLM itself — the dashboard should never be the
 thing that triggers a billed API call.
 
-`create_app(dataset, gaps)` in `lja/dashboard/app.py` is a factory that
+`create_app(dataset, gaps, clustering)` in `lja/dashboard/app.py` is a factory that
 takes data as arguments instead of loading it itself; `lja/dashboard/__main__.py`
 is the only place that touches disk (the Excel file and the clustering
 cache). `tests/test_dashboard.py` builds tiny in-memory `LjaDataset` /

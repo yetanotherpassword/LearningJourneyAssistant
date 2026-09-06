@@ -8,6 +8,10 @@
 <!-- Requires internet access to load. If this dashboard needs to run fully
      offline, vendor Chart.js into static/ and swap this for a local path. -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<!-- Local, and deferred so the table exists before it runs. Table sorting is
+     progressive enhancement -- if this fails to load, rows still render in
+     the server's default order. -->
+<script src="/static/sort.js" defer></script>
 </head>
 <body>
 <header class="site-header">
