@@ -90,9 +90,9 @@ open PRs and GitHub's branch-protection API, only 5–10 of those 31 points meet
 |---|---|---|---|---|
 | S3-1 | IOLG-78 | Done | `eb93a01` landed | ✅ Done |
 | S3-6 | **IOLG-86** | In Progress | **PR #7 merged 31 Aug, reviewed by Istiaque** | → **Done** |
-| S3-3 | **IOLG-80** | Done | PR #4 unmerged; **branch protection OFF** (API 404) | → In Review |
+| S3-3 | **IOLG-80** | Done | **6 Sep:** PR #4 merged (Ayesha approved); protection **ON**; verification probe in progress (A-04) | → Done once A-04 is recorded |
 | S3-5 | **IOLG-82** | Done | PR #8 open, not merged; A-32 pending | → In Review |
-| S3-9 | **IOLG-88** | Done | PR #9 open, ready, not merged | → In Review (merge it, then Done) |
+| S3-9 | **IOLG-88** | Done | **6 Sep:** PR #9 merged (Allan approved). Left `main` lint-red — see A-36 | ✅ Done |
 | S3-10 | **IOLG-81** | Done | PR #3 merged; **PR #2 still open since 16 Aug** | → In Progress |
 | S3-2 | IOLG-79 | Done, unassigned | Reshaped to "raise findings as Jira issues"; none visible; subtasks 94–98 exist | Verify or revert |
 | S3-7 | IOLG-83 | Done | Existing student page meets the literal AC; PR #5 unmerged and is a different feature | Attach evidence (A-35) |
@@ -111,11 +111,10 @@ the incomplete items into Sprint 4.
 
 | ID | Action | Owner | Agenda | State | Notes |
 |---|---|---|---|---|---|
-| A-03 | Enable branch protection on `main` — no direct pushes, ≥1 approving review, CI must pass | GitHub admin | A3 | **OPEN** | **Confirmed NOT enabled 2026-09-05** — GitHub API returns 404 for branch protection and there are no rulesets. **S3-3 cannot close without this.** A repository setting; no code can apply it. |
-| A-04 | Verify protection: throwaway PR with a failing test, confirm the merge is blocked, close it | T2 | A3 | **BLOCKED** | Blocked by A-03. Acceptance evidence for the CI ticket, not a ticket itself. |
-| A-05 | Assign reviewers to PRs #4, #5, #6 | ALL | A4 | **OPEN** | PR #7 (WP2) was merged 31 Aug — check it had a non-author review, see the audit. PRs #4 and #5 were repaired 5 Sep after WP2's merge broke them (a text conflict and a semantic one). DoD requires a reviewer other than the author. #5 is meant to be T5's entry point. |
+| A-04 | Verify protection: throwaway PR with a failing test, confirm the merge is blocked, close it | T2 | A3 | **IN PROGRESS** | A-03 done 6 Sep. Probe PR opened from branch `verify/s3-3-branch-protection` (based on the lint-fix branch so Lint is green and only the deliberate test is red). Close it once the block is confirmed; then IOLG-80 can be Done. Acceptance evidence for the CI ticket, not a ticket itself. |
+| A-05 | Assign reviewers to PRs #4, #5, #6 | ALL | A4 | **OPEN** | **Resolved for three:** PR #7 merged 31 Aug (Istiaque approved), PR #4 merged 6 Sep (Ayesha approved), PR #9 merged 6 Sep (Allan approved, non-author). #5 and #6 still need a non-author review and are now also blocked on A-36. PRs #4 and #5 were repaired 5 Sep after WP2's merge broke them (a text conflict and a semantic one). DoD requires a reviewer other than the author. #5 is meant to be T5's entry point. |
 | A-07 | State at the review that WP1 (CI) is a slipped **Sprint 1** item, not new delivery | T1 | B1 | **OPEN** | `sprint-plan.md` §3 had it as an M5 Sprint 1 task. Cheap honesty point. |
-| A-09 | ~~Supply the IOLG issue numbers~~ Mapping now known — see box below | T1 | B2 | **RESOLVED 2026-09-05** | Every Sprint 3 item already exists as a story/task under `IOLG Sprint 3` (78–102). Only S3-13 has no ticket. The three landed commits still carry `Refs S3-n`; the real keys go in the PR descriptions. |
+| A-09 | ~~Supply the IOLG issue numbers~~ Mapping now known — see box below | T1 | B2 | **RESOLVED 2026-09-05** | Every Sprint 3 item already exists as a story/task under `IOLG Sprint 3` (78–102). Only S3-13 has no ticket. 6 Sep: PR #7 retitled `IOLG-86: …` with `Refs IOLG-86` appended; #4 merged as `IOLG-80`; #5 retitled `IOLG-83`. Jira's Development panel links on PR title/branch/commit keys, so IOLG-86 should now show PR #7 — verify. |
 | A-21 | Merge, close or assign PR #2 ("Apple Silicon setup guide") | ALL | C5 | **OPEN** | Open since 2026-08-16. |
 
 | A-35 | Attach acceptance evidence to IOLG-83 (story) / IOLG-64 (epic), or reopen | T1 | — | **OPEN** | Marked Done 2026-09-05 with nothing under it merged since 25 Aug. If Done reflects the existing student page satisfying S3-7's literal criteria (all competencies rendered, existing pipeline, semantic palette, existing fixtures), say so in the ticket — DoD requires evidence attached. If it was meant to cover PR #5 (cohorts/statistics/sorting) that PR is not merged, and it is not S3-7 or S3-13 anyway. S3-13 strengths view (pulled into Sprint 3) is not started. |
@@ -237,6 +236,8 @@ within-student variation looks like. That question is cheap to ask and gates the
 
 | A-33 | Gate the dashboard entry point on review state too | T3 | — | **OPEN** | Sprint 3 goal: *no gap report can be produced from unreviewed LLM clustering without saying so.* PR #8 gates `lja.cli` only; `python -m lja.dashboard` renders the same unreviewed clustering with no warning. Rev 5 §8 cuts the confirmation **UI** on the dashboard, not a warning banner — a one-line notice in `base.html` reading the review file meets the goal without reopening the cut. |
 
+| A-36 | Land the lint fix for `main` (`fix/iolg-88-import-order`) | T3 or T2 to approve | — | **OPEN** | PR #9 put `import anthropic` above the stdlib block; it never had a CI run (opened before `ci.yml` reached `main`) and merged minutes after. `main` is now red on Lint and **every open PR inherits it** — protection is correctly blocking #5, #6, #8. Fix PR is three lines, ruff clean, 77 tests; needs a non-author approval because protection applies to admins. **Lesson recorded:** a PR opened before CI existed has no checks — run `ruff` locally before approving, and use *Update branch* to trigger CI under `strict`. |
+
 ## 4. Closed
 
 | ID | Action | Owner | Agenda | Outcome |
@@ -246,3 +247,4 @@ within-student variation looks like. That question is cheap to ask and gates the
 | A-10 | Adopt one people-numbering scheme, M1–M5 or T1–T5 | ALL | B3 | **RESOLVED 2026-09-05** — Sprint Plan Rev 5 §1: *Sprint-plan slots M1–M5 are retired; work is now assigned to people* (T1–T5 from tender §10). |
 | A-15 | Authorise the `devenv/env.sh` correction ("all six of us" → five) | ALL | C2 | **RESOLVED 2026-09-05** — Authorised by Sprint Plan Rev 5, box *Three inconsistencies*: *devenv/env.sh also says "all six of us" and should be corrected in the same commit that fixes the repo.* Unblocks A-24. |
 | A-31 | Commit the authoritative sprint plan (Rev 5) and the epic/terminology plan (Rev 3) into `docs/` | T1 | — | **DONE 2026-09-05** — `docs/LJA_Sprint_Plan_3-6_rev5.pdf`, `docs/LJA_Sprint_Plan_A-C_rev3.pdf`. Both had lived only in one person's Downloads folder while the runbook cited them as its companion — the exact bus-factor failure Rev 5 §4 describes. |
+| A-03 | Enable branch protection on `main` | Allan | A3 | **DONE 2026-09-06** — via API: 1 approving review required, checks `Lint (ruff)` / `Tests (Python 3.12)` / `Security scanning` required, branch must be up to date (`strict`), **enforced for admins**, no force-push, no deletion. `strict` chosen because it is exactly what would have caught the semantic break in #5. |
