@@ -12,16 +12,22 @@ Capstone project for CSE5IDP. Project owner: Scott Mann. No real student data
 is used anywhere in this project; all student records are synthetic or
 supplied as an anonymised, modelled dataset.
 
+![The LJA dashboard: cohort statistics, distribution of average totals, competency classifications and a sortable student list, computed live from the supplied dataset](docs/images/Dashboard_example.png)
+
+*The read-only dashboard over a pipeline run. Start it with `python -m lja.dashboard`
+and open http://127.0.0.1:8000/ — see [python/README.md](python/README.md#dashboard).*
+
 ## What it is today
 
 Extraction through gap-detection now runs end-to-end against a real supplied
-dataset. The dashboard and the generation features built on top of gap data
-(learning plans, quizzes, study strategies) don't exist yet.
+dataset, and a read-only dashboard (above) presents the results. The generation
+features built on top of gap data (learning plans, quizzes, study strategies)
+don't exist yet.
 
 | Bundle | Contents | Status |
 | --- | --- | --- |
 | [devenv/](devenv/) | One-shot Dockerised Moodle 5.2 dev environment (`bootstrap.sh`), shared config, synthetic-data seeding via `tool_generator`, `.mbz` restore path | Working |
-| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — 69 passing tests, runs end-to-end against real data** |
+| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI, read-only dashboard — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — all tests passing in CI, runs end-to-end against real data** |
 | [sql/](sql/) | Read-only extraction queries for the production Moodle path: rubric definitions, per-criterion fills, outcomes/competency attainment, cross-subject gap detection | Written, not yet wired to code — superseded for now by the Excel path below |
 | [data-fixtures/](data-fixtures/) | **The real dataset** — 150 students × 3 subjects × 11 assessments, supplied by the project owner. Plus a competency-framework import CSV and a Moodle backup used only to prove the restore mechanics | Real data in hand |
 | [docs/](docs/) | Sprint plan, trade show deck | Active |
@@ -206,7 +212,7 @@ Run the same checks locally before opening a PR:
 ```bash
 cd python
 ruff check .          # pip install ruff==0.16.4
-pytest -q             # 69 tests
+pytest -q             # all offline; the count is whatever CI reports
 ```
 
 > **Branch protection is a repository setting, not a file.** This workflow
