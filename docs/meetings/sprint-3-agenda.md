@@ -49,7 +49,7 @@ itself: until an admin enables "no direct pushes, at least one approving review,
 the jobs are advisory and a red build is still mergeable. This is a repository setting, not code.
 
 The runbook's verification step — open a throwaway PR with a deliberately failing test, confirm
-the merge is blocked, close it — is also outstanding and cannot pass until protection exists.
+the merge is blocked, close it — was completed on 6 Sep (PR #11; see A-04).
 
 ### A4. Who reviews the three open PRs *(owner: team)*
 
@@ -145,7 +145,7 @@ out of scope until Sprint 4. It is a one-line comment. **Someone just needs to a
 
 ### C3. The root README's test count keeps going stale
 
-It has now been wrong three times (18 → 54 → 69 → 87). Derive it, or stop quoting a number.
+It was wrong four times (18 → 54 → 69 → 87, actual 95). **Resolved:** counts dropped from both READMEs (A-23).
 
 ### C4. Is the GitHub Issues backlog item obsolete?
 

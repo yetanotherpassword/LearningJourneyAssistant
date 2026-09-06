@@ -15,6 +15,11 @@ what was decided, and what r1 got wrong about the repository.
 
 ---
 
+> **Status 6 September 2026 — read `docs/meetings/actions.md` for the live record; this file is a
+> point-in-time revision.** WP1 merged (PR #4) with branch protection on and verified (A-03, A-04);
+> WP2 merged (PR #7); S3-9 merged (PR #9); PRs #5 (WP4 part 1), #6 (this document) and #8 (WP3) are
+> open. Test counts below are historical — they are no longer quoted in the READMEs (A-23).
+
 ## 0. How to start a session
 
 Unchanged from r1, and it still matters:
@@ -34,7 +39,7 @@ the outcome this rule exists to produce. Keep it.
 
 | § | Work package | Jira | Owner | Status at r2 |
 |---|---|---|---|---|
-| §4 | WP1 — CI pipeline | S3-3 | Ayesha | **Code complete**, branch protection outstanding |
+| §4 | WP1 — CI pipeline | S3-3 | Ayesha | **Done 6 Sep** — merged (PR #4), protection on, verified (A-03/A-04) |
 | §5 | WP2 — Relative gap detection | S3-6 | Allan | Not started — **now blocking two things** |
 | §6 | WP3 — Confirmation gate | S3-5 | Istiaque | Not started |
 | §7 | WP4 — Dashboard views | S3-7, S3-13 | Sui Lung + Allan | **Partially delivered**, see §7 |
@@ -81,11 +86,11 @@ r1's §1 orientation table was accurate on 24 August. Current verified state:
 | Fact | r1 said | Now |
 |---|---|---|
 | Test suite | 69 tests | **87 tests**, all passing, run from `python/` |
-| CI | `.github/workflows/` absent | `.github/workflows/ci.yml` exists (branch `s3-3/ci-pipeline`) |
+| CI | `.github/workflows/` absent | on `main` since 6 Sep (PR #4); badge live |
 | Lint config | none | `python/pyproject.toml`, ruff `E`/`F`/`I` at width 120 |
 | `python/README.md` | claimed 54 tests | corrected to 87 |
 | Root `README.md` | claimed 18 and 54 tests | both corrected to 69, **now stale again at 87** |
-| `docs/adr/` | absent | still absent — WP2 creates it |
+| `docs/adr/` | absent | `docs/adr/0001-relative-gap-detection.md` on `main` (PR #7) |
 | `docs/compliance-checklist.md` | absent | still absent |
 
 > The root README's counts are stale *again* because WP1 fixed them to 69 before WP4 added 18 more. This
@@ -124,7 +129,7 @@ enforced (§4) and it held through both landed work packages. Do not quietly rel
 ## 3. Order of work
 
 ```
-WP1  CI pipeline            ── CODE COMPLETE; branch protection still outstanding
+WP1  CI pipeline            ── DONE 6 Sep: merged, protection on, verified
 WP2  Relative gap detection ── NOT STARTED; now blocks WP4's remainder AND the At-Risk cohort
 WP3  Confirmation gate      ── NOT STARTED; independent, can run in parallel
 WP4  Dashboard views        ── PART 1 LANDED (cohorts, statistics, sorting)
@@ -137,7 +142,7 @@ has explicitly asked for (the At-Risk cohort). Nothing else in the sprint has tw
 
 ---
 
-## 4. WP1 — CI pipeline and scanning *(S3-3, owner Ayesha)* — **CODE COMPLETE**
+## 4. WP1 — CI pipeline and scanning *(S3-3, owner Ayesha)* — **DONE 6 Sep**
 
 Landed on `s3-3/ci-pipeline` as `95ba39d`. Three independent jobs in `.github/workflows/ci.yml`:
 
@@ -163,7 +168,7 @@ Landed on `s3-3/ci-pipeline` as `95ba39d`. Three independent jobs in `.github/wo
   which ships as an sdist and compiles against libpq. Without the headers the job fails with a bare
   "pg_config executable not found". Changing the pin instead is a Sprint 4 dependency decision, not CI's.
 
-> **Still not done, and the ticket cannot close without it.** Branch protection on `main` — no direct
+> **Resolved 6 Sep — protection enabled and verified (A-03, A-04); kept for the record.** Branch protection on `main` — no direct
 > pushes, one approving review, CI required — is a GitHub repository setting no code can apply. Until it is
 > switched on, these jobs are advisory and a red build is still mergeable. r1's verification step (open a
 > throwaway PR with a deliberately failing test, confirm the merge is blocked, close it) is also
@@ -285,7 +290,7 @@ r1's table stands. Two items are now live rather than hypothetical:
 
 ```bash
 cd python
-pytest -q                              # 87 + your new tests, all green
+pytest -q                              # all green (counts no longer quoted -- A-23)
 ruff check .                           # clean; config is python/pyproject.toml
 git log --oneline origin/main..HEAD    # conventional commits, Refs S3-<n> present
 git diff origin/main --stat            # only files this work package should touch
