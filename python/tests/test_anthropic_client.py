@@ -10,10 +10,9 @@ module docstring in anthropic_client.py.
 
 from __future__ import annotations
 
-import anthropic
-
 from types import SimpleNamespace
 
+import anthropic
 from pydantic import BaseModel
 
 from lja.llm.anthropic_client import AnthropicClient
