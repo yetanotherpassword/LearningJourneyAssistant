@@ -129,9 +129,10 @@ Design rules for the abstraction, confirmed by actually building it:
   OpenAI-compatibility shim — each backend gets its native client.
 - Every clustering/generation call is grounded in structured data and the
   prompt forbids inventing SILOs, subjects, or wording that wasn't supplied
-  (anti-hallucination constraint from the proposal) — and a coverage
-  validator checks the LLM's response against the input, not just its shape,
-  because a live run caught a real model dropping data silently.
+  (anti-hallucination constraint from the proposal) — and a grounding
+  validator (`lja/llm/grounding.py`, shared by every generated artefact)
+  checks the LLM's response against the input, not just its shape, because a
+  live run caught a real model dropping data silently.
 - Model choice is per-task: this session ran the whole pipeline for free on a
   local Ollama model; student-facing generation later should use a stronger one.
 
