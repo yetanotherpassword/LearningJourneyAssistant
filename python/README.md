@@ -235,11 +235,25 @@ sweep.
 For the Anthropic path, `effort` is the closest equivalent lever: `high`
 (the API's own default, same as leaving `LJA_ANTHROPIC_EFFORT` empty) is
 probably the right starting point for this task; `xhigh` or `max` cost more
-and haven't been tested against SILO clustering specifically. Neither the
-effort nor the thinking wiring has been exercised against a live Anthropic
-call in this repo yet — there's no `ANTHROPIC_API_KEY` configured in this
-dev environment, only the local Ollama path has actually been run — so
-treat both as implemented-and-unit-tested, not validated end to end.
+and have not been tested against SILO clustering specifically. Adaptive
+thinking also remains unvalidated against the full clustering task.
+
+**Live Anthropic validation (IOLG-88, 31 August 2026).** The Anthropic
+structured-output path was validated end to end against `claude-opus-4-8`.
+A live structured-output request successfully returned
+`status="success"` and `message="Anthropic API is working."`. The call took
+2.2 seconds, used 282 input tokens and 21 output tokens, with an estimated
+cost of $0.0019.
+
+Live testing uncovered two integration issues. First, an identity-linked API
+key required an `anthropic-workspace-id`; using a key scoped to the Default
+Workspace resolved the authentication issue. Second, Anthropic rejected the
+raw Pydantic JSON Schema because object schemas require
+`additionalProperties: false`. The client was updated to use
+`anthropic.transform_schema(...)`, which produces an Anthropic-compatible
+schema. The Anthropic client unit tests passed after the fix. The API key is
+stored only in the gitignored `.env` file and is not committed to the
+repository.
 
 **3. Other request options.** `LJA_OPENAI_MAX_TOKENS` / the Anthropic
 client's fixed `max_tokens=16000` already exist and are covered above (see
