@@ -30,7 +30,7 @@ Moodle (moodle_probe.py + sql/)  ──┘
 | `lja/data/excel_loader.py` | Parses the 3-sheet workbook into typed `Silo` / `Assessment` / `ResultRow` / `StudentSummary` records |
 | `lja/data/synth_generator.py` | Generates additional synthetic students — planted, known cross-subject gaps + LLM-varied feedback. `python -m lja.data.synth_generator --help` |
 | `lja/model/silo_clustering.py` | LLM-driven cross-subject SILO clustering — the semantic-matching step Scott asked for, with automatic retry on a validation failure |
-| `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + gap classification |
+| `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + **relative** gap classification — see "Gap detection" below |
 | `lja/cli.py` | `python -m lja.cli <xlsx path>` — runs the whole pipeline, writes a gap report |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
 | `tests/` | pytest — 54 tests, all offline (no live LLM call needed) |
@@ -110,6 +110,53 @@ whole point of the Ollama path).
 Sprint 2's scope in `docs/sprint-plan.md`; the natural place for that
 action is a "confirm" control on each competency once it exists.
 
+## Gap detection — relative, not absolute
+
+A competency is judged against **the variability within that student's own profile**, not against
+a fixed pass mark. That is what the lodged tender's requirement 4 promises, explicitly "rather
+than raw pass or fail thresholds". The previous absolute 50/65 classification was the mechanism
+the tender excludes.
+
+For each student, their competency attainments form a profile. Position is measured as
+`(attainment − profile median) / profile MAD`, in median-absolute-deviation units. Median and MAD
+rather than mean and standard deviation because students carry roughly 4–8 competencies, and at
+that n one catastrophic result drags the mean far enough to hide everything else.
+
+Two absolute guards remain, because pure relative logic has two degenerate cases that are each
+*worse* than what it replaces — a uniformly weak student would be told they have no gaps, and a
+uniformly strong student would have their merely-very-good competency flagged. The **floor**
+catches the first, the **ceiling** the second, and both are checked before anything relative.
+
+Where a profile is too short or too flat to reason about, classification falls back to absolute
+**and records that it did**. Every gap carries `classification_basis` — one of `relative position`,
+`absolute floor`, `absolute ceiling`, `insufficient data` — plus `relative_position` when the
+relative path was taken. Both appear in the gap report CSV and on the student page, because tender
+requirement 5 asks that a displayed figure be traceable, and a verdict with no visible basis is not.
+
+`subjects_evidencing >= 2` still separates a persistent gap from an isolated one. That distinction
+is orthogonal to how the gap was detected and Sprint 5's study-strategy generation depends on it.
+
+### Tuning
+
+Seven `LJA_GAP_*` environment variables in `lja/config.py` — the single source of truth, with no
+numeric literals anywhere in `gap_detection.py`. `python -m lja.cli` exposes all six of the
+classification tunables as flags (`--absolute-floor`, `--relative-gap-cutoff`, `--min-spread`, …)
+so Sprint 5 can sweep them without editing a `.env` between runs. See `.env.example`.
+
+> **The defaults are proposals, not settled numbers.** Scott confirmed there is no institutional
+> "at risk" figure to match, so they are the team's to ratify and defend — action **A-01** in
+> `docs/meetings/actions.md`. Read
+> [`docs/adr/0001-relative-gap-detection.md`](../docs/adr/0001-relative-gap-detection.md) before
+> changing any of them: it records a measurement showing the supplied dataset's profiles are
+> nearly flat (median MAD 0.90 percentage points), that a quarter of relative gaps sit under two
+> points below the student's own median, and why tuning `MIN_SPREAD` down to make more gaps appear
+> would be fitting to an artefact of how the data was generated.
+
+**`sql/moodle_attainment_extraction.sql` Query 6 still carries the legacy 50/65** and is annotated
+as divergent. Running it and running `lja.cli` on the same data will disagree. That is expected
+until Sprint 4 reconciles them — the Moodle path is not wired to code yet, and porting an
+unratified algorithm would mean maintaining two copies of a moving target.
+
 ## The LLM layer — provider-agnostic, actually built now
 
 One interface, `lja.llm.LLMClient`, with a single method:
@@ -188,11 +235,25 @@ sweep.
 For the Anthropic path, `effort` is the closest equivalent lever: `high`
 (the API's own default, same as leaving `LJA_ANTHROPIC_EFFORT` empty) is
 probably the right starting point for this task; `xhigh` or `max` cost more
-and haven't been tested against SILO clustering specifically. Neither the
-effort nor the thinking wiring has been exercised against a live Anthropic
-call in this repo yet — there's no `ANTHROPIC_API_KEY` configured in this
-dev environment, only the local Ollama path has actually been run — so
-treat both as implemented-and-unit-tested, not validated end to end.
+and have not been tested against SILO clustering specifically. Adaptive
+thinking also remains unvalidated against the full clustering task.
+
+**Live Anthropic validation (IOLG-88, 31 August 2026).** The Anthropic
+structured-output path was validated end to end against `claude-opus-4-8`.
+A live structured-output request successfully returned
+`status="success"` and `message="Anthropic API is working."`. The call took
+2.2 seconds, used 282 input tokens and 21 output tokens, with an estimated
+cost of $0.0019.
+
+Live testing uncovered two integration issues. First, an identity-linked API
+key required an `anthropic-workspace-id`; using a key scoped to the Default
+Workspace resolved the authentication issue. Second, Anthropic rejected the
+raw Pydantic JSON Schema because object schemas require
+`additionalProperties: false`. The client was updated to use
+`anthropic.transform_schema(...)`, which produces an Anthropic-compatible
+schema. The Anthropic client unit tests passed after the fix. The API key is
+stored only in the gitignored `.env` file and is not committed to the
+repository.
 
 **3. Other request options.** `LJA_OPENAI_MAX_TOKENS` / the Anthropic
 client's fixed `max_tokens=16000` already exist and are covered above (see

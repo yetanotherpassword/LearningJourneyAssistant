@@ -24,7 +24,6 @@ from __future__ import annotations
 import argparse
 import random
 import sys
-from pathlib import Path
 
 import pandas as pd
 from pydantic import BaseModel

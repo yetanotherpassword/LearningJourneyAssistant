@@ -10,6 +10,8 @@ module docstring in anthropic_client.py.
 
 from __future__ import annotations
 
+import anthropic
+
 from types import SimpleNamespace
 
 from pydantic import BaseModel
@@ -56,8 +58,9 @@ def test_output_config_format_carries_the_json_schema() -> None:
     client.complete_structured(system="sys", user="usr", schema=_Schema)
     output_config = fake.calls[0]["output_config"]
     assert output_config["format"]["type"] == "json_schema"
-    assert output_config["format"]["schema"] == _Schema.model_json_schema()
-
+    assert output_config["format"]["schema"] == anthropic.transform_schema(
+        _Schema.model_json_schema()
+    )
 
 def test_effort_and_format_are_sibling_keys_of_one_output_config() -> None:
     """The reason this client doesn't use .parse(): effort must land next
