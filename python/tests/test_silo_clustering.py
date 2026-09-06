@@ -60,7 +60,7 @@ def test_cluster_silos_rejects_missing_silo() -> None:
     canned = SiloClusteringResult(
         clusters=[CompetencyCluster(competency_label="Only A", rationale="test", members=[SiloRef(subject_code="SUBA", silo_local_id="SILO1")])]
     )
-    with pytest.raises(ValueError, match="missing from any cluster"):
+    with pytest.raises(ValueError, match="absent from the output"):
         cluster_silos(_FakeLLMClient(canned), _two_silo_dataset())
 
 
@@ -72,7 +72,7 @@ def test_cluster_silos_rejects_duplicated_silo() -> None:
             CompetencyCluster(competency_label="Group 2", rationale="test", members=[ref]),
         ]
     )
-    with pytest.raises(ValueError, match="more than one cluster"):
+    with pytest.raises(ValueError, match="referenced more than once"):
         cluster_silos(_FakeLLMClient(canned), _two_silo_dataset())
 
 
@@ -90,7 +90,7 @@ def test_cluster_silos_rejects_unknown_silo() -> None:
             )
         ]
     )
-    with pytest.raises(ValueError, match="don't exist in the dataset"):
+    with pytest.raises(ValueError, match="not present in the input"):
         cluster_silos(_FakeLLMClient(canned), _two_silo_dataset())
 
 
