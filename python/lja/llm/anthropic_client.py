@@ -65,7 +65,7 @@ class AnthropicClient:
         output_config: dict[str, Any] = {
             "format": {
                 "type": "json_schema",
-                "schema": schema.model_json_schema(),
+                "schema": anthropic.transform_schema(schema.model_json_schema()),
             }
         }
         if self._effort:
