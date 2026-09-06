@@ -30,7 +30,8 @@ from .review import (
     gate_status,
     load_or_create_reviews,
     rework_instructions,
-) 
+)
+
 
 def _print_table(headers: list[str], rows: list[list[str]], col_widths: list[int]) -> None:
     """Fixed-column ASCII table. Cells that exceed their column's width wrap
