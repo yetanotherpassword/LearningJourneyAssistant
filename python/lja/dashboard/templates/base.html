@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}LJA Dashboard{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+<!-- Requires internet access to load. If this dashboard needs to run fully
+     offline, vendor Chart.js into static/ and swap this for a local path. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<header class="site-header">
+  <a href="/">LJA Dashboard</a>
+  <span class="tag">gap report &middot; read-only</span>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>
