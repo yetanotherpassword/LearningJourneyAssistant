@@ -4,49 +4,18 @@
 <h1>Students</h1>
 <p class="dek">One row per student, computed live from the cached SILO clustering &mdash; not a hardcoded example.</p>
 
+{# Each tile is a link into its cohort page. The cohorts themselves are
+   registered in app.py, so a new tile is a registry entry rather than a new
+   template -- including the "At Risk" tile the team has asked for, which is
+   held back until its definition is agreed (see _COHORTS in app.py). #}
 <div class="stat-strip">
-  <div class="stat">
-    <div class="num">{{ student_count }}</div>
-    <div class="label">students</div>
-  </div>
-  <div class="stat">
-    <div class="num">{{ students_with_persistent_gaps }}</div>
-    <div class="label">with a persistent gap</div>
-  </div>
+  {% for tile in tiles %}
+  <a class="stat stat-link" href="/cohort/{{ tile.key }}">
+    <div class="num">{{ tile.count }}</div>
+    <div class="label">{{ tile.label }}</div>
+  </a>
+  {% endfor %}
 </div>
 
-{% if rows %}
-<table>
-  <thead>
-    <tr>
-      <th>Student</th>
-      <th>Average</th>
-      <th>Band</th>
-      <th>Persistent gaps</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in rows %}
-    <tr>
-      <td>
-        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
-          {{ row.student_id }}
-        </a>
-      </td>
-      <td>{{ "%.1f"|format(row.average_total) }}%</td>
-      <td>{{ row.performance_band }}</td>
-      <td>
-        {% if row.persistent_gap_count > 0 %}
-        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
-        {% else %}
-        &mdash;
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p class="empty-state">No students in this dataset.</p>
-{% endif %}
+{% include "_cohort_body.html" %}
 {% endblock %}

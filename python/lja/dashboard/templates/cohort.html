@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ cohort.title }} &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/">&larr; all students</a>
+<h1>{{ cohort.title }}</h1>
+{# Membership is stated, not implied. Tender requirement 5 asks that every
+   displayed figure be traceable to a source record, and a filtered count
+   with no statement of what filtered it does not meet that. #}
+<p class="dek">{{ cohort.blurb }}</p>
+
+{% include "_cohort_body.html" %}
+{% endblock %}

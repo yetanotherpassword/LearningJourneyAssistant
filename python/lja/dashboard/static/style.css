@@ -129,6 +129,64 @@ td a.at-risk { color: var(--status-persistent); }
 .stat .num { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stat .label { color: var(--muted); font-size: 0.85rem; }
 
+/* Tiles on the index are links into their cohort page. They must not look
+   like body links -- inherit the surrounding ink and let the lift on hover
+   carry the affordance instead. */
+a.stat-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+a.stat-link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+a.stat-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Statistics panel: many small figures, so wrap into a grid rather than the
+   single row .stat-strip uses for two or three tiles. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.stat-grid .stat { min-width: 0; padding: 12px 16px; }
+.stat-grid .stat .num { font-size: 1.3rem; }
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.chart-grid .chart-card { margin-bottom: 0; }
+.chart-card h3 { font-size: 0.95rem; margin: 0 0 2px; }
+.chart-note { color: var(--muted); font-size: 0.82rem; margin: 0 0 14px; }
+
+/* Sortable column headings. The indicator is driven by aria-sort, so the
+   accessible state and the visible state cannot disagree. */
+th.sortable-header { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable-header:hover { color: var(--ink); }
+th.sortable-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+th.sortable-header::after {
+  content: "\2195";           /* up-down arrow: sortable, not yet sorted */
+  opacity: 0.35;
+  margin-left: 6px;
+  font-size: 0.9em;
+}
+
+th.sortable-header[aria-sort="ascending"]::after { content: "\2191"; opacity: 1; color: var(--accent); }
+th.sortable-header[aria-sort="descending"]::after { content: "\2193"; opacity: 1; color: var(--accent); }
+
 .chart-card {
   background: var(--surface);
   border: 1px solid var(--line);
