@@ -113,6 +113,47 @@ After restoring:
 3. Seed synthetic students into the restored courses (enrolment + marks +
    rubric fills), since the backups deliberately contain none.
 
+## Rubric-fills fixture (IOLG-56)
+
+`tool_generator` makes courses, users and assignments but never grades anything,
+so SQL Query 2 (`sql/moodle_attainment_extraction.sql`) — the per-criterion
+rubric-fills query the whole Moodle path depends on — returns nothing on a
+freshly seeded instance. `fixtures/` fills that gap: it defines one rubric on
+`CSE1IOI`'s "Assignment 1" (three criteria) and marks five students, giving
+every filling a marker remark and varying the middle criterion across the full
+score range.
+
+There is no supplied `.mbz` in `data-fixtures/`, so this is the "build by hand in
+the generated subject" route of IOLG-56, not the restore route above. Marking
+goes through `assign::save_grade()` — the same code path as the grading UI and
+the `mod_assign_save_grade` web service — so nothing writes to the grade tables
+directly (the rule in "Synthetic data" above).
+
+Reload it after a fresh install, in this order:
+
+```bash
+./bootstrap.sh                     # install Moodle 5.2
+./seed.sh                          # generate CSE1IOI etc. with enrolled students
+./fixtures/reload_fixture.sh       # define the rubric and mark five students
+```
+
+`reload_fixture.sh` copies `fixtures/mark_rubric_fixture.php` into the webserver
+container and runs it. It is idempotent — the rubric is defined once and re-runs
+only re-grade (superseded gradings are archived to `status = 3`, so Query 2's
+`status = 1` filter still returns exactly five students × three criteria).
+
+Verify by running Query 2 against the devenv database — **remember the devenv
+prefix is `m_`, not the `mdl_` the queries are written against** (see
+`sql/README.md`). It should return 15 rows: five students, three criteria each,
+every row carrying a remark, joined `grading_instances.itemid →
+assign_grades.id` with `status = 1`.
+
+The criteria are mapped to subject SILOs in
+`data-fixtures/criterion_silo_map_CSE1IOI.csv` (one row per criterion, using the
+Excel loader's `SUBJECT:SILOn` SILO-key form) — that file is what makes the
+Moodle rubric rows comparable to the Excel-path rows, since Moodle rubric
+criteria carry no SILO tags.
+
 ## Bulk import paths worth knowing
 
 - Users: Site administration → Users → Upload users (CSV)
