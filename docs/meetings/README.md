@@ -1,0 +1,33 @@
+# Meetings
+
+Agendas and the running actions register for team meetings.
+
+| File | Purpose |
+| --- | --- |
+| `sprint-3-agenda.md` | Items needing a team decision, raised during Sprint 3 implementation. Prepared 2026-08-26; meeting date TBC. |
+| `IOLG-sprint3-import.csv` | Every Sprint 3 item from Sprint Plan Rev 5 as a Jira CSV-import file: summary, type, points, suggested epic, acceptance criteria as description, and status on 2026-09-05. **Superseded the same day:** the Backlog view showed every Sprint 3 item already exists (IOLG-78–102). Only the **S3-13 row** is still needed. Kept as the S3-n → IOLG mapping and the status-on-5-Sep record; see the board audit in `actions.md`. |
+| `actions.md` | **Running register** across all meetings — one row per action, with an owner and a state. Not per-meeting; actions outlive the meeting that raised them. |
+
+## Convention
+
+- One agenda file per meeting. Once a meeting has a date, name it `YYYY-MM-DD-agenda.md`;
+  an agenda drafted before a date exists is named for its topic, as `sprint-3-agenda.md` is.
+- **`actions.md` is never per-meeting and never rewritten.** Add rows, change states, and
+  record the outcome inline. An action closed in a later meeting keeps its original ID so the
+  decision trail survives.
+- Every agenda item that produces an outcome gets an action row, even if the outcome is "no
+  change" — otherwise the next meeting re-litigates it from scratch.
+- **`actions.md` is not a backlog.** It holds *decide, confirm, authorise, assign* and *raise a
+  ticket* — actions that close when a decision is made or a ticket exists. Engineering work that
+  produces code belongs in Jira (IOLG), and the meeting action is "raise it". Tracking the
+  engineering to completion here as well would create a second backlog competing with the board,
+  which is the fragmentation the register is partly meant to stop.
+- Decisions with an engineering consequence also belong in the code or its README, not only
+  here. This folder records *that* a decision was made; the code records *what* it means.
+
+## Why this exists
+
+Sprint 3 implementation surfaced a set of contradictions between the runbook, `sprint-plan.md`
+and the tender — plus several thresholds that the runbook explicitly marks as team decisions
+rather than implementer decisions. They were deliberately left unresolved in the code, with
+the reasoning recorded next to where each one bites. This folder is where they get settled.
