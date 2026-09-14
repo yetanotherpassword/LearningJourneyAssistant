@@ -142,6 +142,14 @@ container and runs it. It is idempotent — the rubric is defined once and re-ru
 only re-grade (superseded gradings are archived to `status = 3`, so Query 2's
 `status = 1` filter still returns exactly five students × three criteria).
 
+The 15 marker remarks baked into that script are LLM-generated (local `qwen3-vl:30b`
+via the `lja.llm` layer), each grounded in its criterion and the level the student
+was awarded — the "generating plausible criterion-level feedback is a legitimate use
+of an LLM" note above. They are committed verbatim, not fetched at reload time, so
+the replay stays deterministic and offline. Regenerate them with
+`fixtures/generate_remarks.py` (run from `python/` so `.env` and `lja` resolve) and
+paste its `$REMARKS = [...]` output over the block in `mark_rubric_fixture.php`.
+
 Verify by running Query 2 against the devenv database — **remember the devenv
 prefix is `m_`, not the `mdl_` the queries are written against** (see
 `sql/README.md`). It should return 15 rows: five students, three criteria each,

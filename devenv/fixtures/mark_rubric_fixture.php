@@ -76,31 +76,38 @@ $SCORES = [
 // One remark per filling — [student_index][criterion_index]. Every filling has a
 // remark because it is a Query 2 output column and the point of the fixture is to
 // give the parsing engine realistic feedback to chew on.
+//
+// These are LLM-generated (local qwen3-vl:30b via the lja.llm layer), each grounded
+// in its criterion and the level that student was awarded below — generating varied
+// criterion-level feedback with an LLM is an explicitly legitimate use here (see
+// devenv/README.md's "Synthetic data" note). They are baked in verbatim, not fetched
+// at reload time, so this replay script stays deterministic and offline. Regenerate
+// with fixtures/generate_remarks.py and paste its output over this block.
 $REMARKS = [
     [
-        'Clear breakdown of the problem into well-chosen sub-steps.',
-        'All test cases pass and edge cases are handled thoughtfully.',
-        'Readable, but a few functions would benefit from doc comments.',
+        'Your problem decomposition was exceptionally clear, with a well-structured algorithm that efficiently addressed all edge cases. The use of pseudocode and flowcharts demonstrated strong analytical thinking.',  // Exemplary: Problem decomposition and algorithm design
+        'The implementation was robust and fully functional, with comprehensive test cases covering all specified scenarios and edge conditions. Your thorough testing approach ensured reliability and correctness.',  // Exemplary: Correct implementation and testing
+        'Code quality is generally strong with consistent naming conventions, though some functions could benefit from more detailed docstrings. Minor improvements in documentation would elevate this to exemplary.',  // Proficient: Code quality and documentation
     ],
     [
-        'Decomposition is sound; some steps could be split further.',
-        'Core logic works but two boundary cases fail — revisit input validation.',
-        'Naming is consistent and the layout is easy to follow.',
+        'The decomposition logically breaks the problem into manageable components, though some steps lack sufficient detail. With more explicit planning, this could be refined further.',  // Proficient: Problem decomposition and algorithm design
+        'The implementation contains significant errors and lacks adequate testing; critical functionality is not operational. Focus on debugging and developing a structured testing strategy is essential.',  // Developing: Correct implementation and testing
+        'Code is readable with appropriate comments, but inconsistent formatting and sparse documentation reduce clarity. Addressing these areas would significantly improve maintainability.',  // Proficient: Code quality and documentation
     ],
     [
-        'The overall approach is unclear; plan the algorithm before coding.',
-        'Implementation does not yet produce correct output on the samples.',
-        'Formatting is inconsistent; run the formatter and add comments.',
+        'The decomposition shows basic understanding but lacks depth in algorithm selection and step-by-step planning. More detailed analysis of problem components is needed.',  // Developing: Problem decomposition and algorithm design
+        'No functional implementation or testing was provided; the submission does not address the core requirements. This work requires substantial reworking to meet basic standards.',  // Not demonstrated: Correct implementation and testing
+        'Code structure is present but inconsistent, with minimal documentation. Improving comment clarity and adhering to style guidelines would enhance readability.',  // Developing: Code quality and documentation
     ],
     [
-        'Good decomposition, though one sub-problem is solved twice.',
-        'Correct on all provided cases; add a couple of your own tests.',
-        'Excellent documentation — clear docstrings and inline rationale.',
+        'Your algorithm design is logical and addresses the problem effectively, though some steps could be more explicitly defined. This demonstrates solid problem-solving skills.',  // Proficient: Problem decomposition and algorithm design
+        'The implementation meets core requirements with functional code, though some edge cases were not fully tested. Strengthening test coverage would improve robustness.',  // Proficient: Correct implementation and testing
+        'Code is exceptionally well-structured with comprehensive documentation, consistent style, and clear modular design. This exemplifies best practices in both quality and maintainability.',  // Exemplary: Code quality and documentation
     ],
     [
-        'Little evidence of decomposition; the solution is one long block.',
-        'Partially working — the main loop terminates early on empty input.',
-        'Some comments present but variable names are hard to follow.',
+        'No evidence of problem decomposition or algorithm design was provided; the submission does not address this criterion. This work requires fundamental reworking.',  // Not demonstrated: Problem decomposition and algorithm design
+        'The implementation contains critical errors and lacks meaningful testing; functionality is not operational. Prioritising debugging and test case development is crucial.',  // Developing: Correct implementation and testing
+        'Code quality is inconsistent with minimal documentation; style guidelines are frequently overlooked. Focusing on consistent formatting and clear comments will improve clarity.',  // Developing: Code quality and documentation
     ],
 ];
 
