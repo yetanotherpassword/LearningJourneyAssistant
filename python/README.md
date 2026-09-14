@@ -27,6 +27,7 @@ Moodle (moodle_probe.py + sql/)  ──┘
 | --- | --- |
 | `lja/config.py` | Reads `.env`; the one place that knows environment variable names |
 | `lja/llm/` | Provider-agnostic LLM client — `AnthropicClient`, `OpenAICompatibleClient`, a factory keyed off `LJA_LLM_PROVIDER` |
+| `lja/llm/grounding.py` | Reusable grounding validator — checks any generated artefact names only things present in its input. See "Grounding validation" below |
 | `lja/data/excel_loader.py` | Parses the 3-sheet workbook into typed `Silo` / `Assessment` / `ResultRow` / `StudentSummary` records |
 | `lja/data/synth_generator.py` | Generates additional synthetic students — planted, known cross-subject gaps + LLM-varied feedback. `python -m lja.data.synth_generator --help` |
 | `lja/model/silo_clustering.py` | LLM-driven cross-subject SILO clustering — the semantic-matching step Scott asked for, with automatic retry on a validation failure |
@@ -188,6 +189,48 @@ LJA_OPENAI_TEMPERATURE=0.2                       # low on purpose -- see "Tuning
 
 Default is `openai_compatible` so a fresh checkout with no API key still
 works against a local model.
+
+### Grounding validation — the check every generated artefact goes through
+
+`lja/llm/grounding.py` (S4-3, IOLG-85) is `silo_clustering.py`'s
+`_validate_coverage()` generalised. That check earned its place by catching
+`qwen3-vl:30b` silently dropping 3 of 13 SILOs on two separate live runs;
+the S4-6 learning-plan generator needs the same guarantee for SILOs,
+subjects, assessments and competency names, and tender requirement 6 says
+the build must fail if it is not met. So the check now lives in one module
+and clustering is just its first caller.
+
+A validation is a list of `ReferenceCheck`s — one per kind of name —
+compared against what the input actually contained:
+
+```python
+from lja.llm.grounding import InputVocabulary, ReferenceCheck, validate_grounding
+
+vocab = InputVocabulary.from_dataset(dataset)          # SILO keys, subject codes, "SUBJECT:Assessment"
+validate_grounding("learning plan", [
+    ReferenceCheck("SILO", plan.silo_keys, vocab.silos),
+    ReferenceCheck("subject", plan.subject_codes, vocab.subjects),
+    ReferenceCheck("competency", plan.competency_labels, [c.competency_label for c in clustering.clusters]),
+])                                                       # raises GroundingError (a ValueError) listing every problem
+```
+
+Three failure categories, two of them opt-in so an artefact only asserts
+what it needs:
+
+| Category | Meaning | When checked |
+| --- | --- | --- |
+| `unknown` | the artefact names something not in the input — the hallucination case | always |
+| `missing` | something in the input never appears in the artefact | `require_complete=True` (clustering: every SILO must land in a cluster) |
+| `duplicated` | something referenced more than once | `require_unique=True` (clustering: a SILO in two clusters double-counts evidence) |
+
+`check_grounding()` returns a `GroundingReport` instead of raising, for
+callers that want to retry or warn rather than fail. Names are compared
+exactly after `strip()` — no case folding, no aliasing — because a near-miss
+is exactly the kind of thing this check exists to catch. Structured output
+is the intended input: put the names in explicit Pydantic fields and check
+those. `extract_codes()` exists for free-text fields that mention subject
+codes or `SUBJECT:SILOn` keys inline; it cannot recover an invented
+assessment title from prose, which is the argument for structured fields.
 
 ## Tuning the LLM
 
