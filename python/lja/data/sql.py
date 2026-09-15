@@ -15,6 +15,7 @@ driver dependency.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from .. import config
@@ -38,3 +39,53 @@ def load_extraction_sql(prefix: str | None = None, *, path: Path | None = None) 
         prefix = config.MOODLE_TABLE_PREFIX
     text = (path or EXTRACTION_SQL_PATH).read_text(encoding="utf-8")
     return text.replace(PREFIX_PLACEHOLDER, prefix)
+
+
+def _terminating_semicolon(sql_text: str, stmt_start: int) -> int:
+    """Index of the statement-terminating ';', skipping ';' inside -- comments.
+
+    A naive sql_text.index(';') is wrong here: several queries carry a line
+    comment with a semicolon in the prose (e.g. 'linked to several subjects;
+    this fans out deliberately'), which would truncate the statement before its
+    real end. We scan character by character, ignoring anything from a '--' to
+    the end of its line, and return the first ';' in actual SQL.
+    """
+    i = stmt_start
+    n = len(sql_text)
+    while i < n:
+        if sql_text.startswith("--", i):
+            newline = sql_text.find("\n", i)
+            if newline == -1:
+                break
+            i = newline + 1
+            continue
+        if sql_text[i] == ";":
+            return i
+        i += 1
+    raise ValueError("No terminating semicolon found for the extracted statement.")
+
+
+def extract_query(sql_text: str, banner: str) -> str:
+    """Slice one query out of the multi-query extraction file.
+
+    The file holds six queries plus a CREATE TABLE, each introduced by a
+    banner comment like 'QUERY 2 —'. A caller that wants a single result set
+    (e.g. the loader running Query 2 through psycopg) needs just that one
+    statement, not the whole file. Returns from the query's leading SELECT/WITH
+    up to and including its terminating semicolon -- so leading banner comments
+    are dropped and the result is a single runnable statement.
+    """
+    start = sql_text.index(banner)
+    match = re.search(r"\b(?:SELECT|WITH)\b", sql_text[start:])
+    if match is None:
+        raise ValueError(f"No SELECT/WITH statement found after banner {banner!r}.")
+    stmt_start = start + match.start()
+    end = _terminating_semicolon(sql_text, stmt_start) + 1
+    return sql_text[stmt_start:end]
+
+
+def load_query_2(prefix: str | None = None, *, path: Path | None = None) -> str:
+    """Query 2 (per-criterion rubric fills, per student) as a single runnable
+    statement with the prefix substituted -- the one query the Moodle loader runs.
+    """
+    return extract_query(load_extraction_sql(prefix, path=path), "QUERY 2")

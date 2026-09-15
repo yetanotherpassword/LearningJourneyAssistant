@@ -9,17 +9,35 @@ The proposal's architecture assumed Moodle would be the data source from day
 one. In practice the project owner (Scott Mann) handed over a ready-extracted
 Excel workbook on the 2026-08-11 call — `data-fixtures/CSE_results_150_students_3_Subjects.xlsx`,
 three subjects, 150 synthetic students, SILOs, assessments, scores and
-feedback already structured. That's now the **fast path to a working
-pipeline**; the Moodle Web Services / direct-SQL path (`moodle_probe.py`,
-`sql/`) remains the **production path** for when the system reads a live
-Moodle instance instead of a supplied export. Both feed the same
-clustering → gap-detection → LLM stages; only the extraction step differs.
+feedback already structured. That's the **fast path to a working
+pipeline**; the direct-SQL Moodle path is the **production path** for when the
+system reads a live Moodle instance instead of a supplied export. Both feed the
+same clustering → gap-detection → LLM stages; only the extraction step differs,
+and both produce the identical `LjaDataset` type the downstream code consumes.
+
+As of IOLG-104 the Moodle path is wired end to end for a seeded subject:
+`lja/data/moodle_loader.py` runs Query 2 from `sql/moodle_attainment_extraction.sql`
+(prefix-substituted via `lja/data/sql.py`, IOLG-105) against a read-only
+connection, joins each rubric criterion to a SILO through the staff-editable
+`data-fixtures/criterion_silo_map_*.csv` (IOLG-56), and returns the same
+`LjaDataset` the Excel loader does. Select the source on the CLI:
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx   # --source excel (default)
+python -m lja.cli --source moodle                                            # reads config.MOODLE_DB
+```
 
 ```
-data-fixtures/CSE_results_*.xlsx  ──┐
-                                     ├──▶ lja.model (clustering [via lja.llm], gaps) ──▶ lja.dashboard
-Moodle (moodle_probe.py + sql/)  ──┘
+data-fixtures/CSE_results_*.xlsx  ──▶ excel_loader   ──┐
+                                                        ├──▶ LjaDataset ──▶ lja.model (clustering [via lja.llm], gaps) ──▶ lja.dashboard
+Moodle DB (sql/ Query 2 + mapping CSV) ──▶ moodle_loader ──┘
 ```
+
+The `--source moodle` run above produced clusters and a gap report for the
+seeded CSE1IOI subject with **no change** to `silo_clustering.py` or
+`gap_detection.py` — the `LjaDataset` abstraction held, which was the point of
+the vertical slice. See "Running against Moodle" below for the connection
+setup.
 
 ## Contents
 
@@ -29,10 +47,12 @@ Moodle (moodle_probe.py + sql/)  ──┘
 | `lja/llm/` | Provider-agnostic LLM client — `AnthropicClient`, `OpenAICompatibleClient`, a factory keyed off `LJA_LLM_PROVIDER` |
 | `lja/llm/grounding.py` | Reusable grounding validator — checks any generated artefact names only things present in its input. See "Grounding validation" below |
 | `lja/data/excel_loader.py` | Parses the 3-sheet workbook into typed `Silo` / `Assessment` / `ResultRow` / `StudentSummary` records |
+| `lja/data/moodle_loader.py` | Builds the same records from a live Moodle DB — runs Query 2, joins the criterion→SILO mapping CSV. The production counterpart to `excel_loader.py` |
+| `lja/data/sql.py` | Loads `sql/moodle_attainment_extraction.sql`, substitutes the table prefix, slices out a single query |
 | `lja/data/synth_generator.py` | Generates additional synthetic students — planted, known cross-subject gaps + LLM-varied feedback. `python -m lja.data.synth_generator --help` |
 | `lja/model/silo_clustering.py` | LLM-driven cross-subject SILO clustering — the semantic-matching step Scott asked for, with automatic retry on a validation failure |
 | `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + **relative** gap classification — see "Gap detection" below |
-| `lja/cli.py` | `python -m lja.cli <xlsx path>` — runs the whole pipeline, writes a gap report |
+| `lja/cli.py` | `python -m lja.cli <xlsx path>` or `--source moodle` — runs the whole pipeline, writes a gap report |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
 | `tests/` | pytest — 54 tests, all offline (no live LLM call needed) |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
@@ -64,6 +84,46 @@ Run the tests:
 ```bash
 python -m pytest tests/
 ```
+
+## Running against Moodle (`--source moodle`)
+
+The Moodle path connects to Postgres directly, read-only. Connection settings
+come entirely from `config.MOODLE_DB` (env vars, loaded from `.env`); the loader
+never opens a connection itself as the application user.
+
+1. **Create the read-only role** on the Moodle database (once). The DDL is in
+   `sql/README.md` under "Before you run anything" — a `lja_reader` role with
+   `SELECT` only. Never connect as the Moodle application user.
+2. **Point `.env` at the instance** (gitignored — never commit it):
+
+   ```
+   PGHOST=localhost
+   PGPORT=5432            # devenv: the db container's port, published to the host
+   PGDATABASE=moodle
+   PGUSER=lja_reader
+   PGPASSWORD=…           # the lja_reader password, not the app user's
+   LJA_MOODLE_TABLE_PREFIX=m_   # devenv uses m_, a hosted instance usually mdl_
+   ```
+
+   The devenv `db` container does not publish its port by default; set
+   `MOODLE_DOCKER_DB_PORT` (see `devenv/README.md`) or forward it, and use `m_`
+   for the prefix — confirm with `SELECT current_setting` / `$CFG->prefix` if
+   unsure.
+3. **Run the pipeline.** The Moodle dataset for one subject has only a handful
+   of SILOs, so its clustering differs from the Excel one; give it a separate
+   cache and refresh it:
+
+   ```bash
+   python -m lja.cli --source moodle --refresh-clustering \
+     --clustering-cache output/silo_clustering_moodle.json \
+     --clusters-out output/clusters_moodle.csv \
+     --gaps-out output/gap_report_moodle.csv
+   ```
+
+   `--mapping` defaults to `../data-fixtures/criterion_silo_map_CSE1IOI.csv`;
+   point it elsewhere for another subject. Any Moodle criterion with no row in
+   the mapping CSV is a hard error listing the unmapped criteria — the mapping
+   is required, not best-effort.
 
 ## Dashboard
 
@@ -510,8 +570,9 @@ changes between releases.
 
 Rubric **definitions** are exposed over web services. Rubric **fills** — which
 level was selected on which criterion for which student, plus the marker's
-per-criterion remark — are not. See `sql/README.md` for the direct-SQL path
-that exists because of this gap.
+per-criterion remark — are not. This is why the Moodle path reads the database
+directly (Query 2) rather than over web services; `moodle_loader.py` and
+`sql/README.md` are the answer to this gap.
 
 This doesn't affect the Excel path above — Scott's workbook already carries
 scored, feedback-attached results per student per assessment, so there's no
@@ -541,8 +602,10 @@ before it drives a real intervention: see the module's docstring.
 - Reload-on-change for `python -m lja.dashboard` — restart the process to
   pick up template/CSS edits; wiring `uvicorn`'s `--reload` through the
   `create_app()` factory pattern is more machinery than this slice needed.
-- Loader that populates `lja_criterion_score` for the **Moodle** path (the
-  Excel path has its own loader — `lja/data/excel_loader.py` — already done).
-- Synthetic data seeder for the Moodle path — see the devenv bundle.
+- Multi-subject Moodle extraction. `moodle_loader.py` is proven against one
+  seeded subject (CSE1IOI); the mapping CSV and Query 2 generalise, but a real
+  multi-subject instance hasn't been exercised. Note `lja_criterion_score` is
+  **not** materialised — the in-memory `LjaDataset` the loader returns is its
+  equivalent for the slice, so there is no staging-table loader to write.
 - Learning-plan / quiz / study-strategy generation — `cluster_silos()` is the
   first LLM feature built; those are next.

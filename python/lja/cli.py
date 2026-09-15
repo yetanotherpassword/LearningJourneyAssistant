@@ -1,8 +1,16 @@
-"""Runnable pipeline: Excel -> LLM SILO clustering (cached) -> gap report.
+"""Runnable pipeline: dataset -> LLM SILO clustering (cached) -> gap report.
 
     cd python
     conda activate lja
+    # from Scott's Excel workbook (default)
     python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx
+    # from a live Moodle database (IOLG-104)
+    python -m lja.cli --source moodle
+
+The two sources produce the same LjaDataset; everything after loading is
+identical. The Excel path takes the workbook as a positional argument; the
+Moodle path opens a read-only connection from config.MOODLE_DB (env-driven,
+IOLG-105) and joins the criterion->SILO mapping CSV (--mapping).
 
 The clustering result is cached to disk (output/silo_clustering.json by
 default) because it's one LLM call whose answer doesn't change unless the
@@ -21,10 +29,33 @@ import textwrap
 from itertools import zip_longest
 from pathlib import Path
 
+from . import config
 from .data.excel_loader import load_dataset
+from .data.moodle_loader import load_dataset_from_moodle
 from .llm.factory import get_llm_client
 from .model.gap_detection import GapThresholds, compute_gaps
 from .model.silo_clustering import SiloClusteringResult, cluster_silos
+
+# Default location of the IOLG-56 criterion->SILO mapping CSV, relative to
+# python/ (where the CLI is run from).
+_DEFAULT_MAPPING = "../data-fixtures/criterion_silo_map_CSE1IOI.csv"
+
+
+def _load_moodle_dataset(mapping_path: str):
+    """Open a read-only Moodle connection and build the dataset from it.
+
+    psycopg2 is imported lazily so the Excel path -- and the whole test suite
+    that mocks the DB -- never needs the driver installed. Connection settings
+    come entirely from config.MOODLE_DB (env vars), and the caller is expected
+    to have pointed PGUSER at the least-privilege lja_reader role.
+    """
+    import psycopg2
+
+    conn = psycopg2.connect(**config.MOODLE_DB.connect_kwargs)
+    try:
+        return load_dataset_from_moodle(conn, mapping_path)
+    finally:
+        conn.close()
 
 
 def _print_table(headers: list[str], rows: list[list[str]], col_widths: list[int]) -> None:
@@ -50,8 +81,23 @@ def _print_table(headers: list[str], rows: list[list[str]], col_widths: list[int
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="LJA: SILO clustering + gap detection over Scott's Excel dataset")
-    parser.add_argument("excel_path", help="Path to the CSE_results_*.xlsx workbook")
+    parser = argparse.ArgumentParser(description="LJA: SILO clustering + gap detection over the LJA dataset")
+    parser.add_argument(
+        "excel_path",
+        nargs="?",
+        help="Path to the CSE_results_*.xlsx workbook (required for --source excel)",
+    )
+    parser.add_argument(
+        "--source",
+        choices=("excel", "moodle"),
+        default="excel",
+        help="Where to load the dataset from (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--mapping",
+        default=_DEFAULT_MAPPING,
+        help="criterion->SILO mapping CSV for --source moodle (default: %(default)s)",
+    )
     parser.add_argument(
         "--clustering-cache",
         default="output/silo_clustering.json",
@@ -95,7 +141,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    dataset = load_dataset(args.excel_path)
+    if args.source == "moodle":
+        print(f"Loading dataset from Moodle ({config.MOODLE_DB.host}:{config.MOODLE_DB.port}/"
+              f"{config.MOODLE_DB.dbname} as {config.MOODLE_DB.user}, prefix {config.MOODLE_TABLE_PREFIX!r})...")
+        dataset = _load_moodle_dataset(args.mapping)
+    else:
+        if not args.excel_path:
+            parser.error("excel_path is required when --source is excel")
+        dataset = load_dataset(args.excel_path)
     print(
         f"Loaded {len(dataset.silos)} SILOs, {len(dataset.assessments)} assessments, "
         f"{len(dataset.results)} result rows, {len(dataset.student_summaries)} students."
