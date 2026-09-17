@@ -72,8 +72,8 @@ Moodle (production path — sql/, moodle_probe.py) ─┘
 Planned in order (must-haves from the project proposal, sequenced by dependency):
 
 1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with 69 passing
-   tests.
+   → detect gaps → CSV report, running against real data with the test suite
+   green in CI.
 2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
    Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
    rendered live from `compute_gaps()`, not a hardcoded example. Still
@@ -349,12 +349,13 @@ ruff check .          # pip install ruff==0.16.4
 pytest -q             # all offline; the count is whatever CI reports
 ```
 
-> **Branch protection is a repository setting, not a file.** This workflow
-> cannot enforce itself: until someone with admin rights on the GitHub repo
-> turns on branch protection for `main` — no direct pushes, at least one
-> approving review, CI required to pass — these jobs are advisory, and a red
-> build can still be merged. That switch is the actual deliverable of this
-> work package; the YAML is just what it enforces.
+> **Branch protection on `main` is on (6 September 2026).** Every change reaches `main` only
+> through a pull request with **one approving review from someone other than the author**, all
+> three CI jobs green, and the branch up to date with `main`. It is enforced for administrators
+> too, so nobody can push directly. Verified the way the sprint plan asked: a pull request carrying
+> a deliberately failing test was blocked and its merge refused by policy (PR #11), then closed.
+> If you need to change these rules, that is a repository setting — see action A-03 in
+> `docs/meetings/actions.md` for what was set and why.
 
 ## Team & process
 
