@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ..data.excel_loader import LjaDataset
 from ..llm.base import LLMClient
+from ..llm.grounding import ReferenceCheck, validate_grounding
 
 # extra="forbid" is not just strictness -- Anthropic's structured-output
 # endpoint (output_config.format) rejects any object schema that doesn't
@@ -171,23 +172,23 @@ def _validate_coverage(result: SiloClusteringResult, dataset: LjaDataset) -> Non
     than silently under-counting a student's evidence later in gap
     detection. Retrying on this failure is cluster_silos()'s job, above;
     this function only ever checks one candidate result.
+
+    Since S4-3 this is a thin adapter over lja.llm.grounding, the shared
+    validator every generated artefact goes through. Clustering is the one
+    artefact that needs all three checks: nothing invented (unknown),
+    nothing dropped (require_complete) and nothing double-counted
+    (require_unique).
     """
-    seen: dict[str, int] = {}
-    for cluster in result.clusters:
-        for member in cluster.members:
-            key = f"{member.subject_code}:{member.silo_local_id}"
-            seen[key] = seen.get(key, 0) + 1
-
-    missing = sorted(set(dataset.silos.keys()) - set(seen.keys()))
-    duplicated = sorted(k for k, count in seen.items() if count > 1)
-    unknown = sorted(set(seen.keys()) - set(dataset.silos.keys()))
-
-    problems = []
-    if missing:
-        problems.append(f"missing from any cluster: {missing}")
-    if duplicated:
-        problems.append(f"appear in more than one cluster: {duplicated}")
-    if unknown:
-        problems.append(f"reference SILOs that don't exist in the dataset: {unknown}")
-    if problems:
-        raise ValueError("SILO clustering failed coverage validation -- " + "; ".join(problems))
+    referenced = [f"{m.subject_code}:{m.silo_local_id}" for cluster in result.clusters for m in cluster.members]
+    validate_grounding(
+        "SILO clustering",
+        [
+            ReferenceCheck(
+                kind="SILO",
+                referenced=referenced,
+                known=dataset.silos.keys(),
+                require_complete=True,
+                require_unique=True,
+            )
+        ],
+    )
