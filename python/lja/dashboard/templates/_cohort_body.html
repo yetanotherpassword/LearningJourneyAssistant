@@ -1,0 +1,145 @@
+{# Shared by index.html and cohort.html. Everything here is already computed
+   by app.py's view_model() -- this file formats, it does not aggregate. #}
+
+{% macro figure(value, suffix="") -%}
+  {%- if value is none %}&mdash;{% else %}{{ "%.2f"|format(value) }}{{ suffix }}{% endif -%}
+{%- endmacro %}
+
+<h2>Statistics</h2>
+<p class="dek">
+  Descriptive statistics over each student's average total across all subjects.
+  {% if stats.n < 2 %}
+  Spread figures need at least two students; this cohort has {{ stats.n }}.
+  {% else %}
+  Population statistics, not sample &mdash; this cohort is every student it describes, not a sample drawn from one.
+  {% endif %}
+</p>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num">{{ stats.n }}</div><div class="label">students</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.mean, "%") }}</div><div class="label">mean</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.median, "%") }}</div><div class="label">median</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.stdev) }}</div><div class="label">std deviation</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.variance) }}</div><div class="label">variance</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.minimum, "%") }}</div><div class="label">minimum</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.maximum, "%") }}</div><div class="label">maximum</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.q1, "%") }}</div><div class="label">lower quartile</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.q3, "%") }}</div><div class="label">upper quartile</div></div>
+  <div class="stat"><div class="num">{{ figure(stats.iqr) }}</div><div class="label">interquartile range</div></div>
+</div>
+
+{% if rows %}
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Distribution of average totals</h3>
+    <p class="chart-note">Fixed 0&ndash;100 bins, so two cohorts can be compared directly.</p>
+    <canvas id="distribution-chart" height="150"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Competency classifications</h3>
+    <p class="chart-note">Every competency assessed for these students, not one per student.</p>
+    <canvas id="classification-chart" height="150"></canvas>
+  </div>
+</div>
+
+<h2>Students</h2>
+<p class="dek">Click any column heading to sort by it; click again to reverse.</p>
+<table class="sortable">
+  <thead>
+    <tr>
+      <th data-sort-type="text" aria-sort="ascending">Student</th>
+      <th data-sort-type="number">Average</th>
+      <th data-sort-type="text">Band</th>
+      <th data-sort-type="number">Persistent gaps</th>
+      <th data-sort-type="number">Isolated gaps</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td data-sort-value="{{ row.student_id }}">
+        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
+          {{ row.student_id }}
+        </a>
+      </td>
+      <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
+      <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
+      <td data-sort-value="{{ row.persistent_gap_count }}">
+        {% if row.persistent_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.isolated_gap_count }}">
+        {% if row.isolated_gap_count > 0 %}
+        <span class="badge isolated-gap">{{ row.isolated_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No students in this cohort.</p>
+{% endif %}
+
+{% if rows %}
+<script>
+  const distribution = {{ distribution_data|safe }};
+  const classification = {{ classification_data|safe }};
+
+  // One colour source for the whole dashboard: read the same CSS custom
+  // properties the badges use, so a chart segment and a badge for the same
+  // classification cannot drift apart. Same technique as student.html.
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+
+  new Chart(document.getElementById("distribution-chart"), {
+    type: "bar",
+    data: {
+      labels: distribution.labels,
+      datasets: [{ label: "Students", data: distribution.values, backgroundColor: cssVar("--accent") }],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Students" } },
+        x: { title: { display: true, text: "Average total (%)" } },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+
+  const classificationColors = [
+    cssVar("--status-persistent"),
+    cssVar("--status-isolated"),
+    cssVar("--status-developing"),
+    cssVar("--status-proficient"),
+  ];
+
+  new Chart(document.getElementById("classification-chart"), {
+    type: "doughnut",
+    data: {
+      labels: classification.labels,
+      datasets: [{ data: classification.values, backgroundColor: classificationColors }],
+    },
+    options: {
+      plugins: {
+        legend: { position: "right" },
+        tooltip: {
+          callbacks: {
+            // A raw count is not traceable on its own -- say what it is a share of.
+            label: (item) => {
+              const total = classification.total || 1;
+              const pct = ((item.raw / total) * 100).toFixed(1);
+              return `${item.label}: ${item.raw} of ${classification.total} (${pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+</script>
+{% endif %}
