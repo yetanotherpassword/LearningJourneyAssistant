@@ -35,6 +35,12 @@ from .data.moodle_loader import load_dataset_from_moodle
 from .llm.factory import get_llm_client
 from .model.gap_detection import GapThresholds, compute_gaps
 from .model.silo_clustering import SiloClusteringResult, cluster_silos
+from .review import (
+    default_review_path,
+    gate_status,
+    load_or_create_reviews,
+    rework_instructions,
+)
 
 # Default location of the IOLG-56 criterion->SILO mapping CSV, relative to
 # python/ (where the CLI is run from).
@@ -118,6 +124,23 @@ def main(argv: list[str] | None = None) -> int:
              "(default: output/silo_clustering.json for --source excel, "
              "output/silo_clustering_moodle.json for --source moodle). A cache "
              "that doesn't cover the dataset's SILOs is recomputed automatically.",
+    )
+    parser.add_argument(
+        "--review-file",
+        default=None,
+        help=(
+            "Staff review decisions for the clustering. Defaults to "
+            "silo_clustering.review.json beside --clustering-cache."
+        ),
+    )
+
+    parser.add_argument(
+        "--allow-unconfirmed",
+        action="store_true",
+        help=(
+            "Explicitly allow gap generation from pending LLM clusters. "
+            "Rejected clusters are always blocked."
+        ),
     )
     parser.add_argument(
         "--refresh-clustering",
@@ -212,7 +235,47 @@ def main(argv: list[str] | None = None) -> int:
             f"Wrote clustering to {cache_path} ({len(clustering.clusters)} competencies). "
             f"mapped_by=llm, confirmed_by_staff=False -- review before trusting it."
         )
+    # Staff confirmation gate for LLM-generated competency clusters.
+    review_path = (
+        Path(args.review_file)
+        if args.review_file
+        else default_review_path(cache_path)
+    )
+    review_store = load_or_create_reviews(clustering, review_path)
+    pending_reviews, rejected_reviews = gate_status(clustering, review_store)
 
+    if rejected_reviews:
+        print(
+            f"\nERROR: {len(rejected_reviews)} competency cluster(s) have been "
+            "rejected by staff. Gap generation is blocked.",
+            file=sys.stderr,
+        )
+        for review in rejected_reviews:
+            print("\n" + rework_instructions(review), file=sys.stderr)
+        return 2
+
+    if pending_reviews and not args.allow_unconfirmed:
+        print(
+            f"\nERROR: {len(pending_reviews)} competency cluster(s) are still "
+            "pending staff confirmation. No gap report was produced.\n"
+            f"Review them with:\n"
+            f"  python -m lja.review --clustering-cache {cache_path}\n\n"
+            "For an explicit development run, rerun with --allow-unconfirmed.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if pending_reviews:
+        print(
+            f"\nWARNING: proceeding with {len(pending_reviews)} pending "
+            "LLM-generated competency cluster(s) because "
+            "--allow-unconfirmed was supplied."
+        )
+    else:
+        print(
+            f"\nStaff confirmation gate: all {len(clustering.clusters)} "
+            "competency clusters are confirmed."
+        )
     print()
     term_width = shutil.get_terminal_size(fallback=(120, 24)).columns
     competency_w, members_w = 22, 24
