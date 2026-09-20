@@ -12,16 +12,22 @@ Capstone project for CSE5IDP. Project owner: Scott Mann. No real student data
 is used anywhere in this project; all student records are synthetic or
 supplied as an anonymised, modelled dataset.
 
+![The LJA dashboard: cohort statistics, distribution of average totals, competency classifications and a sortable student list, computed live from the supplied dataset](docs/images/Dashboard_example.png)
+
+*The read-only dashboard over a pipeline run. Start it with `python -m lja.dashboard`
+and open http://127.0.0.1:8000/ — see [python/README.md](python/README.md#dashboard).*
+
 ## What it is today
 
 Extraction through gap-detection now runs end-to-end against a real supplied
-dataset. The dashboard and the generation features built on top of gap data
-(learning plans, quizzes, study strategies) don't exist yet.
+dataset, and a read-only dashboard (above) presents the results. The generation
+features built on top of gap data (learning plans, quizzes, study strategies)
+don't exist yet.
 
 | Bundle | Contents | Status |
 | --- | --- | --- |
 | [devenv/](devenv/) | One-shot Dockerised Moodle 5.2 dev environment (`bootstrap.sh`), shared config, synthetic-data seeding via `tool_generator`, `.mbz` restore path | Working |
-| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — 69 passing tests, runs end-to-end against real data** |
+| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI, read-only dashboard — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — all tests passing in CI, runs end-to-end against real data** |
 | [sql/](sql/) | Read-only extraction queries for the production Moodle path: rubric definitions, per-criterion fills, outcomes/competency attainment, cross-subject gap detection | Written, not yet wired to code — superseded for now by the Excel path below |
 | [data-fixtures/](data-fixtures/) | **The real dataset** — 150 students × 3 subjects × 11 assessments, supplied by the project owner. Plus a competency-framework import CSV and a Moodle backup used only to prove the restore mechanics | Real data in hand |
 | [docs/](docs/) | Sprint plan, trade show deck | Active |
@@ -66,8 +72,8 @@ Moodle (production path — sql/, moodle_probe.py) ─┘
 Planned in order (must-haves from the project proposal, sequenced by dependency):
 
 1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with 69 passing
-   tests.
+   → detect gaps → CSV report, running against real data with the test suite
+   green in CI.
 2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
    Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
    rendered live from `compute_gaps()`, not a hardcoded example. Still
@@ -129,9 +135,10 @@ Design rules for the abstraction, confirmed by actually building it:
   OpenAI-compatibility shim — each backend gets its native client.
 - Every clustering/generation call is grounded in structured data and the
   prompt forbids inventing SILOs, subjects, or wording that wasn't supplied
-  (anti-hallucination constraint from the proposal) — and a coverage
-  validator checks the LLM's response against the input, not just its shape,
-  because a live run caught a real model dropping data silently.
+  (anti-hallucination constraint from the proposal) — and a grounding
+  validator (`lja/llm/grounding.py`, shared by every generated artefact)
+  checks the LLM's response against the input, not just its shape, because a
+  live run caught a real model dropping data silently.
 - Model choice is per-task: this session ran the whole pipeline for free on a
   local Ollama model; student-facing generation later should use a stronger one.
 
@@ -159,6 +166,139 @@ python -m pytest tests/
 Moodle (production-path devenv) answers on `http://localhost:8081` — see
 `devenv/env.sh` for the port default and dev credentials (never reuse them
 anywhere).
+
+## macOS setup (Apple Silicon)
+
+The commands in the quick start above install Docker with Ubuntu's package
+manager. On an Apple Silicon Mac, use Docker Desktop and Miniforge instead.
+The steps below were verified on an `arm64` Mac against Moodle 5.2.2.
+
+### 1. Install and start Docker Desktop
+
+```bash
+brew install --cask docker-desktop
+open -a Docker
+```
+
+Wait until Docker Desktop reports that the engine is running, then verify it:
+
+```bash
+docker info >/dev/null 2>&1 && echo "Docker daemon: OK"
+docker compose version
+```
+
+### 2. Install Miniforge and create the Python environment
+
+Miniforge provides a native Apple Silicon Conda installation using the
+`conda-forge` channel required by `python/environment.yml`.
+
+```bash
+brew install --cask miniforge
+conda init zsh
+```
+
+Close the terminal completely, open a new terminal, then run:
+
+```bash
+cd /path/to/LearningJourneyAssistant/python
+conda env create -f environment.yml
+conda activate lja
+python --version   # expect Python 3.12.x
+python -c "import requests, pandas, openpyxl, psycopg2, dotenv, pydantic, pytest, anthropic, openai; print('All dependencies imported successfully')"
+```
+
+Create the local configuration file. It is gitignored and must never be
+committed:
+
+```bash
+cp .env.example .env
+git check-ignore .env   # should print .env
+```
+
+### 3. Bootstrap and seed Moodle
+
+With Docker Desktop running:
+
+```bash
+cd /path/to/LearningJourneyAssistant/devenv
+bash bootstrap.sh
+bash seed.sh
+open http://localhost:8081
+```
+
+The first bootstrap downloads the Moodle source and container images and can
+take about ten minutes. Log in with `admin` / `Devpass1!`; these are local
+development credentials and must not be reused elsewhere. `seed.sh` creates
+the synthetic courses `CSE1IOI`, `CSE2CWA`, and `CSE1PES`.
+
+### 4. Configure the read-only Moodle Web Service
+
+The probe uses a dedicated service account and a token scoped to exactly four
+functions. Do not generate an administrator token.
+
+1. Go to **Site administration → General → Advanced features**, enable
+   **Web services**, and save.
+2. Go to **Site administration → Server → Web services → Manage protocols**
+   and enable **REST protocol**.
+3. Under **External services**, add an enabled custom service named
+   `LJA Read Only`, with short name `lja_readonly` and **Authorised users
+   only** checked.
+4. Add these functions to the service:
+   `core_webservice_get_site_info`, `core_course_get_courses`,
+   `core_enrol_get_enrolled_users`, and
+   `gradereport_user_get_grade_items`.
+5. Under **Users → Accounts → Add a new user**, create a manual account named
+   `lja_service`. Use a unique local-development password and leave forced
+   password change disabled.
+6. Under **Users → Permissions → Define roles**, create a role named
+   `LJA Read Only`, short name `lja_reader`, assignable in the **System**
+   context. Set only these capabilities to **Allow**:
+   `webservice/rest:use`, `moodle/course:view`,
+   `moodle/course:viewparticipants`, `moodle/grade:viewall`,
+   `gradereport/user:view`, and `moodle/user:viewalldetails`.
+7. Assign the `LJA Read Only` system role to `lja_service` and add that user to
+   the external service's **Authorised users** list.
+8. Under **Server → Web services → Manage tokens**, create a token for
+   `lja_service` and the `LJA Read Only` service.
+
+Put the token in `python/.env`; do not paste it into documentation, chat, or a
+commit:
+
+```dotenv
+MOODLE_URL=http://localhost:8081
+MOODLE_TOKEN=<generated-token>
+```
+
+### 5. Verify the Moodle connection
+
+```bash
+cd /path/to/LearningJourneyAssistant/python
+conda activate lja
+python moodle_probe.py
+```
+
+A successful run connects as `LJA Service`, reports four authorised
+functions, lists the three seeded courses, and prints grade items for several
+users. Grades of `None` and `feedback=no` are expected at this point because
+`seed.sh` creates courses, users, and activities but does not generate marks,
+feedback, or rubric fills.
+
+### Restart Moodle after Docker Desktop stops
+
+If Docker Desktop exits or restarts, all Moodle containers can appear as
+`Exited (255)`. Start the existing stack without rerunning `bootstrap.sh` or
+`seed.sh`:
+
+```bash
+source /path/to/LearningJourneyAssistant/devenv/env.sh
+cd "$MOODLE_DOCKER_WORKDIR"
+bin/moodle-docker-compose up -d
+bin/moodle-docker-wait-for-db
+bin/moodle-docker-compose ps
+```
+
+The Moodle installation, service account, token, and seeded courses are stored
+in Docker volumes and should still be present after the containers restart.
 
 ## Repository layout
 
@@ -206,15 +346,16 @@ Run the same checks locally before opening a PR:
 ```bash
 cd python
 ruff check .          # pip install ruff==0.16.4
-pytest -q             # 69 tests
+pytest -q             # all offline; the count is whatever CI reports
 ```
 
-> **Branch protection is a repository setting, not a file.** This workflow
-> cannot enforce itself: until someone with admin rights on the GitHub repo
-> turns on branch protection for `main` — no direct pushes, at least one
-> approving review, CI required to pass — these jobs are advisory, and a red
-> build can still be merged. That switch is the actual deliverable of this
-> work package; the YAML is just what it enforces.
+> **Branch protection on `main` is on (6 September 2026).** Every change reaches `main` only
+> through a pull request with **one approving review from someone other than the author**, all
+> three CI jobs green, and the branch up to date with `main`. It is enforced for administrators
+> too, so nobody can push directly. Verified the way the sprint plan asked: a pull request carrying
+> a deliberately failing test was blocked and its merge refused by policy (PR #11), then closed.
+> If you need to change these rules, that is a repository setting — see action A-03 in
+> `docs/meetings/actions.md` for what was set and why.
 
 ## Team & process
 
