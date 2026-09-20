@@ -8,7 +8,7 @@ extraction query) must contain neither a literal mdl_ nor an unreplaced
 from __future__ import annotations
 
 from lja import config
-from lja.data.sql import PREFIX_PLACEHOLDER, load_extraction_sql
+from lja.data.sql import PREFIX_PLACEHOLDER, extract_query, load_extraction_sql, load_query_2
 
 
 def _query2(sql: str) -> str:
@@ -48,3 +48,22 @@ def test_substituted_query2_has_no_literal_prefix_or_placeholder() -> None:
     # Sanity: substitution really reached Query 2's body, not just the header.
     assert "m_gradingform_rubric_fillings" in query2
     assert "m_assign_grades" in query2
+
+
+def test_extract_query_ignores_semicolons_in_line_comments() -> None:
+    # Query 4 has a ';' inside a -- comment ("several subjects; this fans out
+    # deliberately") before its real terminator. A naive index(';') truncates
+    # the statement and drops the LEFT JOIN course, so `c` goes out of scope.
+    sql = load_extraction_sql(prefix="m_")
+    query4 = extract_query(sql, "QUERY 4")
+    assert query4.rstrip().endswith(";")
+    # The join that the truncation used to drop must be present.
+    assert "m_course" in query4
+    assert "linked_subject" in query4
+
+
+def test_load_query_2_is_a_single_complete_statement() -> None:
+    query2 = load_query_2(prefix="m_")
+    assert query2.rstrip().endswith(";")
+    # Exactly one statement -- only the terminating semicolon, none mid-body.
+    assert query2.count(";") == 1

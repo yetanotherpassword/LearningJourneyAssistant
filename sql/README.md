@@ -3,14 +3,21 @@
 Read-only extraction queries for a self-hosted Moodle instance, plus the schema
 for the assistant's own criterion-to-outcome mapping table.
 
-**Status: production path, not yet wired to code.** The project owner
-supplied a ready-extracted Excel workbook on 2026-08-11
-(`data-fixtures/CSE_results_150_students_3_Subjects.xlsx`) that this queries'
-`lja_criterion_score` output would otherwise have to produce — see
-`python/README.md`. That Excel path is what `python/lja` actually runs
-against today. These queries remain the plan for when the system reads a
-live Moodle instance directly instead of a supplied export; nothing here is
-wasted, it just isn't on the critical path this sprint.
+**Status: production path, now wired to code (Query 2).** As of IOLG-104,
+`python/lja/data/moodle_loader.py` runs Query 2 against a live Moodle
+Postgres and builds the same `LjaDataset` the Excel path produces, so
+`python -m lja.cli --source moodle` yields clusters and a gap report with no
+change to the model code. `lja/data/sql.py` is the single place that reads
+this file, substitutes the table prefix (`{prefix}`, see below), and slices
+out an individual query. The project owner also supplied a ready-extracted
+Excel workbook on 2026-08-11
+(`data-fixtures/CSE_results_150_students_3_Subjects.xlsx`); that Excel path
+(`--source excel`, the default) is the other way in. The remaining queries
+(1, 3–6) are documentation/plan, not yet called from code.
+
+The `lja_criterion_score` table below is **not materialised**: the in-memory
+`LjaDataset` the loader returns is its equivalent for the vertical slice, so
+nothing writes a staging table.
 
 ## Contents
 
@@ -102,3 +109,28 @@ data-fixtures README checklist.
   supplied dataset; whichever returns rows tells us which one La Trobe actually
   uses in production, and that should drive the architecture. If neither
   returns rows, the bridging table is not a workaround — it is the product.
+
+  **Resolved (IOLG-87, 2026-09-15, against the devenv seeded with the IOLG-56
+  rubric fixture):** both queries return **zero rows**.
+  - **Query 3 (legacy Outcomes):** 0 rows. `$CFG->enableoutcomes` is off and
+    no outcomes are attached to activities (`m_grade_outcomes` is empty).
+  - **Query 4 (competency framework):** 0 rows. All competency tables are
+    empty (`m_competency`, `m_competency_framework`, `m_competency_usercomp`,
+    `m_competency_coursecomp` = 0). Critically, Query 4 reads *from*
+    `competency_usercomp` — per-user proficiency ratings — and **importing a
+    framework does not create those**; a marker would have to rate each student
+    against each competency, which nothing in the LJA marking workflow does
+    (marking happens through rubrics). So even after importing
+    `data-fixtures/competency_framework_cse5idp.csv` via
+    `admin/tool/lpimportcsv`, Query 4 would still return 0 rows until
+    per-student competency proficiency exists.
+
+  **Conclusion:** neither built-in attainment mechanism carries data for our
+  subject. The rubric-fillings path (Query 2) joined to the staff-editable
+  `criterion_silo_map` CSV **is the product**, not a workaround — which is why
+  `moodle_loader.py` builds the dataset from Query 2 + the mapping CSV rather
+  than from Outcomes or competency proficiency.
+
+  A `{prefix}`-inside-a-line-comment bug in `sql.py`'s query slicer surfaced
+  while running Query 4 here (a `;` in a `-- comment` truncated the statement
+  and dropped a `LEFT JOIN`); fixed in IOLG-104 with a regression test.
