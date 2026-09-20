@@ -7,10 +7,61 @@ directly, so there is exactly one place that knows the variable names.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# --- Moodle direct-database access (sql/ bundle) ---------------------------
+# Moodle's documented default table prefix is mdl_, but our own devenv/ Docker
+# install uses m_ (set by moodle-docker's config template, confirmed against the
+# live devenv Postgres -- see sql/README.md). So the prefix is configuration,
+# not a string hardcoded across the extraction SQL: lja/data/sql.py substitutes
+# this into the {prefix} placeholders in sql/moodle_attainment_extraction.sql.
+# Check $CFG->prefix on the target instance if unsure.
+MOODLE_TABLE_PREFIX = os.environ.get("LJA_MOODLE_TABLE_PREFIX", "mdl_")
+
+
+@dataclass(frozen=True)
+class MoodleDbSettings:
+    """Connection settings for the read-only Moodle Postgres role.
+
+    Read from the standard libpq PG* variables (not LJA_-prefixed) so the same
+    values work with psql, pg_dump and any other libpq client without
+    translation. Connect as the least-privilege lja_reader role, never the
+    Moodle application user -- see sql/README.md.
+    """
+
+    host: str
+    port: int
+    dbname: str
+    user: str
+    password: str
+
+    @property
+    def connect_kwargs(self) -> dict[str, object]:
+        """Keyword form for psycopg.connect(**settings.connect_kwargs) -- a dict
+        rather than a DSN string so a password with spaces or quotes needs no
+        escaping.
+        """
+        return {
+            "host": self.host,
+            "port": self.port,
+            "dbname": self.dbname,
+            "user": self.user,
+            "password": self.password,
+        }
+
+
+# One instance, read once at import like the rest of this module.
+MOODLE_DB = MoodleDbSettings(
+    host=os.environ.get("PGHOST", "localhost"),
+    port=int(os.environ.get("PGPORT", "5432")),
+    dbname=os.environ.get("PGDATABASE", "moodle"),
+    user=os.environ.get("PGUSER", "lja_reader"),
+    password=os.environ.get("PGPASSWORD", ""),
+)
 
 # "anthropic" or "openai_compatible". Defaults to the free/local path so a
 # fresh checkout works without an API key -- see python/README.md.
