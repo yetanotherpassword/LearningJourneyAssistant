@@ -1,10 +1,25 @@
 -- =============================================================================
 -- Learning Journey Assistant — Moodle attainment extraction (PostgreSQL)
 --
--- Target:  Moodle 5.2.x, default table prefix `mdl_`, PostgreSQL backend.
+-- Target:  Moodle 5.2.x, PostgreSQL backend.
 -- Purpose: pull the per-criterion rubric detail and per-outcome attainment that
 --          the Web Services API does not fully expose, for use by the
 --          competency model and gap-detection layer.
+--
+-- TABLE PREFIX:  every table name below is written as {prefix}tablename, not a
+--          hardcoded prefix, because Moodle's prefix is configuration and we
+--          have already seen it vary between our own two environments (Moodle's
+--          documented default is mdl_, but our devenv/ Docker install uses m_).
+--          The Python loader substitutes it from LJA_MOODLE_TABLE_PREFIX via
+--          lja.data.sql.load_extraction_sql(); see sql/README.md and IOLG-105.
+--
+--          To run a query by hand, substitute the prefix first. psql's own
+--          :var interpolation can't be used here because a variable can't abut
+--          the rest of an identifier ({prefix}user would be read as one name),
+--          so preprocess with sed and pipe into psql:
+--
+--            sed 's/{prefix}/mdl_/g' moodle_attainment_extraction.sql | psql "$DSN"
+--            sed 's/{prefix}/m_/g'   moodle_attainment_extraction.sql | psql "$DSN"
 --
 -- SAFETY:  every statement here is read-only. Never write to Moodle tables
 --          directly — grade aggregation, event triggers and cache invalidation
@@ -20,7 +35,8 @@
 --   ALTER DEFAULT PRIVILEGES IN SCHEMA public
 --       GRANT SELECT ON TABLES TO lja_reader;
 --
--- If your instance uses a different prefix, check $CFG->prefix in config.php.
+-- If you are unsure which prefix an instance uses, check $CFG->prefix in its
+-- config.php before running anything here.
 -- =============================================================================
 
 
@@ -42,7 +58,7 @@
 -- Always filter on status = 1 unless you deliberately want grading history.
 --
 -- grading_instances.itemid is NOT a user id. For assignments it is
--- mdl_assign_grades.id — the grade record — which is where userid lives.
+-- {prefix}assign_grades.id — the grade record — which is where userid lives.
 -- This is the join people most often get wrong.
 --
 -- grading_areas.contextid points at a CONTEXT_MODULE row (contextlevel = 70),
@@ -70,16 +86,16 @@ SELECT
     rl.score                                      AS level_score,
     rl.definition                                 AS level_descriptor,
     MAX(rl.score) OVER (PARTITION BY rc.id)       AS criterion_max_score
-FROM mdl_gradingform_rubric_criteria rc
-JOIN mdl_gradingform_rubric_levels   rl  ON rl.criterionid = rc.id
-JOIN mdl_grading_definitions         gd  ON gd.id          = rc.definitionid
-JOIN mdl_grading_areas               ga  ON ga.id          = gd.areaid
-JOIN mdl_context                     ctx ON ctx.id          = ga.contextid
+FROM {prefix}gradingform_rubric_criteria rc
+JOIN {prefix}gradingform_rubric_levels   rl  ON rl.criterionid = rc.id
+JOIN {prefix}grading_definitions         gd  ON gd.id          = rc.definitionid
+JOIN {prefix}grading_areas               ga  ON ga.id          = gd.areaid
+JOIN {prefix}context                     ctx ON ctx.id          = ga.contextid
                                         AND ctx.contextlevel = 70
-JOIN mdl_course_modules              cm  ON cm.id          = ctx.instanceid
-JOIN mdl_modules                     m   ON m.id           = cm.module
-JOIN mdl_assign                      a   ON a.id           = cm.instance
-JOIN mdl_course                      c   ON c.id           = cm.course
+JOIN {prefix}course_modules              cm  ON cm.id          = ctx.instanceid
+JOIN {prefix}modules                     m   ON m.id           = cm.module
+JOIN {prefix}assign                      a   ON a.id           = cm.instance
+JOIN {prefix}course                      c   ON c.id           = cm.course
 WHERE gd.method = 'rubric'
   AND m.name    = 'assign'
 ORDER BY c.shortname, a.name, rc.sortorder, rl.score;
@@ -119,29 +135,29 @@ SELECT
     a.grade                                  AS assessment_max_grade,
     to_timestamp(gi.timemodified)            AS graded_at,
     grader.id                                AS grader_user_id
-FROM mdl_gradingform_rubric_fillings rf
-JOIN mdl_grading_instances           gi     ON gi.id           = rf.instanceid
-JOIN mdl_gradingform_rubric_criteria rc     ON rc.id           = rf.criterionid
+FROM {prefix}gradingform_rubric_fillings rf
+JOIN {prefix}grading_instances           gi     ON gi.id           = rf.instanceid
+JOIN {prefix}gradingform_rubric_criteria rc     ON rc.id           = rf.criterionid
 -- LEFT JOIN: a filling can exist with levelid NULL if the marker left a remark
 -- without selecting a level. Those rows matter — they are feedback with no mark.
-LEFT JOIN mdl_gradingform_rubric_levels rl  ON rl.id           = rf.levelid
-JOIN mdl_grading_definitions         gd     ON gd.id           = gi.definitionid
-JOIN mdl_grading_areas               ga     ON ga.id           = gd.areaid
-JOIN mdl_context                     ctx    ON ctx.id          = ga.contextid
+LEFT JOIN {prefix}gradingform_rubric_levels rl  ON rl.id           = rf.levelid
+JOIN {prefix}grading_definitions         gd     ON gd.id           = gi.definitionid
+JOIN {prefix}grading_areas               ga     ON ga.id           = gd.areaid
+JOIN {prefix}context                     ctx    ON ctx.id          = ga.contextid
                                            AND ctx.contextlevel = 70
-JOIN mdl_course_modules              cm     ON cm.id           = ctx.instanceid
-JOIN mdl_modules                     m      ON m.id            = cm.module
+JOIN {prefix}course_modules              cm     ON cm.id           = ctx.instanceid
+JOIN {prefix}modules                     m      ON m.id            = cm.module
                                            AND m.name          = 'assign'
-JOIN mdl_assign                      a      ON a.id            = cm.instance
-JOIN mdl_assign_grades               ag     ON ag.id           = gi.itemid
+JOIN {prefix}assign                      a      ON a.id            = cm.instance
+JOIN {prefix}assign_grades               ag     ON ag.id           = gi.itemid
                                            AND ag.assignment   = a.id
-JOIN mdl_user                        u      ON u.id            = ag.userid
-JOIN mdl_user                        grader ON grader.id        = gi.raterid
-JOIN mdl_course                      c      ON c.id            = cm.course
+JOIN {prefix}user                        u      ON u.id            = ag.userid
+JOIN {prefix}user                        grader ON grader.id        = gi.raterid
+JOIN {prefix}course                      c      ON c.id            = cm.course
 -- Criterion ceiling, computed once per criterion rather than per row.
 CROSS JOIN LATERAL (
     SELECT MAX(score) AS max_score
-    FROM mdl_gradingform_rubric_levels
+    FROM {prefix}gradingform_rubric_levels
     WHERE criterionid = rc.id
 ) lvl
 WHERE gi.status = 1          -- ACTIVE grading only
@@ -173,12 +189,12 @@ SELECT
     s.scale                             AS scale_values,   -- comma-separated
     gg.feedback                         AS outcome_feedback,
     to_timestamp(gg.timemodified)       AS scored_at
-FROM mdl_grade_items    gi
-JOIN mdl_grade_outcomes o  ON o.id  = gi.outcomeid
-JOIN mdl_grade_grades   gg ON gg.itemid = gi.id
-JOIN mdl_user           u  ON u.id  = gg.userid
-JOIN mdl_course         c  ON c.id  = gi.courseid
-LEFT JOIN mdl_scale     s  ON s.id  = gi.scaleid
+FROM {prefix}grade_items    gi
+JOIN {prefix}grade_outcomes o  ON o.id  = gi.outcomeid
+JOIN {prefix}grade_grades   gg ON gg.itemid = gi.id
+JOIN {prefix}user           u  ON u.id  = gg.userid
+JOIN {prefix}course         c  ON c.id  = gi.courseid
+LEFT JOIN {prefix}scale     s  ON s.id  = gi.scaleid
 WHERE gi.outcomeid IS NOT NULL
   AND gg.finalgrade IS NOT NULL
   AND u.deleted = 0
@@ -209,13 +225,13 @@ SELECT
     uc.status                           AS review_status,
     c.shortname                         AS linked_subject,
     to_timestamp(uc.timemodified)       AS rated_at
-FROM mdl_competency_usercomp   uc
-JOIN mdl_competency            comp ON comp.id = uc.competencyid
-JOIN mdl_competency_framework  f    ON f.id    = comp.competencyframeworkid
-JOIN mdl_user                  u    ON u.id    = uc.userid
+FROM {prefix}competency_usercomp   uc
+JOIN {prefix}competency            comp ON comp.id = uc.competencyid
+JOIN {prefix}competency_framework  f    ON f.id    = comp.competencyframeworkid
+JOIN {prefix}user                  u    ON u.id    = uc.userid
 -- A competency can be linked to several subjects; this fans out deliberately.
-LEFT JOIN mdl_competency_coursecomp cc ON cc.competencyid = comp.id
-LEFT JOIN mdl_course                c  ON c.id            = cc.courseid
+LEFT JOIN {prefix}competency_coursecomp cc ON cc.competencyid = comp.id
+LEFT JOIN {prefix}course                c  ON c.id            = cc.courseid
 WHERE u.deleted = 0
 ORDER BY u.id, f.shortname, comp.path;
 
@@ -237,11 +253,11 @@ SELECT
     comp.shortname         AS competency,
     mc.ruleoutcome         AS completion_rule   -- 0 none, 1 evidence,
                                                 -- 2 recommend, 3 complete
-FROM mdl_competency_modulecomp mc
-JOIN mdl_competency      comp ON comp.id = mc.competencyid
-JOIN mdl_course_modules  cm   ON cm.id   = mc.cmid
-JOIN mdl_modules         m    ON m.id    = cm.module
-JOIN mdl_course          c    ON c.id    = cm.course
+FROM {prefix}competency_modulecomp mc
+JOIN {prefix}competency      comp ON comp.id = mc.competencyid
+JOIN {prefix}course_modules  cm   ON cm.id   = mc.cmid
+JOIN {prefix}modules         m    ON m.id    = cm.module
+JOIN {prefix}course          c    ON c.id    = cm.course
 ORDER BY c.shortname, cm.id;
 
 

@@ -12,17 +12,24 @@ Capstone project for CSE5IDP. Project owner: Scott Mann. No real student data
 is used anywhere in this project; all student records are synthetic or
 supplied as an anonymised, modelled dataset.
 
+![The LJA dashboard: cohort statistics, distribution of average totals, competency classifications and a sortable student list, computed live from the supplied dataset](docs/images/Dashboard_example.png)
+
+*The read-only dashboard over a pipeline run. Start it with `python -m lja.dashboard`
+and open http://127.0.0.1:8000/ — see [python/README.md](python/README.md#dashboard).*
+
 ## What it is today
 
 Extraction through gap-detection now runs end-to-end against a real supplied
-dataset, and the first generation feature — a per-student learning plan,
-grounding-validated against its input — runs on top of it. The other
-generation features (quizzes, study strategies) don't exist yet.
+Extraction through gap-detection now runs end-to-end against a real supplied
+dataset, and a read-only dashboard (above) presents the results. The first
+generation feature — a per-student learning plan, grounding-validated against
+its input — also runs on top of the gap data. The other generation features
+(quizzes, study strategies) don't exist yet.
 
 | Bundle | Contents | Status |
 | --- | --- | --- |
 | [devenv/](devenv/) | One-shot Dockerised Moodle 5.2 dev environment (`bootstrap.sh`), shared config, synthetic-data seeding via `tool_generator`, `.mbz` restore path | Working |
-| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — 69 passing tests, runs end-to-end against real data** |
+| [python/](python/) | `lja/` package: Excel loader, provider-agnostic LLM layer, LLM-driven SILO clustering, gap detection, CLI, read-only dashboard — plus `moodle_probe.py`, the Web Services spike for the production Moodle path | **Working — all tests passing in CI, runs end-to-end against real data** |
 | [sql/](sql/) | Read-only extraction queries for the production Moodle path: rubric definitions, per-criterion fills, outcomes/competency attainment, cross-subject gap detection | Written, not yet wired to code — superseded for now by the Excel path below |
 | [data-fixtures/](data-fixtures/) | **The real dataset** — 150 students × 3 subjects × 11 assessments, supplied by the project owner. Plus a competency-framework import CSV and a Moodle backup used only to prove the restore mechanics | Real data in hand |
 | [docs/](docs/) | Sprint plan, trade show deck | Active |
@@ -67,8 +74,8 @@ Moodle (production path — sql/, moodle_probe.py) ─┘
 Planned in order (must-haves from the project proposal, sequenced by dependency):
 
 1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with 69 passing
-   tests.
+   → detect gaps → CSV report, running against real data with the test suite
+   green in CI.
 2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
    Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
    rendered live from `compute_gaps()`, not a hardcoded example. Still
@@ -345,15 +352,16 @@ Run the same checks locally before opening a PR:
 ```bash
 cd python
 ruff check .          # pip install ruff==0.16.4
-pytest -q             # 69 tests
+pytest -q             # all offline; the count is whatever CI reports
 ```
 
-> **Branch protection is a repository setting, not a file.** This workflow
-> cannot enforce itself: until someone with admin rights on the GitHub repo
-> turns on branch protection for `main` — no direct pushes, at least one
-> approving review, CI required to pass — these jobs are advisory, and a red
-> build can still be merged. That switch is the actual deliverable of this
-> work package; the YAML is just what it enforces.
+> **Branch protection on `main` is on (6 September 2026).** Every change reaches `main` only
+> through a pull request with **one approving review from someone other than the author**, all
+> three CI jobs green, and the branch up to date with `main`. It is enforced for administrators
+> too, so nobody can push directly. Verified the way the sprint plan asked: a pull request carrying
+> a deliberately failing test was blocked and its merge refused by policy (PR #11), then closed.
+> If you need to change these rules, that is a repository setting — see action A-03 in
+> `docs/meetings/actions.md` for what was set and why.
 
 ## Team & process
 

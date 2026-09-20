@@ -1,0 +1,4 @@
+subject_code,assessment_name,criterion_text,silo_key,weight
+CSE1IOI,Assignment 1,Problem decomposition and algorithm design,CSE1IOI:SILO1,1.0
+CSE1IOI,Assignment 1,Correct implementation and testing,CSE1IOI:SILO2,1.0
+CSE1IOI,Assignment 1,Code quality and documentation,CSE1IOI:SILO3,1.0
