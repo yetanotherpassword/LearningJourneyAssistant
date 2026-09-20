@@ -80,6 +80,19 @@ def _print_table(headers: list[str], rows: list[list[str]], col_widths: list[int
         print(hline())
 
 
+def uncovered_silos(clustering: SiloClusteringResult, dataset) -> set[str]:
+    """SILO keys ('SUBJECT:SILOn') in the dataset that the clustering omits.
+
+    A cached clustering is only usable if this is empty: gap detection needs a
+    competency for every SILO in the dataset, so a cache that predates the
+    dataset's SILOs (e.g. one left from a different --source) must be recomputed
+    rather than loaded. Kept pure and separate so the rule is unit-tested
+    without standing up the whole pipeline.
+    """
+    covered = {f"{m.subject_code}:{m.silo_local_id}" for c in clustering.clusters for m in c.members}
+    return set(dataset.silos) - covered
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="LJA: SILO clustering + gap detection over the LJA dataset")
     parser.add_argument(
@@ -100,8 +113,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--clustering-cache",
-        default="output/silo_clustering.json",
-        help="Where the LLM's SILO-to-competency clustering is cached (default: %(default)s)",
+        default=None,
+        help="Where the LLM's SILO-to-competency clustering is cached "
+             "(default: output/silo_clustering.json for --source excel, "
+             "output/silo_clustering_moodle.json for --source moodle). A cache "
+             "that doesn't cover the dataset's SILOs is recomputed automatically.",
     )
     parser.add_argument(
         "--refresh-clustering",
@@ -154,11 +170,37 @@ def main(argv: list[str] | None = None) -> int:
         f"{len(dataset.results)} result rows, {len(dataset.student_summaries)} students."
     )
 
-    cache_path = Path(args.clustering_cache)
-    if cache_path.exists() and not args.refresh_clustering:
-        clustering = SiloClusteringResult.model_validate_json(cache_path.read_text())
-        print(f"Loaded cached SILO clustering from {cache_path} ({len(clustering.clusters)} competencies).")
+    # Default cache path is source-aware so an Excel run and a Moodle run don't
+    # clobber each other's clustering (their SILO sets differ). The Excel
+    # default stays output/silo_clustering.json -- the dashboard reads that
+    # exact path (config.DASHBOARD_CLUSTERING_CACHE).
+    if args.clustering_cache is not None:
+        cache_path = Path(args.clustering_cache)
+    elif args.source == "moodle":
+        cache_path = Path("output/silo_clustering_moodle.json")
     else:
+        cache_path = Path("output/silo_clustering.json")
+
+    clustering = None
+    if cache_path.exists() and not args.refresh_clustering:
+        cached = SiloClusteringResult.model_validate_json(cache_path.read_text())
+        # A cache is only usable if it covers this dataset's SILOs. Otherwise it
+        # is stale (e.g. left from a different --source) and compute_gaps would
+        # fail on the first unmapped SILO. The cache exists to skip an LLM call
+        # when the SILOs are unchanged, per this module's docstring -- when they
+        # have changed, recomputing is the correct thing, not an error.
+        missing = uncovered_silos(cached, dataset)
+        if missing:
+            print(
+                f"Cached clustering at {cache_path} does not cover "
+                f"{len(missing)} of this dataset's SILOs (e.g. {sorted(missing)[0]}); "
+                f"recomputing. Pass --clustering-cache to keep separate caches."
+            )
+        else:
+            clustering = cached
+            print(f"Loaded cached SILO clustering from {cache_path} ({len(clustering.clusters)} competencies).")
+
+    if clustering is None:
         client = get_llm_client()
         print(f"LLM: {client.describe()}")
         print("Calling the LLM to semantically cluster SILOs across subjects...")

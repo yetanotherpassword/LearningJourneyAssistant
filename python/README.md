@@ -109,16 +109,19 @@ never opens a connection itself as the application user.
    `MOODLE_DOCKER_DB_PORT` (see `devenv/README.md`) or forward it, and use `m_`
    for the prefix — confirm with `SELECT current_setting` / `$CFG->prefix` if
    unsure.
-3. **Run the pipeline.** The Moodle dataset for one subject has only a handful
-   of SILOs, so its clustering differs from the Excel one; give it a separate
-   cache and refresh it:
+3. **Run the pipeline:**
 
    ```bash
-   python -m lja.cli --source moodle --refresh-clustering \
-     --clustering-cache output/silo_clustering_moodle.json \
-     --clusters-out output/clusters_moodle.csv \
-     --gaps-out output/gap_report_moodle.csv
+   python -m lja.cli --source moodle
    ```
+
+   That's the whole command — it produces `output/clusters.csv` and
+   `output/gap_report.csv` for the seeded subject. The clustering cache is
+   source-aware (Moodle defaults to `output/silo_clustering_moodle.json`, Excel
+   to `output/silo_clustering.json`) so the two paths don't clobber each other,
+   and a cache that doesn't cover the current dataset's SILOs is recomputed
+   automatically rather than failing gap detection. Override with
+   `--clustering-cache`, `--clusters-out`, `--gaps-out` as needed.
 
    `--mapping` defaults to `../data-fixtures/criterion_silo_map_CSE1IOI.csv`;
    point it elsewhere for another subject. Any Moodle criterion with no row in
