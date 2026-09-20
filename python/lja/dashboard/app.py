@@ -40,7 +40,12 @@ _CLASSIFICATION_ORDER = ["persistent gap", "isolated gap", "developing", "profic
 _AT_RISK_CLASSIFICATIONS = {"persistent gap", "isolated gap"}
 
 
-def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloClusteringResult) -> FastAPI:
+def create_app(
+    dataset: LjaDataset,
+    gaps: list[CompetencyGap],
+    clustering: SiloClusteringResult,
+    review_warning: str | None = None,
+) -> FastAPI:
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
@@ -70,6 +75,7 @@ def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloC
                 "rows": rows,
                 "student_count": len(rows),
                 "students_with_persistent_gaps": sum(1 for r in rows if r["persistent_gap_count"] > 0),
+                "review_warning": review_warning,
             },
         )
 
@@ -115,7 +121,12 @@ def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloC
         return templates.TemplateResponse(
             request,
             "student.html",
-            {"summary": summary, "gap_details": gap_details, "chart_data": chart_data},
+            {
+                "summary": summary,
+                "gap_details": gap_details,
+                "chart_data": chart_data,
+                "review_warning": review_warning,
+            },
         )
 
     return app

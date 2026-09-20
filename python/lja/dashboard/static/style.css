@@ -229,3 +229,17 @@ td a.at-risk { color: var(--status-persistent); }
   background: transparent;
   color: var(--muted);
 }
+
+.ai-review-warning {
+  max-width: 1000px;
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--status-isolated);
+  border-radius: 8px;
+  background: var(--status-isolated-bg);
+  color: var(--ink);
+}
+
+.ai-review-warning strong {
+  color: var(--status-isolated);
+}

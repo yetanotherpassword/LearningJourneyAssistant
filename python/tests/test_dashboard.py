@@ -222,3 +222,44 @@ def test_student_detail_never_flags_future_subjects_for_a_non_gap() -> None:
     body = _client(dataset, gaps).get("/student/STU0001").text
     assert "Flag for intervention" not in body
     assert "No other subject in this dataset" not in body
+
+
+def test_dashboard_shows_pending_ai_review_warning() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning="2 AI-generated SILO cluster(s) are still awaiting staff review.",
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" in body
+    assert "still awaiting staff review" in body
+
+
+def test_dashboard_shows_rejected_ai_review_warning() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning="1 AI-generated SILO cluster(s) have been rejected by staff.",
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" in body
+    assert "have been rejected by staff" in body
+
+
+def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning=None,
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" not in body
