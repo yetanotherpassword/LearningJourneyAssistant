@@ -107,7 +107,12 @@ _COHORTS: tuple[_Cohort, ...] = (
 _COHORTS_BY_KEY = {cohort.key: cohort for cohort in _COHORTS}
 
 
-def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloClusteringResult) -> FastAPI:
+def create_app(
+    dataset: LjaDataset,
+    gaps: list[CompetencyGap],
+    clustering: SiloClusteringResult,
+    review_warning: str | None = None,
+) -> FastAPI:
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
@@ -151,6 +156,9 @@ def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloC
 
         return {
             "cohort": cohort,
+            # Banner from base.html (IOLG-116): the same warning on every
+            # page, sourced once here rather than per route.
+            "review_warning": review_warning,
             "rows": rows,
             "stats": summarise(averages),
             # Charts read their colours from the CSS custom properties at
@@ -232,7 +240,12 @@ def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloC
         return templates.TemplateResponse(
             request,
             "student.html",
-            {"summary": summary, "gap_details": gap_details, "chart_data": chart_data},
+            {
+                "summary": summary,
+                "gap_details": gap_details,
+                "chart_data": chart_data,
+                "review_warning": review_warning,
+            },
         )
 
     return app

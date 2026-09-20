@@ -18,6 +18,11 @@
   <a href="/">LJA Dashboard</a>
   <span class="tag">gap report &middot; read-only</span>
 </header>
+{% if review_warning %}
+<div class="ai-review-warning" role="alert">
+  <strong>AI review warning:</strong> {{ review_warning }}
+</div>
+{% endif %}
 <main>
 {% block content %}{% endblock %}
 </main>
