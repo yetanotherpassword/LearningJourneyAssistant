@@ -24,6 +24,7 @@ from .llm.grounding import GroundingError
 from .model.gap_detection import GapThresholds, compute_gaps
 from .model.learning_plan import build_plan_context, generate_learning_plan, render_markdown
 from .model.silo_clustering import SiloClusteringResult
+from .review import current_reviews, default_review_path, load_or_create_reviews
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,6 +35,14 @@ def main(argv: list[str] | None = None) -> int:
         "--clustering-cache",
         default="output/silo_clustering.json",
         help="The SILO clustering written by lja.cli (default: %(default)s). Required; never regenerated here",
+    )
+    parser.add_argument(
+        "--review-file",
+        default=None,
+        help=(
+            "Staff-review JSON file. Defaults to a .review.json file beside "
+            "--clustering-cache."
+        ),
     )
     parser.add_argument(
         "--out-dir",
@@ -61,6 +70,45 @@ def main(argv: list[str] | None = None) -> int:
     dataset = load_dataset(args.excel_path)
     clustering = SiloClusteringResult.model_validate_json(cache_path.read_text())
     gaps = compute_gaps(dataset, clustering, thresholds=GapThresholds())
+
+    # IOLG-108: learning plans must respect the staff review decisions
+    # introduced by IOLG-82. Only clusters used by this student's
+    # competency evidence are relevant to this plan.
+    review_path = (
+        Path(args.review_file)
+        if args.review_file
+        else default_review_path(cache_path)
+    )
+    review_store = load_or_create_reviews(clustering, review_path)
+
+    student_competencies = {
+        gap.competency_label
+        for gap in gaps
+        if gap.student_id == args.student_id
+    }
+    relevant_reviews = [
+        review
+        for review in current_reviews(clustering, review_store)
+        if review.competency_label in student_competencies
+    ]
+
+    rejected = [review for review in relevant_reviews if review.state == "rejected"]
+    pending = [review for review in relevant_reviews if review.state == "pending"]
+
+    if rejected:
+        labels = ", ".join(review.competency_label for review in rejected)
+        print(
+            f"Cannot generate learning plan: rejected clustering used by this student: {labels}.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if pending:
+        labels = ", ".join(review.competency_label for review in pending)
+        print(
+            f"WARNING: learning plan uses unreviewed clustering: {labels}.",
+            file=sys.stderr,
+        )
 
     try:
         context = build_plan_context(dataset, clustering, gaps, args.student_id)
