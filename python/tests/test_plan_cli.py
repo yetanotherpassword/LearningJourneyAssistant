@@ -38,7 +38,11 @@ def _setup_common(monkeypatch, tmp_path, state):
         "model_validate_json",
         lambda _text: clustering,
     )
-    monkeypatch.setattr(plan_module, "load_dataset", lambda _path: dataset)
+    monkeypatch.setattr(
+        plan_module,
+        "load_dataset_for_source",
+        lambda *_args, **_kwargs: dataset,
+    )
     monkeypatch.setattr(plan_module, "compute_gaps", lambda *_args, **_kwargs: gaps)
     monkeypatch.setattr(
         plan_module,
@@ -122,3 +126,19 @@ def test_confirmed_review_allows_learning_plan_without_warning(
     captured = capsys.readouterr()
     assert result == 0
     assert "WARNING" not in captured.err
+
+
+def test_moodle_source_resolves_the_moodle_cache_default(monkeypatch, tmp_path, capsys):
+    # IOLG-119: --source moodle with no --clustering-cache must look for
+    # output/silo_clustering_moodle.json, not the Excel default. With no cache
+    # present, plan exits 2 before touching the DB and names the moodle path --
+    # which proves the source-aware default resolved (and that the positional
+    # student_id, not excel_path, absorbs the single argument).
+    monkeypatch.chdir(tmp_path)
+
+    result = plan_module.main(["12345", "--source", "moodle"])
+
+    err = capsys.readouterr().err
+    assert result == 2
+    assert "silo_clustering_moodle.json" in err
+    assert "--source moodle" in err

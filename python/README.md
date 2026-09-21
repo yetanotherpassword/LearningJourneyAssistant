@@ -49,12 +49,13 @@ setup.
 | `lja/data/excel_loader.py` | Parses the 3-sheet workbook into typed `Silo` / `Assessment` / `ResultRow` / `StudentSummary` records |
 | `lja/data/moodle_loader.py` | Builds the same records from a live Moodle DB — runs Query 2, joins the criterion→SILO mapping CSV. The production counterpart to `excel_loader.py` |
 | `lja/data/sql.py` | Loads `sql/moodle_attainment_extraction.sql`, substitutes the table prefix, slices out a single query |
+| `lja/data/loading.py` | Source-aware dataset loader shared by `cli.py` and `plan.py` — turns `--source`/`--mapping`/`--clustering-cache` into a dataset + cache path so the two commands can't drift |
 | `lja/data/synth_generator.py` | Generates additional synthetic students — planted, known cross-subject gaps + LLM-varied feedback. `python -m lja.data.synth_generator --help` |
 | `lja/model/silo_clustering.py` | LLM-driven cross-subject SILO clustering — the semantic-matching step Scott asked for, with automatic retry on a validation failure |
 | `lja/model/gap_detection.py` | Weighted per-student, per-competency attainment + **relative** gap classification — see "Gap detection" below |
 | `lja/cli.py` | `python -m lja.cli <xlsx path>` or `--source moodle` — runs the whole pipeline, writes a gap report |
 | `lja/model/learning_plan.py` | LLM-generated learning plan for one student, grounded in the gap output and validated by `lja/llm/grounding.py` — see "Learning plans" below |
-| `lja/plan.py` | `python -m lja.plan <xlsx path> <student id>` — generates and writes one student's plan; needs `lja.cli`'s clustering cache |
+| `lja/plan.py` | `python -m lja.plan <xlsx path> <student id>` or `--source moodle <student id>` — generates and writes one student's plan; needs `lja.cli`'s clustering cache from the same source |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
 | `tests/` | pytest — all offline (no live LLM call needed). The count is whatever CI reports; it is no longer quoted here because it went stale four times in a fortnight. |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
@@ -280,6 +281,18 @@ calls, and it never regenerates the clustering — it requires the cache
 python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx    # once: caches the clustering
 python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
 # writes output/plans/learning_plan_STU0003.json and .md
+```
+
+`lja.plan` takes the same `--source {excel,moodle}` and `--mapping` options as
+`lja.cli`, and its default `--clustering-cache` is source-aware in the same way
+(`output/silo_clustering.json` for Excel, `output/silo_clustering_moodle.json`
+for Moodle) — both commands share `lja/data/loading.py`, so a plan is always
+drawn from the same source as the clustering it reads. Against Moodle the
+student id is the Moodle `idnumber`:
+
+```bash
+python -m lja.cli --source moodle              # once: caches the Moodle clustering
+python -m lja.plan --source moodle <idnumber>  # writes output/plans/learning_plan_<idnumber>.json and .md
 ```
 
 **What the model is shown** (`build_plan_context()`): this one student's
