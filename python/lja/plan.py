@@ -2,14 +2,22 @@
 
     cd python
     conda activate lja
+    # from Scott's Excel workbook (default)
     python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx   # once, to cache the clustering
     python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx S001
+    # from a live Moodle database (IOLG-104)
+    python -m lja.cli --source moodle                                            # once, to cache the clustering
+    python -m lja.plan --source moodle 12345
 
 A separate entry point rather than a flag on lja.cli on purpose: the
 clustering is one cached LLM call shared by every student, while a plan is
 one LLM call per student, and mixing the two into one command would make
 "re-run the pipeline" silently re-spend a plan call. This command never
 calls the LLM for clustering -- it requires the cache lja.cli wrote.
+
+--source and the source-aware cache default match lja.cli exactly (they share
+lja.data.loading), so a plan is always drawn from the same source as the
+clustering it reads.
 """
 
 from __future__ import annotations
@@ -18,7 +26,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .data.excel_loader import load_dataset
+from .data.loading import add_source_arguments, clustering_cache_path, load_dataset_for_source
 from .llm.factory import get_llm_client
 from .llm.grounding import GroundingError
 from .model.gap_detection import GapThresholds, compute_gaps
@@ -29,12 +37,22 @@ from .review import current_reviews, default_review_path, load_or_create_reviews
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="LJA: generate a grounded learning plan for one student")
-    parser.add_argument("excel_path", help="Path to the CSE_results_*.xlsx workbook")
-    parser.add_argument("student_id", help="Student id exactly as it appears in the workbook, e.g. S001")
+    parser.add_argument(
+        "excel_path",
+        nargs="?",
+        help="Path to the CSE_results_*.xlsx workbook (required for --source excel)",
+    )
+    parser.add_argument(
+        "student_id",
+        help="Student id exactly as it appears in the dataset (e.g. S001 for Excel, the Moodle idnumber for --source moodle)",
+    )
+    add_source_arguments(parser)
     parser.add_argument(
         "--clustering-cache",
-        default="output/silo_clustering.json",
-        help="The SILO clustering written by lja.cli (default: %(default)s). Required; never regenerated here",
+        default=None,
+        help="The SILO clustering written by lja.cli (default: output/silo_clustering.json "
+             "for --source excel, output/silo_clustering_moodle.json for --source moodle). "
+             "Required; never regenerated here",
     )
     parser.add_argument(
         "--review-file",
@@ -62,12 +80,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    cache_path = Path(args.clustering_cache)
+    cache_path = Path(clustering_cache_path(args.source, args.clustering_cache))
     if not cache_path.exists():
-        print(f"No clustering cache at {cache_path}. Run python -m lja.cli first.", file=sys.stderr)
+        print(
+            f"No clustering cache at {cache_path}. Run python -m lja.cli --source {args.source} first.",
+            file=sys.stderr,
+        )
         return 2
 
-    dataset = load_dataset(args.excel_path)
+    dataset = load_dataset_for_source(args.source, args.excel_path, args.mapping, parser=parser)
     clustering = SiloClusteringResult.model_validate_json(cache_path.read_text())
     gaps = compute_gaps(dataset, clustering, thresholds=GapThresholds())
 
