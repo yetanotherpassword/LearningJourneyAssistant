@@ -139,6 +139,69 @@ render. Vendor `chart.js` into `lja/dashboard/static/` if this needs to run
 fully offline, matching the rest of the project's local-first stance (the
 whole point of the Ollama path).
 
+### Outcome quality and progression pages
+
+`/silos` ("Outcome quality" in the header) is the first place the dashboard
+shows anything about the *outcomes themselves* rather than the students. It
+is computed by `lja/model/silo_quality.py`, pure functions over the same
+three inputs as every other page (dataset, clustering, gap rows), so it
+adds no pipeline stage and never calls the LLM. It shows:
+
+- **Tiles**: subjects, SILOs, and how many SILOs are flagged by the
+  clustering model, link to no other subject (a one-member cluster), are
+  never assessed, or are vaguely worded.
+- **The vocabulary of the outcomes** as a word cloud (d3-cloud): every
+  content word across all SILO texts, sized by how many outcomes use it,
+  green where it names an observable act (analyse, implement, evaluate) and
+  red where it names a mental state that cannot be marked (understand,
+  appreciate, be aware of). That is Bloom's old test of an assessable
+  outcome, applied to the whole catalogue at once. The stem lists are
+  `MEASURABLE_STEMS` and `VAGUE_STEMS` in `silo_quality.py`; qualifiers
+  like "basic" are deliberately not vague.
+- **Subjects**: health (share of SILOs with no issue), the four issue
+  counts, students, mean attainment and gap rate. Sortable.
+- **Progression by competency**: every competency taught in two or more
+  subjects, the subjects in year order, the change in mean attainment from
+  first to last and a trend using the same five-point band as the student
+  page. Each row links to `/competency/{slug}`: a line chart of mean
+  attainment and gap rate subject by subject, hollow points where the
+  subject's outcome was flagged, and the outcome texts underneath.
+- **Which subjects share competencies**: a chord diagram (d3), one arc per
+  subject coloured by year level, ribbons weighted by shared competencies.
+  Above 40 subjects it keeps the most connected and says so.
+- **Attainment by subject and competency**: a heat-mapped table, empty
+  where a subject has no outcome in that competency.
+- **Every outcome**, worst first, with the flag reason in the model's own
+  words and the vague terms found.
+
+Run it on a large cohort the same way as any other run; only the paths change:
+
+```bash
+D=../data-fixtures/CSE_results_catalogue_handbook_3000
+python -m lja.data.catalogue_generator ../data-fixtures/handbook/catalogue_tagged.yaml \
+    --students 3000 --enrolment-fraction 0.05 --no-llm-feedback --seed 7 --out $D.xlsx
+python -m lja.cli $D.xlsx --clustering-cache $D.clustering.json --review-file $D.clustering.review.json
+python -m lja.dashboard --excel-path $D.xlsx --clustering-cache $D.clustering.json
+```
+
+Measured on that run (314 handbook subjects, 1,436 SILOs, 3,000 students,
+181k result rows): generation 17 s, pipeline 13 s, dashboard start 14 s,
+`/silos` renders in about 0.1 s and is about 3 MB because the outcome
+table and the 314 x 48 heat map are complete rather than paged.
+
+Two honest limits of that run. The catalogue's own competency tags stand in
+for the LLM clustering (single-call clustering fails its coverage check at
+52 SILOs, let alone 1,436), so **flagged is zero** there: flags only come
+from a real clustering run, as on the supplied workbook where CSE2ALG SILO1
+is flagged. And every progression is **stable**, because the generator's
+ability model has no year-level drift to find; the page is doing its job
+by not inventing a trend. What the run does show is the vocabulary: 366 of
+the 1,436 real handbook outcomes lean on an unobservable verb.
+
+d3 and d3-cloud load from the same CDN as Chart.js and carry the same
+offline caveat; if they fail, the cloud and chord stay empty and the
+tables still carry every number.
+
 ### Staff confirmation gate
 
 LLM-generated competency clusters now require staff review before they are

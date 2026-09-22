@@ -287,3 +287,69 @@ th.sortable-header[aria-sort="descending"]::after { content: "\2193"; opacity: 1
   background: transparent;
   color: var(--muted);
 }
+
+/* --- outcome quality (silos.html) and competency progression --- */
+
+nav.site-nav { margin-left: auto; display: flex; gap: 18px; }
+nav.site-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+nav.site-nav a:hover { color: var(--ink); }
+
+.stat .num.warn { color: var(--status-isolated); }
+
+.cloud { width: 100%; height: auto; display: block; }
+.cloud text { cursor: default; }
+
+.term-key { font-weight: 600; }
+.term-key.measurable { color: var(--status-proficient); }
+.term-key.vague { color: var(--status-persistent); }
+.term-key.other { color: var(--muted); }
+
+.fold { margin: 0 0 28px; }
+.fold summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+.fold table { margin-top: 12px; }
+
+table.compact th, table.compact td { padding: 7px 10px; font-size: 0.88rem; }
+td.wording { max-width: 460px; }
+.flag-reason { color: var(--status-persistent); font-size: 0.82rem; margin-top: 2px; }
+.flag-reason.vague { color: var(--status-isolated); }
+.muted { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+tr.has-issue td:first-child { border-left: 3px solid var(--status-isolated); }
+
+.issue {
+  display: inline-block; margin: 1px 4px 1px 0; padding: 1px 8px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 600; color: var(--status-isolated); background: var(--status-isolated-bg);
+}
+
+.health-bar {
+  display: inline-block; vertical-align: middle; width: 90px; height: 8px; border-radius: 4px;
+  background: var(--surface-2); overflow: hidden; margin-right: 8px;
+}
+.health-bar i { display: block; height: 100%; background: var(--status-proficient); }
+.health-num { font-variant-numeric: tabular-nums; }
+
+td.path { white-space: nowrap; }
+.path-step { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 0.82rem; }
+.path-step.flagged { color: var(--status-persistent); text-decoration: underline dotted; }
+.path-arrow { color: var(--muted); margin: 0 5px; }
+
+.chord { width: 100%; max-width: 760px; height: auto; display: block; margin: 0 auto; }
+
+.heat-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 28px; }
+table.heat { border: none; border-radius: 0; font-size: 0.78rem; width: max-content; min-width: 100%; }
+table.heat th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
+table.heat thead th span { display: inline-block; max-width: 110px; white-space: normal; line-height: 1.2; font-size: 0.68rem; }
+table.heat tbody th { position: sticky; left: 0; z-index: 1; background: var(--surface-2); text-align: left; font-weight: 600; }
+table.heat td { text-align: center; padding: 5px 6px; font-variant-numeric: tabular-nums; min-width: 44px; }
+table.heat td.h-none { background: transparent; }
+/* Ten bands from the persistent-gap tint to the proficient tint, chosen from
+   the same status palette the badges use so red here means red there. */
+table.heat td.h0, table.heat td.h1, table.heat td.h2, table.heat td.h3, table.heat td.h4 { background: var(--status-persistent-bg); color: var(--status-persistent); }
+table.heat td.h4 { opacity: 0.8; }
+table.heat td.h5 { background: var(--status-isolated-bg); color: var(--status-isolated); }
+table.heat td.h6 { background: var(--status-developing-bg); color: var(--status-developing); }
+table.heat td.h7, table.heat td.h8, table.heat td.h9 { background: var(--status-proficient-bg); color: var(--status-proficient); }
+table.heat td.h9 { font-weight: 700; }
+
+.silo-line { margin-bottom: 6px; }
+.silo-line.flagged { border-left: 3px solid var(--status-persistent); padding-left: 8px; }
+.rationale { font-style: italic; }

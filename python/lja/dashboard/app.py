@@ -41,7 +41,21 @@ from ..data.excel_loader import LjaDataset, StudentSummary
 from ..model.gap_detection import CompetencyGap
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
 from ..model.silo_clustering import SiloClusteringResult
+from ..model.silo_quality import (
+    assess_silos,
+    competency_progressions,
+    slugify,
+    subject_competency_matrix,
+    subject_links,
+    summarise_subjects,
+    term_weights,
+)
 from .stats import histogram, summarise
+
+# A chord diagram stops being readable somewhere around forty arcs. Above
+# that the page keeps the most connected subjects and says so in its caption;
+# the full link counts are still in the subject table.
+_MAX_CHORD_SUBJECTS = 40
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -110,7 +124,20 @@ _COHORTS_BY_KEY = {cohort.key: cohort for cohort in _COHORTS}
 def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloClusteringResult) -> FastAPI:
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+    templates.env.filters["slug"] = slugify
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+    # Outcome quality and progression: computed once at start-up from the
+    # same three inputs as everything else. Pure functions in
+    # model/silo_quality.py; the page only formats what they return.
+    silo_rows = assess_silos(dataset, clustering, gaps)
+    silo_by_key = {row.key: row for row in silo_rows}
+    subject_rows = summarise_subjects(silo_rows, dataset, gaps)
+    terms = term_weights(silo_rows)
+    progressions = competency_progressions(dataset, clustering, gaps)
+    progression_by_slug = {p.slug: p for p in progressions}
+    matrix = subject_competency_matrix(dataset, clustering)
+    links = subject_links(clustering)
 
     gaps_by_student: dict[str, list[CompetencyGap]] = defaultdict(list)
     for gap in gaps:
@@ -233,6 +260,61 @@ def create_app(dataset: LjaDataset, gaps: list[CompetencyGap], clustering: SiloC
             request,
             "student.html",
             {"summary": summary, "gap_details": gap_details, "chart_data": chart_data},
+        )
+
+    @app.get("/silos")
+    def outcome_quality(request: Request):
+        # Trim the chord input to the most connected subjects; keep the
+        # subject table complete.
+        degree = [sum(row) for row in links.matrix]
+        keep = sorted(range(len(links.subjects)), key=lambda i: (-degree[i], links.subjects[i]))[:_MAX_CHORD_SUBJECTS]
+        keep.sort()
+        chord_subjects = [links.subjects[i] for i in keep]
+        chord_matrix = [[links.matrix[i][j] for j in keep] for i in keep]
+        chord_shared = {f"{a}|{b}": list(labels) for (a, b), labels in links.shared.items() if a in chord_subjects and b in chord_subjects}
+
+        context = {
+            "totals": {
+                "subjects": len(subject_rows),
+                "silos": len(silo_rows),
+                "flagged": sum(1 for r in silo_rows if r.flagged),
+                "orphan": sum(1 for r in silo_rows if r.orphan),
+                "unassessed": sum(1 for r in silo_rows if r.n_assessments == 0),
+                "vague": sum(1 for r in silo_rows if r.vague_terms),
+            },
+            "silo_rows": sorted(silo_rows, key=lambda r: (-len(r.issues), r.key)),
+            "subjects": subject_rows,
+            "terms": terms,
+            "terms_json": json.dumps(
+                [
+                    {"term": t.term, "kind": t.kind, "count": t.count, "n_subjects": t.n_subjects, "mean_attainment": t.mean_attainment}
+                    for t in terms
+                ]
+            ),
+            "progressions": progressions,
+            "matrix": matrix,
+            "links": {"subjects": chord_subjects, "total": len(links.subjects), "truncated": len(keep) < len(links.subjects)},
+            "links_json": json.dumps({"subjects": chord_subjects, "matrix": chord_matrix, "shared": chord_shared}),
+        }
+        return templates.TemplateResponse(request, "silos.html", context)
+
+    @app.get("/competency/{slug}")
+    def competency_detail(request: Request, slug: str):
+        progression = progression_by_slug.get(slug)
+        if progression is None:
+            raise HTTPException(status_code=404, detail=f"No cross-subject competency {slug!r}")
+        chart_json = json.dumps(
+            {
+                "labels": [p.subject_code for p in progression.points],
+                "attainment": [p.mean_attainment for p in progression.points],
+                "gap_rate": [p.gap_rate for p in progression.points],
+                "flagged": [p.flagged for p in progression.points],
+            }
+        )
+        return templates.TemplateResponse(
+            request,
+            "competency.html",
+            {"progression": progression, "silo_by_key": silo_by_key, "chart_json": chart_json},
         )
 
     return app

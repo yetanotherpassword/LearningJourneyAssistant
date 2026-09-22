@@ -12,11 +12,16 @@
      progressive enhancement -- if this fails to load, rows still render in
      the server's default order. -->
 <script src="/static/sort.js" defer></script>
+{% block head %}{% endblock %}
 </head>
 <body>
 <header class="site-header">
   <a href="/">LJA Dashboard</a>
   <span class="tag">gap report &middot; read-only</span>
+  <nav class="site-nav">
+    <a href="/">Students</a>
+    <a href="/silos">Outcome quality</a>
+  </nav>
 </header>
 <main>
 {% block content %}{% endblock %}

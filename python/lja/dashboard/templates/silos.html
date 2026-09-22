@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Outcome quality &mdash; LJA Dashboard{% endblock %}
+{% block head %}
+<!-- d3 and d3-cloud drive the two figures Chart.js cannot draw (the word
+     cloud and the chord diagram). Same CDN as Chart.js, same offline caveat:
+     if either fails to load, the SVG stays empty and the tables below still
+     carry every number. -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1/build/d3.layout.cloud.js"></script>
+{% endblock %}
+{% block content %}
+<a class="back-link" href="/">&larr; all students</a>
+<h1>Outcome quality</h1>
+<p class="dek">
+  How well the subjects' intended learning outcomes (SILOs) are written and linked, and how students
+  fare on each. Flags and clusters come from the cached SILO clustering; attainment and gap rates from
+  the same gap rows the student pages show. Nothing here calls the LLM.
+</p>
+
+<div class="stat-strip">
+  <div class="stat"><div class="num">{{ totals.subjects }}</div><div class="label">subjects</div></div>
+  <div class="stat"><div class="num">{{ totals.silos }}</div><div class="label">SILOs</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.flagged }}">{{ totals.flagged }}</div><div class="label">flagged by the clustering</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.orphan }}">{{ totals.orphan }}</div><div class="label">link to no other subject</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.unassessed }}">{{ totals.unassessed }}</div><div class="label">never assessed</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.vague }}">{{ totals.vague }}</div><div class="label">vaguely worded</div></div>
+</div>
+
+<h2>The vocabulary of the outcomes</h2>
+<p class="dek">
+  Every content word across all {{ totals.silos }} SILO texts, sized by how many outcomes use it.
+  <span class="term-key measurable">Green</span> words name something a student does that can be observed and
+  marked (analyse, implement, evaluate). <span class="term-key vague">Red</span> words cannot be
+  assessed as written (understand, appreciate, be aware of), the oldest test of an outcome's
+  assessability there is. Hover a word for how many subjects use it and mean attainment on the
+  outcomes that do.
+</p>
+<div class="chart-card">
+  <svg id="term-cloud" class="cloud" viewBox="0 0 900 420" role="img"
+       aria-label="Word cloud of SILO vocabulary; larger words appear in more outcomes; red words are vague, green words are measurable"></svg>
+  <p class="chart-note" id="cloud-fallback" hidden>The cloud could not be drawn (no internet for d3). The same terms are listed in the table below.</p>
+</div>
+<details class="fold">
+  <summary>Term table ({{ terms|length }} terms)</summary>
+  <table class="sortable compact">
+    <thead><tr>
+      <th data-sort-type="text">Term</th><th data-sort-type="text">Kind</th>
+      <th data-sort-type="number" aria-sort="descending">Outcomes</th><th data-sort-type="number">Subjects</th>
+      <th data-sort-type="number">Mean attainment</th>
+    </tr></thead>
+    <tbody>
+    {% for t in terms %}
+      <tr>
+        <td data-sort-value="{{ t.term }}"><span class="term-key {{ t.kind }}">{{ t.term }}</span></td>
+        <td data-sort-value="{{ t.kind }}">{{ t.kind }}</td>
+        <td data-sort-value="{{ t.count }}">{{ t.count }}</td>
+        <td data-sort-value="{{ t.n_subjects }}">{{ t.n_subjects }}</td>
+        <td data-sort-value="{{ t.mean_attainment if t.mean_attainment is not none else -1 }}">
+          {% if t.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(t.mean_attainment) }}%{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</details>
+
+<h2>Subjects</h2>
+<p class="dek">
+  Health is the share of a subject's SILOs with none of the four issues. It is a count, not a weighted
+  score; the four counts sit beside it so the reader can weigh them. Gap rate is the share of
+  (student, competency) pairs this subject evidences that are classified as a gap.
+</p>
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text">Subject</th><th data-sort-type="number">Year</th>
+    <th data-sort-type="number" aria-sort="ascending">Health</th>
+    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Flagged</th>
+    <th data-sort-type="number">Unlinked</th><th data-sort-type="number">Unassessed</th>
+    <th data-sort-type="number">Vague</th><th data-sort-type="number">Students</th>
+    <th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for s in subjects %}
+    <tr>
+      <td data-sort-value="{{ s.subject_code }}"><strong>{{ s.subject_code }}</strong></td>
+      <td data-sort-value="{{ s.year_level if s.year_level is not none else 99 }}">{{ s.year_level if s.year_level is not none else "?" }}</td>
+      <td data-sort-value="{{ s.health }}">
+        <span class="health-bar" title="{{ s.n_clean }} of {{ s.n_silos }} SILOs have no issue"><i style="width: {{ s.health }}%"></i></span>
+        <span class="health-num">{{ "%.0f"|format(s.health) }}%</span>
+      </td>
+      <td data-sort-value="{{ s.n_silos }}">{{ s.n_silos }}</td>
+      <td data-sort-value="{{ s.n_flagged }}">{% if s.n_flagged %}<span class="badge persistent-gap">{{ s.n_flagged }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_orphan }}">{% if s.n_orphan %}<span class="badge isolated-gap">{{ s.n_orphan }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_unassessed }}">{% if s.n_unassessed %}<span class="badge isolated-gap">{{ s.n_unassessed }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_vague }}">{% if s.n_vague %}<span class="badge developing">{{ s.n_vague }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_students }}">{{ s.n_students }}</td>
+      <td data-sort-value="{{ s.mean_attainment if s.mean_attainment is not none else -1 }}">{% if s.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(s.mean_attainment) }}%{% endif %}</td>
+      <td data-sort-value="{{ s.gap_rate if s.gap_rate is not none else -1 }}">{% if s.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(s.gap_rate) }}%{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Progression by competency</h2>
+<p class="dek">
+  A competency several subjects claim to teach, followed subject by subject in year order. The trend
+  compares mean attainment in the last subject with the first, using the same five-point band the
+  student pages use. Click a row for the chart and the outcomes behind it.
+</p>
+{% if progressions %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Competency</th><th data-sort-type="number">Subjects</th>
+    <th data-sort-type="text">Path</th><th data-sort-type="number">Change</th><th data-sort-type="text">Trend</th>
+    <th data-sort-type="number">Flagged outcomes</th>
+  </tr></thead>
+  <tbody>
+  {% for p in progressions %}
+    <tr>
+      <td data-sort-value="{{ p.label }}"><a href="/competency/{{ p.slug }}">{{ p.label }}</a></td>
+      <td data-sort-value="{{ p.n_subjects }}">{{ p.n_subjects }}</td>
+      <td data-sort-value="{{ p.points[0].subject_code }}" class="path">
+        {% for pt in p.points %}<span class="path-step {{ 'flagged' if pt.flagged }}" title="{{ pt.subject_code }}: {{ '%.1f'|format(pt.mean_attainment) if pt.mean_attainment is not none else 'no results' }}{{ '%' if pt.mean_attainment is not none }}">{{ pt.subject_code }}</span>{% if not loop.last %}<span class="path-arrow">&rarr;</span>{% endif %}{% endfor %}
+      </td>
+      <td data-sort-value="{{ p.delta if p.delta is not none else -999 }}">{% if p.delta is none %}&mdash;{% else %}{{ "%+.1f"|format(p.delta) }} pts{% endif %}</td>
+      <td data-sort-value="{{ p.trend }}"><span class="trend-badge {{ p.trend|replace(' ', '-') }}">{{ p.trend }}</span></td>
+      <td data-sort-value="{{ p.points|selectattr('flagged')|list|length }}">{{ p.points|selectattr('flagged')|list|length or "&mdash;"|safe }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No competency spans more than one subject in this clustering, so there is no progression to draw.</p>
+{% endif %}
+
+<h2>Which subjects share competencies</h2>
+<p class="dek">
+  Each arc is a subject; a ribbon between two subjects is the competencies they both teach, thicker for
+  more. A subject with no ribbons teaches nothing the clustering could link elsewhere.
+  {% if links.truncated %}Showing the {{ links.subjects|length }} most connected of {{ links.total }} subjects.{% endif %}
+  Hover a ribbon for the competency names.
+</p>
+<div class="chart-card">
+  <svg id="chord" class="chord" viewBox="0 0 760 760" role="img" aria-label="Chord diagram of subjects linked by shared competencies"></svg>
+</div>
+
+<h2>Attainment by subject and competency</h2>
+<p class="dek">
+  Mean attainment on every subject&rsquo;s outcomes, grouped by the competency they were clustered into.
+  An empty cell means the subject has no outcome in that competency, which is different from a low score.
+</p>
+<div class="heat-wrap">
+  <table class="heat">
+    <thead><tr><th>Subject</th>{% for c in matrix.competencies %}<th><span>{{ c }}</span></th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for subject in matrix.subjects %}
+      <tr><th>{{ subject }}</th>
+      {% for v in matrix.cells[loop.index0] %}
+        {% if v is none %}<td class="h-none"></td>{% else %}<td class="h{{ (v // 10)|int if v < 100 else 9 }}" title="{{ subject }}: {{ '%.1f'|format(v) }}%">{{ "%.0f"|format(v) }}</td>{% endif %}
+      {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Every outcome</h2>
+<p class="dek">Sorted so the outcomes with the most issues come first. The flag reason is the clustering model&rsquo;s own words.</p>
+<table class="sortable compact">
+  <thead><tr>
+    <th data-sort-type="text">SILO</th><th data-sort-type="text">Wording</th><th data-sort-type="text">Competency</th>
+    <th data-sort-type="number" aria-sort="descending">Issues</th><th data-sort-type="number">Assessments</th>
+    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for r in silo_rows %}
+    <tr class="{{ 'has-issue' if r.issues }}">
+      <td data-sort-value="{{ r.key }}"><strong>{{ r.subject_code }}</strong> {{ r.silo_local_id }}</td>
+      <td data-sort-value="{{ r.text }}" class="wording">
+        {{ r.text }}
+        {% if r.flagged %}<div class="flag-reason">Flagged: {{ r.flag_reason }}</div>{% endif %}
+        {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.competency_label or '' }}">
+        {% if r.competency_label and not r.orphan %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>
+        {% elif r.competency_label %}{{ r.competency_label }} <span class="muted">(this subject only)</span>
+        {% else %}<span class="muted">not clustered</span>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.issues|length }}">
+        {% for issue in r.issues %}<span class="issue">{{ issue }}</span>{% else %}&mdash;{% endfor %}
+      </td>
+      <td data-sort-value="{{ r.n_assessments }}">{{ r.n_assessments }}</td>
+      <td data-sort-value="{{ r.n_students }}">{{ r.n_students }}</td>
+      <td data-sort-value="{{ r.mean_attainment if r.mean_attainment is not none else -1 }}">{% if r.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(r.mean_attainment) }}%{% endif %}</td>
+      <td data-sort-value="{{ r.gap_rate if r.gap_rate is not none else -1 }}">{% if r.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(r.gap_rate) }}%{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+(function () {
+  const terms = {{ terms_json|safe }};
+  const links = {{ links_json|safe }};
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  const kindColor = {
+    measurable: cssVar("--status-proficient"),
+    vague: cssVar("--status-persistent"),
+    other: cssVar("--muted"),
+  };
+
+  if (typeof d3 === "undefined" || typeof d3.layout === "undefined" || typeof d3.layout.cloud !== "function") {
+    const note = document.getElementById("cloud-fallback");
+    if (note) note.hidden = false;
+    return;
+  }
+
+  // ---- word cloud -------------------------------------------------------
+  const W = 900, H = 420;
+  const shown = terms.slice(0, 160);
+  const maxCount = Math.max(1, ...shown.map((t) => t.count));
+  const size = d3.scaleSqrt().domain([1, maxCount]).range([11, 64]);
+  const svg = d3.select("#term-cloud");
+  const g = svg.append("g").attr("transform", `translate(${W / 2},${H / 2})`);
+
+  d3.layout.cloud()
+    .size([W, H])
+    .words(shown.map((t) => ({ text: t.term, size: size(t.count), kind: t.kind, count: t.count, subjects: t.n_subjects, mean: t.mean_attainment })))
+    .padding(2)
+    .rotate(() => 0)
+    .font("-apple-system, Segoe UI, Helvetica Neue, Arial, sans-serif")
+    .fontSize((d) => d.size)
+    .on("end", (words) => {
+      const node = g.selectAll("text").data(words).enter().append("text")
+        .style("font-size", (d) => `${d.size}px`)
+        .style("font-weight", (d) => (d.kind === "other" ? 500 : 700))
+        .style("fill", (d) => kindColor[d.kind])
+        .style("opacity", (d) => (d.kind === "other" ? 0.75 : 1))
+        .attr("text-anchor", "middle")
+        .attr("transform", (d) => `translate(${d.x},${d.y})`)
+        .text((d) => d.text);
+      node.append("title").text((d) =>
+        `${d.text}: in ${d.count} outcome${d.count === 1 ? "" : "s"} across ${d.subjects} subject${d.subjects === 1 ? "" : "s"}` +
+        (d.mean == null ? "" : `; mean attainment ${d.mean.toFixed(1)}%`) +
+        (d.kind === "vague" ? "\nVague: cannot be observed in a student's work as written." : "") +
+        (d.kind === "measurable" ? "\nMeasurable: names something a student does." : ""));
+    })
+    .start();
+
+  // ---- chord diagram -----------------------------------------------------
+  const names = links.subjects;
+  if (names.length < 2) return;
+  const S = 760, outer = S / 2 - 70, inner = outer - 18;
+  const chord = d3.chord().padAngle(0.02).sortSubgroups(d3.descending)(links.matrix);
+  const arc = d3.arc().innerRadius(inner).outerRadius(outer);
+  const ribbon = d3.ribbon().radius(inner - 1);
+  const years = names.map((n) => (n.match(/^[A-Za-z]+(\d)/) || [null, "0"])[1]);
+  const yearColor = d3.scaleOrdinal().domain(["1", "2", "3", "4", "5", "6", "0"])
+    .range([cssVar("--status-developing"), cssVar("--status-proficient"), cssVar("--accent"),
+            cssVar("--status-isolated"), cssVar("--status-persistent"), "#7c5cbf", cssVar("--muted")]);
+  const csvg = d3.select("#chord").append("g").attr("transform", `translate(${S / 2},${S / 2})`);
+
+  const group = csvg.append("g").selectAll("g").data(chord.groups).enter().append("g");
+  group.append("path").attr("d", arc).attr("fill", (d) => yearColor(years[d.index])).attr("stroke", cssVar("--surface"));
+  group.append("title").text((d) => `${names[d.index]}: ${d.value} shared-competency link${d.value === 1 ? "" : "s"}`);
+  group.append("text")
+    .each((d) => { d.angle = (d.startAngle + d.endAngle) / 2; })
+    .attr("dy", "0.35em")
+    .attr("transform", (d) => `rotate(${(d.angle * 180) / Math.PI - 90}) translate(${outer + 6}) ${d.angle > Math.PI ? "rotate(180)" : ""}`)
+    .attr("text-anchor", (d) => (d.angle > Math.PI ? "end" : null))
+    .style("font-size", names.length > 40 ? "8px" : "11px")
+    .style("fill", cssVar("--ink"))
+    .text((d) => names[d.index]);
+
+  csvg.append("g").attr("fill-opacity", 0.55).selectAll("path").data(chord).enter().append("path")
+    .attr("d", ribbon)
+    .attr("fill", (d) => yearColor(years[d.source.index]))
+    .attr("stroke", cssVar("--surface"))
+    .append("title").text((d) => {
+      const a = names[d.source.index], b = names[d.target.index];
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      const shared = links.shared[key] || [];
+      return `${a} and ${b} share ${shared.length} competenc${shared.length === 1 ? "y" : "ies"}:\n${shared.join("\n")}`;
+    });
+})();
+</script>
+{% endblock %}

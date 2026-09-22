@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ progression.label }} &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/silos">&larr; outcome quality</a>
+<h1>{{ progression.label }}</h1>
+<p class="dek">
+  Taught in {{ progression.n_subjects }} subjects. Mean attainment moves
+  {% if progression.delta is none %}by an unknown amount{% else %}{{ "%+.1f"|format(progression.delta) }} points{% endif %}
+  from the first subject in year order to the last:
+  <span class="trend-badge {{ progression.trend|replace(' ', '-') }}">{{ progression.trend }}</span>
+</p>
+
+<div class="chart-card">
+  <h3>Attainment and gap rate, subject by subject</h3>
+  <p class="chart-note">
+    Left axis: mean attainment on this competency&rsquo;s outcomes in that subject, over every student who sat them.
+    Right axis: share of those students whose competency is classified as a gap. A hollow point marks a subject
+    whose outcome for this competency was flagged by the clustering.
+  </p>
+  <canvas id="progression-chart" height="110"></canvas>
+</div>
+
+<table>
+  <thead><tr><th>Subject</th><th>Year</th><th>Students</th><th>Mean attainment</th><th>Gap rate</th><th>Outcomes</th></tr></thead>
+  <tbody>
+  {% for pt in progression.points %}
+    <tr>
+      <td><strong>{{ pt.subject_code }}</strong></td>
+      <td>{{ pt.year_level if pt.year_level is not none else "?" }}</td>
+      <td>{{ pt.n_students }}</td>
+      <td>{% if pt.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(pt.mean_attainment) }}%{% endif %}</td>
+      <td>{% if pt.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(pt.gap_rate) }}%{% endif %}</td>
+      <td class="wording">
+        {% for key in pt.silo_keys %}
+          {% set r = silo_by_key[key] %}
+          <div class="silo-line {{ 'flagged' if r.flagged }}">
+            <span class="muted">{{ r.silo_local_id }}</span> {{ r.text }}
+            {% if r.flagged %}<div class="flag-reason">Flagged: {{ r.flag_reason }}</div>{% endif %}
+            {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Why these outcomes were grouped</h2>
+<p class="dek rationale">{{ progression.rationale }}</p>
+
+<script>
+  const series = {{ chart_json|safe }};
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  const accent = cssVar("--accent"), gapColor = cssVar("--status-persistent"), surface = cssVar("--surface");
+
+  new Chart(document.getElementById("progression-chart"), {
+    type: "line",
+    data: {
+      labels: series.labels,
+      datasets: [
+        {
+          label: "Mean attainment %",
+          data: series.attainment,
+          yAxisID: "y",
+          borderColor: accent,
+          backgroundColor: accent,
+          tension: 0.25,
+          pointRadius: 6,
+          pointBorderWidth: 2,
+          pointBackgroundColor: series.flagged.map((f) => (f ? surface : accent)),
+          pointBorderColor: accent,
+          spanGaps: true,
+        },
+        {
+          label: "Gap rate %",
+          data: series.gap_rate,
+          yAxisID: "y1",
+          borderColor: gapColor,
+          backgroundColor: gapColor,
+          borderDash: [6, 4],
+          tension: 0.25,
+          pointRadius: 4,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: { min: 0, max: 100, title: { display: true, text: "Mean attainment (%)" } },
+        y1: { min: 0, max: 100, position: "right", grid: { drawOnChartArea: false }, title: { display: true, text: "Gap rate (%)" } },
+        x: { title: { display: true, text: "Subjects in year order" } },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            afterLabel: (item) => (item.datasetIndex === 0 && series.flagged[item.dataIndex] ? "Outcome flagged by the clustering" : ""),
+          },
+        },
+      },
+    },
+  });
+</script>
+{% endblock %}

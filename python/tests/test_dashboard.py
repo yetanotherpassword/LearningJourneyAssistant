@@ -362,3 +362,76 @@ def test_empty_dataset_renders_an_empty_state_not_a_broken_page() -> None:
     response = _client(_dataset([]), []).get("/")
     assert response.status_code == 200
     assert "No students in this cohort." in response.text
+
+
+# --- outcome quality and competency progression ------------------------------
+
+from lja.data.excel_loader import Assessment, Silo  # noqa: E402
+from lja.model.silo_clustering import FlaggedSilo  # noqa: E402
+
+
+def _quality_fixture() -> tuple[LjaDataset, list[CompetencyGap], SiloClusteringResult]:
+    dataset = LjaDataset(
+        silos={
+            "CSE1OOF:SILO1": Silo("CSE1OOF", "SILO1", "Implement basic data structures"),
+            "CSE2ALG:SILO1": Silo("CSE2ALG", "SILO1", "Understand the general objectives of algorithms"),
+            "CSE2ALG:SILO2": Silo("CSE2ALG", "SILO2", "Design and evaluate data structures"),
+        },
+        assessments=[
+            Assessment("CSE1OOF", "Test", 40.0, "Individual", False, False, ("SILO1",)),
+            Assessment("CSE2ALG", "Assignment", 60.0, "Individual", False, False, ("SILO2",)),
+        ],
+        results=[
+            ResultRow("STU0001", "CSE1OOF", "Test", 80.0, "", 40.0, 32.0, ("SILO1",)),
+            ResultRow("STU0002", "CSE1OOF", "Test", 40.0, "", 40.0, 16.0, ("SILO1",)),
+            ResultRow("STU0001", "CSE2ALG", "Assignment", 60.0, "", 60.0, 36.0, ("SILO2",)),
+            ResultRow("STU0002", "CSE2ALG", "Assignment", 30.0, "", 60.0, 18.0, ("SILO2",)),
+        ],
+        student_summaries=[
+            StudentSummary("STU0001", {"CSE1OOF": 80.0, "CSE2ALG": 60.0}, 70.0, "Credit"),
+            StudentSummary("STU0002", {"CSE1OOF": 40.0, "CSE2ALG": 30.0}, 35.0, "Fail"),
+        ],
+    )
+    clustering = _clustering(
+        ("Data Structures", [("CSE1OOF", "SILO1"), ("CSE2ALG", "SILO2")]),
+        ("Vague outcome", [("CSE2ALG", "SILO1")]),
+    )
+    clustering.flagged_silos.append(FlaggedSilo(subject_code="CSE2ALG", silo_local_id="SILO1", reason="Vague wording; not assessable."))
+    gaps = [
+        CompetencyGap("STU0001", "Data Structures", 68.0, 2, 2, "proficient", BASIS_RELATIVE, 1.2),
+        CompetencyGap("STU0002", "Data Structures", 34.0, 2, 2, "persistent gap", BASIS_FLOOR, None),
+    ]
+    return dataset, gaps, clustering
+
+
+def test_outcome_quality_page_shows_flags_and_progressions() -> None:
+    dataset, gaps, clustering = _quality_fixture()
+    response = _client(dataset, gaps, clustering).get("/silos")
+    assert response.status_code == 200
+    assert "Vague wording; not assessable." in response.text
+    assert "no cross-subject link" in response.text
+    assert "not assessed" in response.text
+    assert 'href="/competency/data-structures"' in response.text
+    assert "declining" in response.text  # 60 -> 45 across the two subjects
+    # The word cloud gets its data as JSON with the vocabulary classes.
+    assert '"term": "understand", "kind": "vague"' in response.text
+    assert '"term": "implement", "kind": "measurable"' in response.text
+
+
+def test_every_page_links_to_outcome_quality() -> None:
+    dataset, gaps, clustering = _quality_fixture()
+    client = _client(dataset, gaps, clustering)
+    for path in ("/", "/student/STU0001", "/silos"):
+        assert 'href="/silos"' in client.get(path).text
+
+
+def test_competency_page_renders_points_in_year_order_and_404s_unknown() -> None:
+    dataset, gaps, clustering = _quality_fixture()
+    client = _client(dataset, gaps, clustering)
+    response = client.get("/competency/data-structures")
+    assert response.status_code == 200
+    assert response.text.index("CSE1OOF") < response.text.index("CSE2ALG")
+    assert '"attainment": [60.0, 45.0]' in response.text
+    assert "Design and evaluate data structures" in response.text
+    assert client.get("/competency/vague-outcome").status_code == 404  # single-subject: no progression
+    assert client.get("/competency/nope").status_code == 404
