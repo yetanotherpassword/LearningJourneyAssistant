@@ -11,7 +11,9 @@ later is explicitly fine.
 | --- | --- |
 | `bootstrap.sh` | One-shot setup of a Moodle 5.2 instance on a fresh Ubuntu machine. |
 | `env.sh` | Shared moodle-docker configuration. Source before any `bin/moodle-docker-*` command. |
-| `seed.sh` | Generates synthetic courses and students via `tool_generator`. |
+| `seed.sh` | Generates synthetic courses and students via `tool_generator`. Takes a subject list, `--size`, or `--from-file`. |
+| `fixtures/mark_rubric_from_json.php` | Defines rubrics and marks students from a catalogue-generated `rubric_fixture.json` (IOLG-113). |
+| `fixtures/reload_catalogue_fixture.sh` | Copies that script and fixture into the webserver container and runs it. |
 
 ## Quick start
 
@@ -112,6 +114,64 @@ After restoring:
    criterion-to-SILO mapping has to cover.
 3. Seed synthetic students into the restored courses (enrolment + marks +
    rubric fills), since the backups deliberately contain none.
+
+## Catalogue-driven fixtures (IOLG-113)
+
+`tool_generator` makes courses, users and assignments but never grades
+anything, and it has no concept of a learning outcome. The subject catalogue
+(`data-fixtures/subject_catalogue.yaml`, see that bundle's README) fills both
+gaps from one definition, and it is the same definition the Excel workbook is
+generated from, so the Moodle rows and the Excel rows describe the same
+students.
+
+```bash
+# 1. generate the workbook AND the Moodle fixtures from the catalogue
+cd ../python && conda activate lja
+python -m lja.data.catalogue_generator ../data-fixtures/subject_catalogue.yaml \
+    --students 300 --out ../data-fixtures/CSE_results_catalogue_300_synthetic.xlsx \
+    --moodle-out ../data-fixtures/moodle-generated
+
+# 2. seed the courses the catalogue names (size S: ten assignments per course)
+cd ../devenv
+./seed.sh --from-file ../data-fixtures/moodle-generated/seed_subjects.txt
+
+# 3. define the rubrics and mark the first N enrolled students per assignment
+./fixtures/reload_catalogue_fixture.sh ../data-fixtures/moodle-generated/rubric_fixture.json
+
+# 4. import the competency frameworks by hand
+#    Site administration -> Competencies -> Import competency framework
+#    one CSV per subject in ../data-fixtures/moodle-generated/
+```
+
+What `rubric_fixture.json` carries, per course and assignment: the rubric
+criteria (an explicit `rubric:` in the catalogue, or one criterion per SILO
+derived from the SILO text), the level ladder, and for each of the first N
+generated students the level they reached (from their generated mark for
+that assessment) and a remark. Remarks come from a template bank filled
+with the criterion text; `--llm-remarks` on the generator has the LLM write
+the bank in one call, otherwise built-in templates are used.
+
+Rules, the same as the IOLG-56 fixture: nothing writes to the grade tables
+directly (grading controller API + `assign::save_grade()`); re-runs only
+re-grade, never redefine; a missing course or assignment, or an existing
+rubric with different criteria, is reported and skipped rather than fatal.
+
+At handbook scale (300+ subjects, see the python README) `seed.sh --from-file`
+will create 300+ courses; at size S that is 100 users and ten assignments
+each, and `tool_generator` takes roughly a minute per course. Trim
+`seed_subjects.txt` to the subjects one program actually uses if you only
+need a demo instance.
+
+Assignment names: the catalogue maps its i-th assessment to tool_generator's
+`Assignment i` unless `moodle_assignment:` overrides it. Size XS creates one
+assignment per course, so seed at size S (ten) for catalogue subjects with
+three or four assessments.
+
+Verify with SQL Query 2 (devenv prefix `m_`): one row per active
+(student, criterion) across every marked assignment, every row with a remark.
+`moodle-generated/criterion_silo_map.csv` maps each criterion back to its
+`SUBJECT:SILOn` key, which is what makes those rows comparable to the Excel
+path.
 
 ## Bulk import paths worth knowing
 

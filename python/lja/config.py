@@ -107,6 +107,11 @@ OPENAI_MAX_TOKENS = int(os.environ.get("LJA_OPENAI_MAX_TOKENS", "16000"))
 # more consistent coverage in testing. Not a "creativity" knob to turn up.
 OPENAI_TEMPERATURE = float(os.environ.get("LJA_OPENAI_TEMPERATURE", "0.2"))
 
+# Embeddings (lja/llm/embeddings.py) -- always via the OpenAI-compatible
+# endpoint above; Anthropic has no embeddings API. Ollama: `ollama pull
+# nomic-embed-text`. Used only by the catalogue's competency tagger.
+EMBED_MODEL = os.environ.get("LJA_EMBED_MODEL", "nomic-embed-text")
+
 # Gap detection (lja/model/gap_detection.py) -- RELATIVE classification.
 #
 # The lodged tender, requirement 4, promises gap detection based on the
