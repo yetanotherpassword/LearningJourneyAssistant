@@ -23,6 +23,7 @@ from .. import config
 from ..data.excel_loader import load_dataset
 from ..model.gap_detection import GapThresholds, compute_gaps
 from ..model.silo_clustering import SiloClusteringResult
+from ..review import ReviewStore, cluster_id, default_review_path
 from .app import create_app
 
 
@@ -53,6 +54,35 @@ def main(argv: list[str] | None = None) -> int:
 
     dataset = load_dataset(args.excel_path)
     clustering = SiloClusteringResult.model_validate_json(cache_path.read_text())
+
+    review_path = default_review_path(cache_path)
+    pending_count = 0
+    rejected_count = 0
+
+    if review_path.exists():
+        review_store = ReviewStore.model_validate_json(
+            review_path.read_text(encoding="utf-8")
+        )
+        for cluster in clustering.clusters:
+            review = review_store.reviews.get(cluster_id(cluster))
+            if review is None or review.state == "pending":
+                pending_count += 1
+            elif review.state == "rejected":
+                rejected_count += 1
+    else:
+        pending_count = len(clustering.clusters)
+
+    warning_parts = []
+    if rejected_count:
+        warning_parts.append(
+            f"{rejected_count} AI-generated SILO cluster(s) have been rejected by staff."
+        )
+    if pending_count:
+        warning_parts.append(
+            f"{pending_count} AI-generated SILO cluster(s) are still awaiting staff review."
+        )
+    review_warning = " ".join(warning_parts) or None
+
     gaps = compute_gaps(
         dataset,
         clustering,
@@ -60,7 +90,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"Serving {len(dataset.student_summaries)} students, {len(gaps)} gap rows, from {cache_path}")
 
-    app = create_app(dataset, gaps, clustering)
+    app = create_app(
+        dataset,
+        gaps,
+        clustering,
+        review_warning=review_warning,
+    )
     uvicorn.run(app, host=args.host, port=args.port)
     return 0
 

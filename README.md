@@ -20,9 +20,11 @@ and open http://127.0.0.1:8000/ — see [python/README.md](python/README.md#dash
 ## What it is today
 
 Extraction through gap-detection now runs end-to-end against a real supplied
-dataset, and a read-only dashboard (above) presents the results. The generation
-features built on top of gap data (learning plans, quizzes, study strategies)
-don't exist yet.
+Extraction through gap-detection now runs end-to-end against a real supplied
+dataset, and a read-only dashboard (above) presents the results. The first
+generation feature — a per-student learning plan, grounding-validated against
+its input — also runs on top of the gap data. The other generation features
+(quizzes, study strategies) don't exist yet.
 
 | Bundle | Contents | Status |
 | --- | --- | --- |
@@ -86,6 +88,10 @@ Planned in order (must-haves from the project proposal, sequenced by dependency)
 4. **Personalised learning plans & study-strategy recommendations** — LLM
    features grounded in the gap data, never free-associating (a hard constraint
    from the proposal: outputs must be grounded in structured subject data).
+   **Learning plans: first slice done** (`python -m lja.plan`, see
+   `python/README.md`'s "Learning plans" section) — every name in the output
+   is validated against the input and the build fails if one isn't there.
+   Study-strategy recommendations not started.
 5. **Adaptive quiz generation** aligned to identified gaps — last must-have,
    first descope candidate if the schedule slips.
 6. Stretch: custom Moodle plugin exposing rubric fills as a web service;
