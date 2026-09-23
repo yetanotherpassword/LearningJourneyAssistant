@@ -362,3 +362,47 @@ def test_empty_dataset_renders_an_empty_state_not_a_broken_page() -> None:
     response = _client(_dataset([]), []).get("/")
     assert response.status_code == 200
     assert "No students in this cohort." in response.text
+
+
+# --- unreviewed-AI warning banner (IOLG-116) ---
+
+
+def test_dashboard_shows_pending_ai_review_warning() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning="2 AI-generated SILO cluster(s) are still awaiting staff review.",
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" in body
+    assert "still awaiting staff review" in body
+
+
+def test_dashboard_shows_rejected_ai_review_warning() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning="1 AI-generated SILO cluster(s) have been rejected by staff.",
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" in body
+    assert "have been rejected by staff" in body
+
+
+def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
+    app = create_app(
+        _dataset(),
+        [],
+        SiloClusteringResult(clusters=[]),
+        review_warning=None,
+    )
+
+    body = TestClient(app).get("/").text
+
+    assert "AI review warning:" not in body
