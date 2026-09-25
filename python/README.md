@@ -153,6 +153,20 @@ badges never disagree about what a color means. `--port` and `--host` are
 both flags on `python -m lja.dashboard`; neither has an `LJA_*` environment
 variable yet.
 
+**Competency clusters.** `/clusters` (linked in the header) shows the tables
+`python -m lja.cli` prints: which SILOs each competency groups, with each
+SILO's wording shown under its subject as a collapsible tree, the clustering
+rationale, the SILOs flagged as poorly worded, and every SILO definition. It
+adds what the console cannot: each cluster's review state from
+`silo_clustering.review.json`, and a gap rate (the share of students measured
+on the competency who have a persistent or isolated gap in it), so reviewers
+can see which groupings the gap report leans on most. A filter box matches
+competency names, subject codes and SILO wording, which is what keeps a
+100-subject catalogue usable. For a cohort from `catalogue_generator`, the
+clusters are the catalogue's ground truth and the generator writes the review
+file already confirmed, so "confirmed" there does not mean a person reviewed
+them.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
