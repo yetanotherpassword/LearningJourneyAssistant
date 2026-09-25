@@ -11,9 +11,9 @@ import re
 from fastapi.testclient import TestClient
 
 from lja.dashboard.app import create_app
-from lja.data.excel_loader import LjaDataset, ResultRow, StudentSummary
+from lja.data.excel_loader import LjaDataset, ResultRow, Silo, StudentSummary
 from lja.model.gap_detection import BASIS_CEILING, BASIS_FLOOR, BASIS_RELATIVE, CompetencyGap
-from lja.model.silo_clustering import CompetencyCluster, SiloClusteringResult, SiloRef
+from lja.model.silo_clustering import CompetencyCluster, FlaggedSilo, SiloClusteringResult, SiloRef
 
 
 def _dataset(summaries: list[StudentSummary] | None = None, results: list[ResultRow] | None = None) -> LjaDataset:
@@ -406,3 +406,71 @@ def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
     body = TestClient(app).get("/").text
 
     assert "AI review warning:" not in body
+
+
+def _clusters_client(review_states: dict[str, str] | None = None) -> TestClient:
+    silos = {
+        "CSE1OOF:SILO1": Silo(subject_code="CSE1OOF", silo_local_id="SILO1", text="design object-oriented programs"),
+        "CSE2ALG:SILO1": Silo(subject_code="CSE2ALG", silo_local_id="SILO1", text="overall objectives of algorithms"),
+        "CSE2ALG:SILO2": Silo(subject_code="CSE2ALG", silo_local_id="SILO2", text="implement sorting algorithms"),
+        "CSE3CAP:SILO9": Silo(subject_code="CSE3CAP", silo_local_id="SILO9", text="an outcome nobody clustered"),
+    }
+    dataset = LjaDataset(silos=silos, assessments=[], results=[], student_summaries=[])
+    clustering = SiloClusteringResult(
+        clusters=[
+            CompetencyCluster(
+                competency_label="Algorithms",
+                rationale="both subjects cover algorithms",
+                members=[SiloRef(subject_code="CSE2ALG", silo_local_id="SILO1"),
+                         SiloRef(subject_code="CSE2ALG", silo_local_id="SILO2")],
+            ),
+            CompetencyCluster(
+                competency_label="OO Design",
+                rationale="only CSE1OOF",
+                members=[SiloRef(subject_code="CSE1OOF", silo_local_id="SILO1")],
+            ),
+        ],
+        flagged_silos=[FlaggedSilo(subject_code="CSE2ALG", silo_local_id="SILO1", reason="vague, no specific skill")],
+    )
+    gaps = [
+        CompetencyGap(student_id=sid, competency_label="Algorithms", attainment_pct=pct, subjects_evidencing=1,
+                      n_observations=2, classification=cls, classification_basis=BASIS_FLOOR, relative_position=None)
+        for sid, pct, cls in [("STU0001", 30.0, "isolated gap"), ("STU0002", 70.0, "developing")]
+    ]
+    return TestClient(create_app(dataset, gaps, clustering, review_states=review_states))
+
+
+def test_clusters_page_groups_silo_wording_under_competency_and_subject() -> None:
+    body = _clusters_client().get("/clusters").text
+    algorithms = body.split('id="competency-1"')[1].split('id="competency-2"')[0]
+    assert "CSE2ALG" in algorithms and "implement sorting algorithms" in algorithms
+    assert "both subjects cover algorithms" in algorithms
+    assert "design object-oriented programs" not in algorithms
+
+
+def test_clusters_page_lists_flagged_silos_with_their_reason() -> None:
+    body = _clusters_client().get("/clusters").text
+    flagged = body.split("<h2>Flagged SILOs</h2>")[1].split("<h2>SILO definitions</h2>")[0]
+    assert "CSE2ALG:SILO1" in flagged and "vague, no specific skill" in flagged
+
+
+def test_clusters_page_gap_rate_is_share_of_measured_students_with_a_gap() -> None:
+    body = _clusters_client().get("/clusters").text
+    assert "1 of 2 students measured on this competency have a gap in it" in body
+    assert "50% gap rate" in body
+
+
+def test_clusters_page_reports_silos_in_no_cluster() -> None:
+    body = _clusters_client().get("/clusters").text
+    assert "1 SILO in no cluster" in body and "CSE3CAP:SILO9" in body
+
+
+def test_clusters_page_shows_review_state_only_when_known() -> None:
+    assert "review-pending" not in _clusters_client().get("/clusters").text
+    body = _clusters_client(review_states={}).get("/clusters").text
+    assert body.count('class="badge review-pending"') == 2
+    assert "0 / 2" in body
+
+
+def test_header_links_to_the_clusters_page() -> None:
+    assert 'href="/clusters"' in _client(_dataset(), []).get("/").text

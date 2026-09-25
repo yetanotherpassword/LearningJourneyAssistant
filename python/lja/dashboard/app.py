@@ -41,6 +41,7 @@ from ..data.excel_loader import LjaDataset, StudentSummary
 from ..model.gap_detection import CompetencyGap
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
 from ..model.silo_clustering import SiloClusteringResult
+from ..review import cluster_id
 from .stats import histogram, summarise
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -112,6 +113,7 @@ def create_app(
     gaps: list[CompetencyGap],
     clustering: SiloClusteringResult,
     review_warning: str | None = None,
+    review_states: dict[str, str] | None = None,
 ) -> FastAPI:
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
@@ -176,6 +178,16 @@ def create_app(
                 }
             ),
         }
+
+    # /clusters is fixed for the life of the app (the clustering and the gaps
+    # do not change after start-up), so it is built once here, not per request.
+    clusters_context = _clusters_view_model(dataset, gaps, clustering, review_states)
+
+    @app.get("/clusters")
+    def clusters_view(request: Request):
+        return templates.TemplateResponse(
+            request, "clusters.html", {**clusters_context, "review_warning": review_warning}
+        )
 
     @app.get("/")
     def index(request: Request):
@@ -249,3 +261,94 @@ def create_app(
         )
 
     return app
+
+
+def _clusters_view_model(
+    dataset: LjaDataset,
+    gaps: list[CompetencyGap],
+    clustering: SiloClusteringResult,
+    review_states: dict[str, str] | None,
+) -> dict:
+    """The dashboard form of the tables `python -m lja.cli` prints: which SILOs
+    each competency groups, why (the LLM's rationale), which SILOs were
+    flagged as poorly worded, and every SILO's wording.
+
+    Adds two things the console cannot: the staff review state of each
+    cluster, and how often the competency is a gap for the students it was
+    measured on, so a reviewer can see which groupings the gap report leans
+    on most.
+    """
+    flag_reasons = {f"{f.subject_code}:{f.silo_local_id}": f.reason for f in clustering.flagged_silos}
+    measured = Counter(g.competency_label for g in gaps)
+    gapped = Counter(g.competency_label for g in gaps if g.classification in _AT_RISK_CLASSIFICATIONS)
+    largest = max((len(c.members) for c in clustering.clusters), default=0)
+
+    clusters = []
+    clustered: set[str] = set()
+    competency_of: dict[str, str] = {}
+    for index, cluster in enumerate(clustering.clusters):
+        by_subject: dict[str, list[dict]] = defaultdict(list)
+        for member in cluster.members:
+            key = f"{member.subject_code}:{member.silo_local_id}"
+            clustered.add(key)
+            competency_of[key] = cluster.competency_label
+            silo = dataset.silos.get(key)
+            by_subject[member.subject_code].append(
+                {
+                    "id": member.silo_local_id,
+                    "text": silo.text if silo else None,
+                    "flag_reason": flag_reasons.get(key),
+                }
+            )
+        n_measured = measured[cluster.competency_label]
+        clusters.append(
+            {
+                "anchor": f"competency-{index + 1}",
+                "label": cluster.competency_label,
+                "rationale": cluster.rationale,
+                # None when the app was not told (tests, or a caller with no
+                # review file); the template then shows no badge at all
+                # rather than guessing "pending".
+                "review_state": (
+                    review_states.get(cluster_id(cluster), "pending") if review_states is not None else None
+                ),
+                "n_silos": len(cluster.members),
+                "size_pct": round(100 * len(cluster.members) / largest) if largest else 0,
+                "subjects": [
+                    {"code": code, "silos": sorted(silos, key=lambda s: s["id"])}
+                    for code, silos in sorted(by_subject.items())
+                ],
+                # What the page's filter box matches against, lower-cased once here.
+                "search": " ".join(
+                    [cluster.competency_label, *by_subject]
+                    + [silo["text"] for silos in by_subject.values() for silo in silos if silo["text"]]
+                ).lower(),
+                "n_flagged": sum(1 for m in cluster.members if f"{m.subject_code}:{m.silo_local_id}" in flag_reasons),
+                "n_measured": n_measured,
+                "n_gapped": gapped[cluster.competency_label],
+                "gap_pct": round(100 * gapped[cluster.competency_label] / n_measured, 1) if n_measured else None,
+            }
+        )
+
+    anchors = {c["label"]: c["anchor"] for c in clusters}
+    silo_rows = [
+        {
+            "key": key,
+            "subject_code": silo.subject_code,
+            "silo_local_id": silo.silo_local_id,
+            "text": silo.text,
+            "competency": competency_of.get(key),
+            "anchor": anchors.get(competency_of.get(key, "")),
+            "flag_reason": flag_reasons.get(key),
+        }
+        for key, silo in sorted(dataset.silos.items(), key=lambda kv: (kv[1].subject_code, kv[1].silo_local_id))
+    ]
+    states = Counter(c["review_state"] for c in clusters if c["review_state"] is not None)
+    return {
+        "clusters": clusters,
+        "flagged": [row for row in silo_rows if row["flag_reason"]],
+        "silo_rows": silo_rows,
+        "unclustered": [row for row in silo_rows if row["key"] not in clustered],
+        "n_subjects": len({s.subject_code for s in dataset.silos.values()}),
+        "review_counts": states if review_states is not None else None,
+    }
