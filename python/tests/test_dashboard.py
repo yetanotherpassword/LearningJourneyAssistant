@@ -379,6 +379,9 @@ def test_dashboard_shows_pending_ai_review_warning() -> None:
 
     assert "AI review warning:" in body
     assert "still awaiting staff review" in body
+    assert 'href="/clusters"' in body.split("AI review warning:")[0][-200:], (
+        "the banner itself must link to the clusters page, where each cluster's review state is shown"
+    )
 
 
 def test_dashboard_shows_rejected_ai_review_warning() -> None:
@@ -393,6 +396,7 @@ def test_dashboard_shows_rejected_ai_review_warning() -> None:
 
     assert "AI review warning:" in body
     assert "have been rejected by staff" in body
+    assert "ai-review-warning-link" in body
 
 
 def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
@@ -406,6 +410,7 @@ def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
     body = TestClient(app).get("/").text
 
     assert "AI review warning:" not in body
+    assert "ai-review-warning-link" not in body
 
 
 def _clusters_client(review_states: dict[str, str] | None = None) -> TestClient:

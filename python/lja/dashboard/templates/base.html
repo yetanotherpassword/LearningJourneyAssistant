@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}LJA Dashboard{% endblock %}</title>
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v=iolg131">
 <!-- Requires internet access to load. If this dashboard needs to run fully
      offline, vendor Chart.js into static/ and swap this for a local path. -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -23,8 +23,13 @@
   </nav>
 </header>
 {% if review_warning %}
+{# The whole banner is a link: /clusters shows every cluster with its
+   pending / confirmed / rejected badge, which is where a reviewer goes next. #}
 <div class="ai-review-warning" role="alert">
-  <strong>AI review warning:</strong> {{ review_warning }}
+  <a href="/clusters" class="ai-review-warning-link">
+    <strong>AI review warning:</strong> {{ review_warning }}
+    <span class="ai-review-warning-cta">See which clusters &rarr;</span>
+  </a>
 </div>
 {% endif %}
 <main>
