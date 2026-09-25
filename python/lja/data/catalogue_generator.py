@@ -30,7 +30,7 @@ workbook with more students of the same three subjects:
    share first-year chemistry and maths and then diverge -- a cohort that
    looks like a university, not one giant class. Abilities are drawn from
    a small number of latent aptitude traits through the competencies'
-   `traits` loadings (competency_tagger.py), so strengths are correlated:
+   `traits` loadings (catalogue.py), so strengths are correlated:
    a student strong in one quantitative competency tends to be strong in
    the others, and a program's students lean towards the traits its core
    subjects reward. Without programs or traits the model degrades to the

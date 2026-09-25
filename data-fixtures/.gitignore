@@ -9,7 +9,7 @@ CSE_results_*_synthetic.xlsx
 CSE_results_catalogue_*
 moodle-generated/
 
-# La Trobe handbook crawl (lja/data/handbook.py): page cache and the derived
+# La Trobe handbook crawl (kept local, not in this repo): page cache and the derived
 # catalogues. The content is La Trobe's -- keep it out of the repo unless the
 # project owner says otherwise; it regenerates from the sitemap in minutes.
 handbook/

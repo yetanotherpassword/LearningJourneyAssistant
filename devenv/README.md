@@ -205,8 +205,8 @@ directly (grading controller API + `assign::save_grade()`); re-runs only
 re-grade, never redefine; a missing course or assignment, or an existing
 rubric with different criteria, is reported and skipped rather than fatal.
 
-At handbook scale (300+ subjects, see the python README) `seed.sh --from-file`
-will create 300+ courses; at size S that is 100 users and ten assignments
+For a catalogue of hundreds of subjects, `seed.sh --from-file` will create
+hundreds of courses; at size S that is 100 users and ten assignments
 each, and `tool_generator` takes roughly a minute per course. Trim
 `seed_subjects.txt` to the subjects one program actually uses if you only
 need a demo instance.

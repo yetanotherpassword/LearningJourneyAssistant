@@ -747,74 +747,23 @@ asks only about the missed/duplicated SILOs. That is a clustering work
 package, not this one. Until it lands, score gap detection through the
 ground-truth clustering, which is what the sidecar is for.
 
-**Hundreds of real subjects: the La Trobe handbook.** For a cohort that
-looks like a university -- engineering, biology, chemistry, computing
-students sharing first-year maths and chemistry and then diverging -- the
-subjects come from the handbook, not from the LLM's imagination.
-handbook.latrobe.edu.au allows crawling, lists every subject page in its
-sitemap, and embeds each subject as JSON with its SILOs; CSE1OOF's SILOs
-there are the originals Scott abbreviated. Three commands:
-
-```bash
-# 1. crawl (one request/second, cached on disk; 314 pages took ~5 min)
-python -m lja.data.handbook --year 2026 --prefix CSE PHY CHE MAT STA BIO BCH MIC GEN ENG ELE CIV EEE ENV AGR SCI \
-    --out ../data-fixtures/handbook/catalogue_raw.yaml
-# 2. group the SILOs into competencies with embeddings, label them with the LLM
-python -m lja.data.competency_tagger ../data-fixtures/handbook/catalogue_raw.yaml \
-    --out ../data-fixtures/handbook/catalogue_tagged.yaml --k 48 --traits 5
-# 3. add programs (see below), then generate as usual
-python -m lja.data.catalogue_generator ../data-fixtures/handbook/catalogue.yaml --students 3000 \
-    --out ../data-fixtures/handbook/CSE_results_catalogue_handbook_3000_synthetic.xlsx \
-    --moodle-out ../data-fixtures/handbook/moodle-generated
-```
-
-What each step does and does not do:
-
-- `handbook.py` gets real SILOs, titles, year levels and credit points. The
-  handbook loads assessment maps per teaching period with client-side
-  JavaScript and that endpoint is not in the page bundles, so assessments
-  are **synthetic**, drawn from a small library of realistic patterns per
-  discipline and seeded by subject code (`assessments_synthetic: true` on
-  every subject). Swap them for real ones if Scott can export them.
-- `competency_tagger.py` embeds every SILO (`nomic-embed-text` through the
-  OpenAI-compatible endpoint; `LJA_EMBED_MODEL`), runs spherical k-means,
-  and asks the chat model only to *label* each cluster, in batches of 20.
-  1,436 SILOs took 64 seconds end to end. This is the scaling answer to the
-  finding above: `cluster_silos()` cannot partition 52 SILOs in one call,
-  but grouping sentences by meaning is what embeddings are for. It also
-  writes `traits` on each competency: loadings onto a few latent aptitude
-  axes from a PCA of the cluster centroids, so competencies that mean
-  similar things co-vary across students.
-- **Programs** live in the catalogue's `programs:` list. Each has an intake
-  share and ordered rules: "take N subjects matching these globs in this
-  year", core (first N in catalogue order) or elective (sampled). The
-  science set in `data-fixtures/handbook/catalogue.yaml` defines seven, from
-  Computer Science to Agricultural Science and a Master of IT, and every
-  student is assigned to one. The generator then draws each student's
-  traits around their program's mean (`--program-selection`: engineering
-  students lean towards what engineering rewards), derives competency
-  abilities from traits plus independent noise (`--latent-share`), and
-  enrols by the rules. Planted gaps land only in a competency the student's
-  own subjects evidence at least twice.
-
-Measured on the 3,000-student, seed-7 handbook cohort (314 subjects, 1,436
-SILOs, 48 competencies, 7 programs, 193,988 result rows; generation 20 s,
-workbook 24 MB, pipeline 13 s) through the ground-truth clustering:
-
-| Relative gap cutoff (MAD) | Planted gaps found as persistent (of 245) | Unplanted students with a persistent gap | ...of which genuinely in the student's weakest third |
-| --- | --- | --- | --- |
-| -1.0 (default) | 227 (93%) | 2,240 of 3,000 | 2,066 |
-| -1.5 | 220 (90%) | 1,833 | 1,700 |
-| -2.0 | 207 (84%) | 1,420 | 1,329 |
-
-Same shape as the 500-student finding above, now with a sensitivity curve:
-the detector is accurate about *which* competency is weak, and the cutoff
-trades a little planted-gap recall for a lot fewer flagged students. That
-table is the input action A-01 has been missing.
-
-The handbook directory is gitignored: the content is La Trobe's, and the
-whole thing regenerates from the sitemap in minutes. Ask Scott before
-committing any of it.
+**Programs and correlated strengths.** A catalogue may define a
+`programs:` list so that students share some subjects and diverge on
+others, the way an engineering student and a biology student share
+first-year maths. Each program has an intake share and ordered rules: "take
+N subjects matching these globs in this year", either core (the first N in
+catalogue order) or elective (sampled). Every student is assigned to one
+program and enrols by its rules. A competency may also carry `traits`,
+which are loadings onto a few latent aptitude axes. The generator then
+derives each student's competency abilities from their traits plus
+independent noise (`--latent-share`), so a student strong in one
+quantitative competency tends to be strong in the others. It draws those
+traits around the program's mean (`--program-selection`), so a program's
+students lean towards what its core subjects reward. Planted gaps land only
+in a competency that the student's own subjects evidence at least twice.
+`subject_catalogue.yaml` defines neither, so the default cohort uses the
+simpler model above. `tests/test_catalogue_programs.py` builds a small
+catalogue that uses both.
 
 **Drafting more subjects with the LLM.** Hand-writing 30 subjects of
 plausible SILOs is the tedious part; the model drafts them in the
