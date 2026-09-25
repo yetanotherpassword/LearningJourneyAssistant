@@ -448,6 +448,60 @@ def subject_links(clustering: SiloClusteringResult) -> SubjectLinks:
     )
 
 
+def discipline_of(subject_code: str) -> str:
+    """The leading letters of a subject code: CSE2ALG -> CSE, MAT1001 -> MAT."""
+    m = re.match(r"[A-Za-z]+", subject_code)
+    return m.group(0).upper() if m else subject_code
+
+
+@dataclass(frozen=True)
+class DisciplineLinks:
+    """The chord-diagram input one level up from SubjectLinks: arcs are
+    disciplines (subject-code prefixes), a cell counts the DISTINCT
+    competencies both disciplines teach. Distinct rather than summed pair
+    counts, so one competency shared by twelve CSE and three MAT subjects is
+    one link, not thirty-six -- the number a reader expects when told "CSE and
+    MAT share 4 competencies". A subject-level chord stops being readable at a
+    few dozen arcs; this stays at one arc per discipline however many subjects
+    there are."""
+
+    disciplines: tuple[str, ...]
+    subject_counts: tuple[int, ...]
+    matrix: tuple[tuple[int, ...], ...]  # diagonal = competencies shared by 2+ subjects inside the discipline
+    shared: dict[tuple[str, str], tuple[str, ...]]
+
+
+def discipline_links(clustering: SiloClusteringResult) -> DisciplineLinks:
+    subjects_by_disc: dict[str, set[str]] = defaultdict(set)
+    for cluster in clustering.clusters:
+        for m in cluster.members:
+            subjects_by_disc[discipline_of(m.subject_code)].add(m.subject_code)
+    disciplines = sorted(subjects_by_disc)
+    index = {d: i for i, d in enumerate(disciplines)}
+    matrix = [[0] * len(disciplines) for _ in disciplines]
+    shared: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for cluster in clustering.clusters:
+        subjects = {m.subject_code for m in cluster.members}
+        if len(subjects) < 2:
+            continue
+        per_disc = Counter(discipline_of(s) for s in subjects)
+        discs = sorted(per_disc)
+        for i, a in enumerate(discs):
+            if per_disc[a] >= 2:
+                matrix[index[a]][index[a]] += 1
+                shared[(a, a)].append(cluster.competency_label)
+            for b in discs[i + 1:]:
+                matrix[index[a]][index[b]] += 1
+                matrix[index[b]][index[a]] += 1
+                shared[(a, b)].append(cluster.competency_label)
+    return DisciplineLinks(
+        disciplines=tuple(disciplines),
+        subject_counts=tuple(len(subjects_by_disc[d]) for d in disciplines),
+        matrix=tuple(tuple(r) for r in matrix),
+        shared={k: tuple(v) for k, v in shared.items()},
+    )
+
+
 @dataclass(frozen=True)
 class AttainmentMatrix:
     subjects: tuple[str, ...]  # year order

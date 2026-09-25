@@ -44,6 +44,8 @@ from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
     assess_silos,
     competency_progressions,
+    discipline_links,
+    discipline_of,
     slugify,
     subject_competency_matrix,
     subject_links,
@@ -52,10 +54,11 @@ from ..model.silo_quality import (
 )
 from .stats import histogram, summarise
 
-# A chord diagram stops being readable somewhere around forty arcs. Above
-# that the page keeps the most connected subjects and says so in its caption;
-# the full link counts are still in the subject table.
-_MAX_CHORD_SUBJECTS = 40
+# Below this many subjects the chord draws one arc per subject; above it,
+# one arc per discipline (subject-code prefix), because a subject-level chord
+# is a hairball well before a hundred arcs. The subject explorer below the
+# chord carries the per-subject detail at any size.
+_MAX_SUBJECT_CHORD = 16
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -143,6 +146,45 @@ def create_app(
     progression_by_slug = {p.slug: p for p in progressions}
     matrix = subject_competency_matrix(dataset, clustering)
     links = subject_links(clustering)
+    disc_links = discipline_links(clustering)
+
+    # Chord input, computed once: subject level for a small catalogue, the
+    # discipline roll-up otherwise (or when every subject is one discipline,
+    # where a one-arc chord would say nothing).
+    if len(links.subjects) <= _MAX_SUBJECT_CHORD or len(disc_links.disciplines) < 2:
+        chord_level = "subject"
+        chord_payload = {
+            "level": chord_level,
+            "names": list(links.subjects),
+            "sizes": [1] * len(links.subjects),
+            "matrix": [list(r) for r in links.matrix],
+            "shared": {f"{a}|{b}": list(v) for (a, b), v in links.shared.items()},
+        }
+    else:
+        chord_level = "discipline"
+        chord_payload = {
+            "level": chord_level,
+            "names": list(disc_links.disciplines),
+            "sizes": list(disc_links.subject_counts),
+            # The diagonal (links inside a discipline) is reported in the
+            # tooltip but not drawn: a self-ribbon reads as noise.
+            "matrix": [[0 if i == j else v for j, v in enumerate(r)] for i, r in enumerate(disc_links.matrix)],
+            "internal": [disc_links.matrix[i][i] for i in range(len(disc_links.disciplines))],
+            "shared": {f"{a}|{b}": list(v) for (a, b), v in disc_links.shared.items()},
+        }
+
+    # Subject explorer: every subject's partners, most shared first.
+    partners: dict[str, list[dict]] = {s: [] for s in links.subjects}
+    for (a, b), labels in links.shared.items():
+        partners[a].append({"code": b, "labels": list(labels)})
+        partners[b].append({"code": a, "labels": list(labels)})
+    for rows in partners.values():
+        rows.sort(key=lambda r: (-len(r["labels"]), r["code"]))
+    explorer_subjects = sorted(links.subjects, key=lambda s: (-len(partners[s]), s))
+    explorer_payload = {
+        "subjects": [{"code": s, "discipline": discipline_of(s), "n": len(partners[s])} for s in explorer_subjects],
+        "partners": partners,
+    }
 
     gaps_by_student: dict[str, list[CompetencyGap]] = defaultdict(list)
     for gap in gaps:
@@ -277,15 +319,6 @@ def create_app(
 
     @app.get("/silos")
     def outcome_quality(request: Request):
-        # Trim the chord input to the most connected subjects; keep the
-        # subject table complete.
-        degree = [sum(row) for row in links.matrix]
-        keep = sorted(range(len(links.subjects)), key=lambda i: (-degree[i], links.subjects[i]))[:_MAX_CHORD_SUBJECTS]
-        keep.sort()
-        chord_subjects = [links.subjects[i] for i in keep]
-        chord_matrix = [[links.matrix[i][j] for j in keep] for i in keep]
-        chord_shared = {f"{a}|{b}": list(labels) for (a, b), labels in links.shared.items() if a in chord_subjects and b in chord_subjects}
-
         context = {
             "totals": {
                 "subjects": len(subject_rows),
@@ -306,8 +339,10 @@ def create_app(
             ),
             "progressions": progressions,
             "matrix": matrix,
-            "links": {"subjects": chord_subjects, "total": len(links.subjects), "truncated": len(keep) < len(links.subjects)},
-            "links_json": json.dumps({"subjects": chord_subjects, "matrix": chord_matrix, "shared": chord_shared}),
+            "links": {"level": chord_level, "n_subjects": len(links.subjects), "n_disciplines": len(disc_links.disciplines),
+                      "max_subject_chord": _MAX_SUBJECT_CHORD},
+            "chord_json": json.dumps(chord_payload),
+            "explorer_json": json.dumps(explorer_payload),
         }
         return templates.TemplateResponse(request, "silos.html", context)
 

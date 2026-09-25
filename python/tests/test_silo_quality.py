@@ -12,6 +12,7 @@ from lja.model.silo_clustering import CompetencyCluster, FlaggedSilo, SiloCluste
 from lja.model.silo_quality import (
     assess_silos,
     competency_progressions,
+    discipline_links,
     slugify,
     subject_competency_matrix,
     subject_links,
@@ -164,3 +165,28 @@ def test_matrix_leaves_untaught_cells_empty() -> None:
 def test_slugify() -> None:
     assert slugify("Object-oriented analysis & modelling") == "object-oriented-analysis-modelling"
     assert slugify("!!!") == "competency"
+
+
+def test_discipline_links_count_distinct_competencies_and_keep_internal_links() -> None:
+    clustering = SiloClusteringResult(
+        clusters=[
+            CompetencyCluster(
+                competency_label="Proof",
+                rationale="r",
+                members=[SiloRef(subject_code=c, silo_local_id="SILO1") for c in ("CSE1OOF", "CSE2ALG", "MAT1001", "MAT2001")],
+            ),
+            CompetencyCluster(
+                competency_label="Solo",
+                rationale="r",
+                members=[SiloRef(subject_code="PHY1SCA", silo_local_id="SILO1")],
+            ),
+        ],
+        flagged_silos=[],
+    )
+    links = discipline_links(clustering)
+    assert links.disciplines == ("CSE", "MAT", "PHY")
+    assert links.subject_counts == (2, 2, 1)
+    # One competency spanning four subjects in two disciplines is ONE link, not four.
+    assert links.matrix == ((1, 1, 0), (1, 1, 0), (0, 0, 0))
+    assert links.shared[("CSE", "MAT")] == ("Proof",)
+    assert links.shared[("CSE", "CSE")] == ("Proof",)

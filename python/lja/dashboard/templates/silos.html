@@ -133,15 +133,37 @@
 <p class="empty-state">No competency spans more than one subject in this clustering, so there is no progression to draw.</p>
 {% endif %}
 
-<h2>Which subjects share competencies</h2>
+<h2 id="share">Which subjects share competencies</h2>
 <p class="dek">
-  Each arc is a subject; a ribbon between two subjects is the competencies they both teach, thicker for
-  more. A subject with no ribbons teaches nothing the clustering could link elsewhere.
-  {% if links.truncated %}Showing the {{ links.subjects|length }} most connected of {{ links.total }} subjects.{% endif %}
-  Hover a ribbon for the competency names.
+  Two subjects are linked when some of their outcomes were clustered into the same competency: a
+  student's work in one is evidence about the other.
+  {% if links.level == "discipline" %}
+  With {{ links.n_subjects }} subjects a subject-by-subject diagram is unreadable, so the circle groups
+  them into {{ links.n_disciplines }} disciplines by subject-code prefix. A ribbon's width is the number of
+  distinct competencies the two disciplines both teach. The slider hides weak links; click a discipline to isolate its own. Use the explorer below for individual subjects.
+  {% else %}
+  Each arc is a subject and a ribbon's width is the number of competencies the two subjects both teach.
+  An arc's length is the subject's total links, so a subject linked to nothing has almost no arc.
+  {% endif %}
 </p>
 <div class="chart-card">
-  <svg id="chord" class="chord" viewBox="0 0 760 760" role="img" aria-label="Chord diagram of subjects linked by shared competencies"></svg>
+  <div class="explorer-controls">
+    <label>Show links sharing at least <input type="range" id="chord-min" min="1" max="1" value="1"> <output id="chord-min-out">1</output> competencies</label>
+  </div>
+  <svg id="chord" class="chord" viewBox="0 0 760 760" role="img" aria-label="Chord diagram of {{ 'disciplines' if links.level == 'discipline' else 'subjects' }} linked by shared competencies"></svg>
+  <p class="chart-note" id="chord-status" aria-live="polite"></p>
+</div>
+
+<div class="chart-card explorer">
+  <h3>Explore one subject</h3>
+  <p class="chart-note">Every subject it shares a competency with, most shared first, and which competencies they are.</p>
+  <div class="explorer-controls">
+    <label>Subject <select id="explorer-subject"></select></label>
+    <label class="check"><input type="checkbox" id="explorer-other"> other disciplines only</label>
+  </div>
+  <p class="explorer-summary" id="explorer-summary"></p>
+  <ol class="partner-list" id="partner-list"></ol>
+  <button type="button" class="linkish" id="partner-more" hidden></button>
 </div>
 
 <h2>Attainment by subject and competency</h2>
@@ -201,7 +223,6 @@
 <script>
 (function () {
   const terms = {{ terms_json|safe }};
-  const links = {{ links_json|safe }};
   const styles = getComputedStyle(document.documentElement);
   const cssVar = (name) => styles.getPropertyValue(name).trim();
   const kindColor = {
@@ -248,41 +269,181 @@
     })
     .start();
 
-  // ---- chord diagram -----------------------------------------------------
-  const names = links.subjects;
-  if (names.length < 2) return;
-  const S = 760, outer = S / 2 - 70, inner = outer - 18;
-  const chord = d3.chord().padAngle(0.02).sortSubgroups(d3.descending)(links.matrix);
+})();
+</script>
+<script>
+function drawChord(data, cssVar) {
+  const names = data.names;
+  if (typeof d3 === "undefined" || names.length < 2) return;
+  const status = document.getElementById("chord-status");
+  const slider = document.getElementById("chord-min");
+  const sliderOut = document.getElementById("chord-min-out");
+  const isDisc = data.level === "discipline";
+  const S = 760, outer = S / 2 - 110, inner = outer - 14;
   const arc = d3.arc().innerRadius(inner).outerRadius(outer);
-  const ribbon = d3.ribbon().radius(inner - 1);
-  const years = names.map((n) => (n.match(/^[A-Za-z]+(\d)/) || [null, "0"])[1]);
-  const yearColor = d3.scaleOrdinal().domain(["1", "2", "3", "4", "5", "6", "0"])
-    .range([cssVar("--status-developing"), cssVar("--status-proficient"), cssVar("--accent"),
-            cssVar("--status-isolated"), cssVar("--status-persistent"), "#7c5cbf", cssVar("--muted")]);
-  const csvg = d3.select("#chord").append("g").attr("transform", `translate(${S / 2},${S / 2})`);
+  const ribbon = d3.ribbon().radius(inner - 2);
+  const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+  const accent = cssVar("--accent"), muted = cssVar("--muted"), ink = cssVar("--ink"), surface = cssVar("--surface");
+  const svg = d3.select("#chord");
+  svg.append("rect").attr("width", S).attr("height", S).attr("fill", "transparent").on("click", () => focus(null));
+  const root = svg.append("g").attr("transform", `translate(${S / 2},${S / 2})`);
+  const unit = isDisc ? "discipline" : "subject";
 
-  const group = csvg.append("g").selectAll("g").data(chord.groups).enter().append("g");
-  group.append("path").attr("d", arc).attr("fill", (d) => yearColor(years[d.index])).attr("stroke", cssVar("--surface"));
-  group.append("title").text((d) => `${names[d.index]}: ${d.value} shared-competency link${d.value === 1 ? "" : "s"}`);
-  group.append("text")
-    .each((d) => { d.angle = (d.startAngle + d.endAngle) / 2; })
-    .attr("dy", "0.35em")
-    .attr("transform", (d) => `rotate(${(d.angle * 180) / Math.PI - 90}) translate(${outer + 6}) ${d.angle > Math.PI ? "rotate(180)" : ""}`)
-    .attr("text-anchor", (d) => (d.angle > Math.PI ? "end" : null))
-    .style("font-size", names.length > 40 ? "8px" : "11px")
-    .style("fill", cssVar("--ink"))
-    .text((d) => names[d.index]);
+  // Dense catalogues link almost every pair through a few generic
+  // competencies, which turns any chord into a solid disc. The slider hides
+  // weak links; its default is the smallest threshold that leaves about 30.
+  const values = [];
+  data.matrix.forEach((r, i) => r.forEach((v, j) => { if (j > i && v > 0) values.push(v); }));
+  // A chord with one or two ribbons is a solid disc that says nothing (the
+  // supplied 3-subject workbook has exactly one link). Say it in words.
+  if (values.length < 3) {
+    document.getElementById("chord").style.display = "none";
+    slider.closest(".explorer-controls").hidden = true;
+    const pairs = Object.entries(data.shared).filter(([k]) => { const [a, b] = k.split("|"); return a !== b; });
+    const linked = new Set(pairs.flatMap(([k]) => k.split("|")));
+    const alone = names.filter((n) => !linked.has(n));
+    status.textContent = (pairs.length
+      ? pairs.map(([k, labels]) => `${k.replace("|", " and ")} share ${labels.length} competenc${labels.length === 1 ? "y" : "ies"}: ${labels.join(", ")}.`).join(" ")
+      : `No two ${unit}s share a competency.`) +
+      (alone.length ? ` ${alone.join(", ")} share${alone.length === 1 ? "s" : ""} none with any other ${unit}.` : "") +
+      " Too few links for a diagram.";
+    status.style.fontSize = "1rem";
+    return;
+  }
+  const maxV = Math.max(1, ...values);
+  let minShared = 1;
+  while (minShared < maxV && values.filter((v) => v >= minShared).length > 30) minShared++;
+  slider.max = maxV;
+  slider.value = minShared;
+  slider.disabled = maxV <= 1;
 
-  csvg.append("g").attr("fill-opacity", 0.55).selectAll("path").data(chord).enter().append("path")
-    .attr("d", ribbon)
-    .attr("fill", (d) => yearColor(years[d.source.index]))
-    .attr("stroke", cssVar("--surface"))
-    .append("title").text((d) => {
+  let groups, ribbons, focused = null;
+  function draw() {
+    sliderOut.textContent = minShared;
+    const m = data.matrix.map((r) => r.map((v) => (v >= minShared ? v : 0)));
+    const shown = values.filter((v) => v >= minShared).length;
+    // A discipline left with no link keeps a sliver so it stays on the circle.
+    const sized = m.map((r, i) => (r.some((v) => v > 0) ? r : r.map((v, j) => (j === i ? 0.001 : v))));
+    const chord = d3.chord().padAngle(0.04).sortSubgroups(d3.descending)(sized);
+    root.selectAll("*").remove();
+    groups = root.append("g").selectAll("g").data(chord.groups).enter().append("g").style("cursor", "pointer")
+      .on("click", (event, d) => { event.stopPropagation(); focus(focused === d.index ? null : d.index); });
+    groups.append("path").attr("d", arc).attr("fill", accent).attr("stroke", surface);
+    groups.append("title").text((d) => {
+      const i = d.index;
+      const all = data.matrix[i].filter((v) => v > 0).length;
+      let t = isDisc ? `${names[i]}: ${data.sizes[i]} subjects` : names[i];
+      t += `\nshares competencies with ${all} other ${unit}${all === 1 ? "" : "s"}`;
+      if (isDisc) t += `\n${data.internal[i]} competenc${data.internal[i] === 1 ? "y is" : "ies are"} shared between its own subjects`;
+      return t + "\nClick to show only its links.";
+    });
+    const label = groups.append("text")
+      .each((d) => { d.angle = (d.startAngle + d.endAngle) / 2 - Math.PI / 2; })
+      .attr("x", (d) => Math.cos(d.angle) * (outer + 10))
+      .attr("y", (d) => Math.sin(d.angle) * (outer + 10))
+      .attr("dy", "0.35em")
+      .attr("text-anchor", (d) => (Math.abs(Math.cos(d.angle)) < 0.2 ? "middle" : Math.cos(d.angle) > 0 ? "start" : "end"))
+      .style("font-size", "13px").style("fill", ink);
+    label.append("tspan").style("font-weight", 700).text((d) => names[d.index]);
+    if (isDisc) label.append("tspan").style("fill", muted).style("font-size", "11px").text((d) => ` ${data.sizes[d.index]}`);
+
+    ribbons = root.append("g").selectAll("path").data(chord.filter((c) => c.source.value >= 1)).enter().append("path")
+      .attr("d", ribbon).attr("stroke", "none");
+    ribbons.append("title").text((d) => {
       const a = names[d.source.index], b = names[d.target.index];
-      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
-      const shared = links.shared[key] || [];
+      const shared = data.shared[pairKey(a, b)] || [];
       return `${a} and ${b} share ${shared.length} competenc${shared.length === 1 ? "y" : "ies"}:\n${shared.join("\n")}`;
     });
+    focus(focused);
+    status.textContent = `${shown} of ${values.length} links drawn` +
+      (focused === null ? ". Click a " + unit + " to isolate it." : `; showing ${names[focused]}'s. Click the background to reset.`);
+  }
+
+  function focus(i) {
+    focused = i;
+    const touches = (d) => d.source.index === i || d.target.index === i;
+    ribbons.attr("fill", (d) => (i !== null && touches(d) ? accent : muted))
+      .attr("fill-opacity", (d) => (i === null ? 0.45 : touches(d) ? 0.85 : 0.05));
+    groups.select("path").attr("fill-opacity", (d) => (i === null || d.index === i || data.matrix[i][d.index] >= minShared ? 1 : 0.25));
+    if (status.textContent) status.textContent = status.textContent.replace(/\. Click a .*|; showing .*/,
+      i === null ? ". Click a " + unit + " to isolate it." : `; showing ${names[i]}'s. Click the background to reset.`);
+  }
+
+  slider.addEventListener("input", () => { minShared = +slider.value; draw(); });
+  draw();
+}
+
+(function () {
+  const styles = getComputedStyle(document.documentElement);
+  drawChord({{ chord_json|safe }}, (name) => styles.getPropertyValue(name).trim());
+})();
+
+(function () {
+  const data = {{ explorer_json|safe }};
+  const select = document.getElementById("explorer-subject");
+  const other = document.getElementById("explorer-other");
+  const list = document.getElementById("partner-list");
+  const summary = document.getElementById("explorer-summary");
+  const more = document.getElementById("partner-more");
+  const PAGE = 15;
+  let showAll = false;
+  if (!data.subjects.length) { summary.textContent = "No subject shares a competency with another."; return; }
+  const discOf = Object.fromEntries(data.subjects.map((s) => [s.code, s.discipline]));
+  const byDisc = d3group(data.subjects);
+  for (const [disc, subjects] of byDisc) {
+    const g = document.createElement("optgroup");
+    g.label = disc;
+    for (const s of subjects) {
+      const o = document.createElement("option");
+      o.value = s.code;
+      o.textContent = `${s.code} (linked to ${s.n})`;
+      g.appendChild(o);
+    }
+    select.appendChild(g);
+  }
+  select.value = data.subjects[0].code;  // the most linked subject
+  function d3group(rows) {
+    const out = new Map();
+    for (const r of [...rows].sort((a, b) => a.code.localeCompare(b.code))) {
+      if (!out.has(r.discipline)) out.set(r.discipline, []);
+      out.get(r.discipline).push(r);
+    }
+    return out;
+  }
+  function render() {
+    const code = select.value;
+    let rows = data.partners[code] || [];
+    if (other.checked) rows = rows.filter((r) => discOf[r.code] !== discOf[code]);
+    const max = Math.max(1, ...rows.map((r) => r.labels.length));
+    summary.textContent = rows.length
+      ? `${code} shares at least one competency with ${rows.length} subject${rows.length === 1 ? "" : "s"}.`
+      : `${code} shares no competency with ${other.checked ? "any subject outside " + discOf[code] : "any other subject"}.`;
+    list.replaceChildren();
+    for (const r of showAll ? rows : rows.slice(0, PAGE)) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "partner-code linkish"; btn.textContent = r.code;
+      btn.title = `Explore ${r.code}`;
+      btn.addEventListener("click", () => { select.value = r.code; showAll = false; render(); });
+      const bar = document.createElement("span");
+      bar.className = "partner-bar";
+      const fill = document.createElement("i");
+      fill.style.width = `${(100 * r.labels.length) / max}%`;
+      bar.appendChild(fill);
+      const n = document.createElement("span");
+      n.className = "partner-n"; n.textContent = r.labels.length;
+      const labels = document.createElement("span");
+      labels.className = "partner-labels"; labels.textContent = r.labels.join(" · ");
+      li.append(btn, bar, n, labels);
+      list.appendChild(li);
+    }
+    more.hidden = rows.length <= PAGE;
+    more.textContent = showAll ? "Show fewer" : `Show all ${rows.length}`;
+  }
+  select.addEventListener("change", () => { showAll = false; render(); });
+  other.addEventListener("change", render);
+  more.addEventListener("click", () => { showAll = !showAll; render(); });
+  render();
 })();
 </script>
 {% endblock %}
