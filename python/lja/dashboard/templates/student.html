@@ -12,6 +12,27 @@
   <canvas id="attainment-chart" height="90"></canvas>
 </div>
 
+<h2>Strengths</h2>
+{% if strengths %}
+<table class="evidence-table">
+  <thead><tr><th>Competency</th><th>Attainment</th><th>Basis</th></tr></thead>
+  <tbody>
+    {% for s in strengths %}
+    <tr>
+      <td>{{ s.competency_label }} <span class="badge proficient">proficient</span></td>
+      <td>{{ "%.1f"|format(s.attainment_pct) }}%</td>
+      <td>
+        <span class="basis-badge">{{ s.classification_basis }}</span>
+        {% if s.relative_position is not none %}{{ "%+.2f"|format(s.relative_position) }} MAD above this student's own median{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No competency is classified proficient for this student yet.</p>
+{% endif %}
+
 <h2>Competency gaps</h2>
 {% if gap_details %}
 <div class="gap-list">

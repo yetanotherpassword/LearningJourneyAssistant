@@ -50,6 +50,7 @@
       <th data-sort-type="text" aria-sort="ascending">Student</th>
       <th data-sort-type="number">Average</th>
       <th data-sort-type="text">Band</th>
+      <th data-sort-type="number">Strengths</th>
       <th data-sort-type="number">Persistent gaps</th>
       <th data-sort-type="number">Isolated gaps</th>
     </tr>
@@ -64,6 +65,7 @@
       </td>
       <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
       <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
+      <td data-sort-value="{{ row.strength_count }}">{{ row.strength_count }}</td>
       <td data-sort-value="{{ row.persistent_gap_count }}">
         {% if row.persistent_gap_count > 0 %}
         <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>

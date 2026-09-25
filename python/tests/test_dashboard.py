@@ -140,7 +140,10 @@ def test_worst_classification_renders_first() -> None:
         ),
     ]
     body = _client(dataset, gaps).get("/student/STU0001").text
-    assert body.index("Persistent Thing") < body.index("Proficient Thing")
+    # Scoped to the gap cards: the Strengths section above them (IOLG-112)
+    # lists the proficient row first by design.
+    gap_cards = body.split("<h2>Competency gaps</h2>")[1]
+    assert gap_cards.index("Persistent Thing") < gap_cards.index("Proficient Thing")
 
 
 def test_student_detail_shows_per_subject_evidence_and_trend() -> None:
@@ -406,3 +409,74 @@ def test_dashboard_hides_ai_review_warning_when_confirmed() -> None:
     body = TestClient(app).get("/").text
 
     assert "AI review warning:" not in body
+
+
+def _strength(student_id: str, label: str, attainment: float, position: float | None) -> CompetencyGap:
+    return CompetencyGap(
+        student_id=student_id,
+        competency_label=label,
+        attainment_pct=attainment,
+        subjects_evidencing=1,
+        n_observations=2,
+        classification="proficient",
+        classification_basis=BASIS_RELATIVE if position is not None else BASIS_CEILING,
+        relative_position=position,
+    )
+
+
+def _summary(student_id: str) -> StudentSummary:
+    return StudentSummary(student_id=student_id, subject_totals={"CSE1OOF": 70.0}, average_total=70.0, performance_band="Credit")
+
+
+def _strengths_section(body: str) -> str:
+    return body.split("<h2>Strengths</h2>")[1].split("<h2>Competency gaps</h2>")[0]
+
+
+def test_student_page_lists_proficient_competencies_under_strengths() -> None:
+    gaps = [
+        _strength("STU0001", "Testing", 72.0, 1.5),
+        _strength("STU0001", "Data Structures", 80.0, None),
+        CompetencyGap(
+            student_id="STU0001",
+            competency_label="Algorithms",
+            attainment_pct=42.0,
+            subjects_evidencing=1,
+            n_observations=2,
+            classification="isolated gap",
+            classification_basis=BASIS_FLOOR,
+            relative_position=None,
+        ),
+    ]
+    strengths = _strengths_section(_client(_dataset([_summary("STU0001")]), gaps).get("/student/STU0001").text)
+    assert "Testing" in strengths and "Data Structures" in strengths
+    assert "Algorithms" not in strengths
+    # Every strength states how it was reached, as the gap cards do.
+    assert BASIS_RELATIVE in strengths and BASIS_CEILING in strengths
+    assert "+1.50 MAD above" in strengths
+
+
+def test_strengths_are_ordered_strongest_relative_position_first() -> None:
+    gaps = [
+        _strength("STU0001", "Testing", 90.0, 1.2),
+        _strength("STU0001", "Networking", 75.0, 2.4),
+    ]
+    strengths = _strengths_section(_client(_dataset([_summary("STU0001")]), gaps).get("/student/STU0001").text)
+    assert strengths.index("Networking") < strengths.index("Testing")
+
+
+def test_student_page_shows_empty_state_when_nothing_is_proficient() -> None:
+    body = _client(_dataset([_summary("STU0001")]), []).get("/student/STU0001").text
+    assert "No competency is classified proficient" in body
+
+
+def test_header_picker_lists_every_student_on_every_page() -> None:
+    client = _client(_dataset([_summary("STU0001"), _summary("STU0002")]), [])
+    for path in ("/", "/cohort/all", "/student/STU0001"):
+        body = client.get(path).text
+        assert '<option value="STU0001">' in body and '<option value="STU0002">' in body, path
+
+
+def test_index_strength_count_matches_proficient_competencies() -> None:
+    gaps = [_strength("STU0001", "Testing", 72.0, 1.5), _strength("STU0001", "Data Structures", 80.0, None)]
+    body = _client(_dataset([_summary("STU0001")]), gaps).get("/").text
+    assert 'data-sort-value="2">2</td>' in body
