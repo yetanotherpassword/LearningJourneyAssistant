@@ -11,6 +11,33 @@ from the project owner.
 | `CSE_results_300_students_3_Subjects_synthetic.xlsx` | **Generated, not supplied** — the 150 real students above plus 150 more from `lja/data/synth_generator.py`, same shape, same subjects/SILOs/assessments. 11 of the new students have a deliberately planted, known gap on `CSE1OOF:SILO2` + `CSE2ALG:SILO2`/`SILO3`. Running the pipeline against this file and checking that those exact students come back as a persistent gap is a real correctness test — see `python/README.md`'s "Generating more synthetic data" section. Regenerable; not load-bearing to keep in git if the team would rather `.gitignore` it and regenerate on demand. |
 | `backup-moodle2-course-2-demo101-20260809-1200-nu.mbz` | A small external sample Moodle backup used to prove the restore path (see `devenv/README.md`). Not from Scott, no rubric-graded activities — kept as a restore-mechanics reference only, not sample data. |
 | `competency_framework_cse5idp.csv` | Moodle competency framework import fixture. CSE5IDP's own SILOs, as a worked example. |
+| `subject_catalogue.yaml` | **The subject catalogue (IOLG-113)** — subjects, SILOs, assessments and a ground-truth competency tag per SILO. The three supplied subjects verbatim plus nine synthetic ones. Everything under `CSE_results_catalogue_*` and `moodle-generated/` is generated from it and gitignored. See the section below and `python/README.md`. |
+
+## Subject catalogue (IOLG-113)
+
+`subject_catalogue.yaml` exists because the supplied workbook fixes the
+subject list at three and nothing else in the repo could produce a fourth.
+It is the one place subjects and SILOs are defined for **both** test-data
+paths:
+
+- **Excel path.** `python -m lja.data.catalogue_generator` writes a workbook in
+  the supplied shape for any number of students, plus ground-truth sidecars
+  (planted gaps, per-student ability vectors, the catalogue's competency
+  clustering in the LLM cache's own format).
+- **Moodle path.** With `--moodle-out` it also writes one competency-framework
+  CSV per subject (same columns as `competency_framework_cse5idp.csv`), a
+  `criterion_silo_map.csv` covering every rubric criterion, `rubric_fixture.json`
+  for `devenv/fixtures/mark_rubric_from_json.php`, and `seed_subjects.txt` for
+  `devenv/seed.sh --from-file`.
+
+Rules the file enforces on load (`lja/data/catalogue.py`): assessment weights
+sum to 1, every SILO an assessment lists exists, every competency a SILO names
+exists, SILO text contains no semicolon (the workbook cell delimiter), and the
+supplied subjects match the workbook exactly (`python/tests/test_catalogue.py`).
+
+The `competency` tags are an authoring judgement about which SILOs evidence the
+same thing across subjects, not a fact about the degree. Disagree by editing
+them. Add subjects by hand or with `python -m lja.data.catalogue_draft`.
 
 ## Incoming dataset — what we asked for, and what actually arrived
 

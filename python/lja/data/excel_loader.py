@@ -150,8 +150,14 @@ def load_dataset(path: str) -> LjaDataset:
     ]
     student_summaries: list[StudentSummary] = []
     for _, row in student_summary_sheet.iterrows():
+        # A blank cell means the student did not take that subject (cohorts
+        # with programs -- see catalogue_generator.py), so it is not a total
+        # of 0 and must not appear in subject_totals at all: gap_evidence
+        # treats the keys as "subjects already taken".
         totals = {
-            str(col)[: -len(" Total")]: float(row[col]) for col in subject_total_columns
+            str(col)[: -len(" Total")]: float(row[col])
+            for col in subject_total_columns
+            if pd.notna(row[col])
         }
         student_summaries.append(
             StudentSummary(

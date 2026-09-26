@@ -661,6 +661,138 @@ different ground truth, or `--no-llm-feedback` to skip the LLM call
 entirely (uses a small built-in template per band instead — useful for a
 fast, fully offline test run).
 
+## Generating a whole cohort from the subject catalogue (IOLG-113)
+
+`synth_generator.py` above can only add students: it copies the supplied
+workbook's three subjects and 13 SILOs verbatim. Scott was explicit that the
+product's value arrives "across all of our, what, 30-plus subjects", and the
+relative gap detector cannot be exercised properly on data where every
+student is one baseline plus noise (see the `GAP_MIN_SPREAD` note in
+`config.py` and `docs/adr/0001`). The catalogue path addresses both.
+
+`data-fixtures/subject_catalogue.yaml` is the single source: subjects, their
+SILOs, their assessments, and -- the thing the workbook cannot carry -- a
+`competency` tag on every SILO saying which cross-subject competency it
+evidences. The three supplied subjects are in it verbatim (a test checks
+that against the workbook); nine more are synthetic, using the shortnames
+`devenv/seed.sh` already generates. 12 subjects, 52 SILOs, 16 competencies,
+every competency spanning two or more subjects.
+
+```bash
+python -m lja.data.catalogue_generator ../data-fixtures/subject_catalogue.yaml \
+    --students 500 --seed 42 \
+    --out ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx \
+    --moodle-out ../data-fixtures/moodle-generated
+```
+
+What it writes, all regenerable and gitignored:
+
+| File | Purpose |
+| --- | --- |
+| `<out>.xlsx` | Same three sheets and columns as the supplied workbook; loads through `load_dataset()` unchanged. |
+| `<out>.truth.json` | Ground truth: which students were given a planted gap and in which competency, plus every student's hidden ability vector. |
+| `<out>.clustering.json` | The catalogue's competency tags in the LLM clustering cache's own JSON shape. |
+| `<out>.clustering.review.json` | A staff-review file with every ground-truth cluster confirmed, so the pipeline passes the confirmation gate without `--allow-unconfirmed`. |
+| `moodle-generated/` (with `--moodle-out`) | Competency-framework CSV per subject, `criterion_silo_map.csv`, `rubric_fixture.json` and `seed_subjects.txt` for the devenv Moodle -- see `devenv/README.md`. |
+
+How the cohort differs from the supplied data: each student has a baseline
+**and** a per-competency ability (`--competency-sd`, default 7 points), so a
+student weak at abstraction is weak at it in every subject that assesses
+it. A fraction (`--planted-gap-fraction`, default 8%) additionally gets a
+deep planted gap (18-30 points) in one cross-subject competency. Feedback
+text uses the same LLM template-bank mechanism as `synth_generator.py`;
+`--no-llm-feedback` uses the built-in templates. `--competency-sd 0`
+reproduces the supplied data's flat profiles, which is useful for showing
+why they are flat.
+
+Then run the pipeline against the **ground-truth** clustering and score it:
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx \
+    --clustering-cache ../data-fixtures/CSE_results_catalogue_500_synthetic.clustering.json
+python -m lja.data.catalogue_verify ../data-fixtures/CSE_results_catalogue_500_synthetic.truth.json \
+    --gaps output/gap_report.csv
+```
+
+This isolates gap detection from clustering quality. To score the LLM's
+clustering too, refresh it and pass it to the verifier:
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx --refresh-clustering --allow-unconfirmed
+python -m lja.data.catalogue_verify ../data-fixtures/CSE_results_catalogue_500_synthetic.truth.json \
+    --gaps output/gap_report.csv --clustering output/silo_clustering.json
+```
+
+The verifier reports planted-gap recall, how many unplanted students were
+flagged and whether the flagged competency really is in that student's
+weakest third by true ability, and (with `--clustering`) pairwise
+precision/recall of the LLM's clusters against the catalogue's tags.
+`--min-recall 0.9` makes it exit non-zero, for CI.
+
+Measured on the 500-student, seed-42 run through the ground-truth
+clustering, default thresholds:
+
+| Measure | Result |
+| --- | --- |
+| Planted gaps recovered as a persistent gap | 32 of 33 |
+| Students with any persistent gap | 448 of 500 |
+| Unplanted flags where the competency is in the student's weakest third | 411 of 416 |
+
+The second line is a finding, not a bug: once students have genuine
+per-competency variance, the relative detector at the default `-1.0` MAD
+cutoff flags almost everyone's weakest competency. The flags are
+*accurate* (third line) but there are a lot of them, which is exactly the
+threshold-calibration question action A-01 leaves open. Sensitivity-test
+with the `--relative-gap-cutoff` and `--competency-sd` knobs together.
+
+**Scale finding (2026-09-20).** The first thing the 52-SILO workbook exposed
+was not in the gap detector. `cluster_silos()` with the default local model
+(`qwen3-vl:30b`) failed its own coverage validation on all three attempts
+-- each attempt dropped three SILOs and listed three others twice -- and
+`lja.cli --refresh-clustering` aborted after 7m43s. The same call succeeds
+on the supplied 13 SILOs. So the single-call "cluster everything at once"
+design does not hold at the scale Scott described, at least on this model;
+options are a stronger model (the Anthropic provider), chunking the SILOs
+per year level or per subject pair with a merge pass, or a repair step that
+asks only about the missed/duplicated SILOs. That is a clustering work
+package, not this one. Until it lands, score gap detection through the
+ground-truth clustering, which is what the sidecar is for.
+
+**Programs and correlated strengths.** A catalogue may define a
+`programs:` list so that students share some subjects and diverge on
+others, the way an engineering student and a biology student share
+first-year maths. Each program has an intake share and ordered rules: "take
+N subjects matching these globs in this year", either core (the first N in
+catalogue order) or elective (sampled). Every student is assigned to one
+program and enrols by its rules. A competency may also carry `traits`,
+which are loadings onto a few latent aptitude axes. The generator then
+derives each student's competency abilities from their traits plus
+independent noise (`--latent-share`), so a student strong in one
+quantitative competency tends to be strong in the others. It draws those
+traits around the program's mean (`--program-selection`), so a program's
+students lean towards what its core subjects reward. Planted gaps land only
+in a competency that the student's own subjects evidence at least twice.
+`subject_catalogue.yaml` defines neither, so the default cohort uses the
+simpler model above. `tests/test_catalogue_programs.py` builds a small
+catalogue that uses both.
+
+**Drafting more subjects with the LLM.** Hand-writing 30 subjects of
+plausible SILOs is the tedious part; the model drafts them in the
+catalogue's structure, shown the existing competencies and the real
+subjects as style examples, and the draft is validated by the same Pydantic
+model before it lands:
+
+```bash
+python -m lja.data.catalogue_draft ../data-fixtures/subject_catalogue.yaml \
+    --subject CSE2OSA "Operating Systems and Architecture" 2 \
+    --subject CSE3MLA "Machine Learning Applications" 3 \
+    --out ../data-fixtures/subject_catalogue.yaml
+```
+
+New competencies the model proposes are appended and printed loudly --
+each one changes the ground truth, so look at them. Drafted subjects are
+`source: synthetic`; the supplied three are never rewritten.
+
 ## Enabling the Web Services API on the Moodle instance (production path)
 
 1. Site administration → Advanced features → tick **Enable web services**.
