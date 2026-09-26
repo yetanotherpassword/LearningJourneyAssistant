@@ -16,7 +16,13 @@
 <body>
 <header class="site-header">
   <a href="/">LJA Dashboard</a>
-  <span class="tag">gap report &middot; read-only</span>
+  <span class="tag">gap report &middot; read-only &middot; dev mode, no sign-in</span>
+  <label class="picker">Student
+    <select onchange="if (this.value) location.href = '/student/' + this.value">
+      <option value="">choose&hellip;</option>
+      {% for sid in student_ids %}<option value="{{ sid }}">{{ sid }}</option>{% endfor %}
+    </select>
+  </label>
 </header>
 {% if review_warning %}
 <div class="ai-review-warning" role="alert">
