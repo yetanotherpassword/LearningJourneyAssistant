@@ -1,0 +1,45 @@
+{
+  "student_id": "STU0003",
+  "summary": "Your results show consistent development in core technical skills, with strongest performance in Project Management. Focus on consolidating Object-Oriented Design and Data Structures through targeted practice on feedback-driven exercises to address persistent gaps.",
+  "priorities": [
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "subject_codes": [
+        "CSE1OOF"
+      ],
+      "assessment_keys": [
+        "CSE1OOF:Central examination",
+        "CSE1OOF:Practical demonstration",
+        "CSE1OOF:Test"
+      ],
+      "evidence": "All CSE1OOF assessments (Central exam: 62.0%, Practical: 63.0%, Test: 60.0%) show feedback requiring greater consistency in applying object-oriented concepts and explaining design decisions. The Central exam specifically notes 'consolidating underlying concepts' and 'applying them more consistently'.",
+      "actions": "Revisit feedback on CSE1OOF:Central examination and CSE1OOF:Practical demonstration to address consistency gaps; re-attempt SILO1 exercises on object modeling with stronger reasoning and testing."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Assignment",
+        "CSE2ALG:Central examination"
+      ],
+      "evidence": "CSE2ALG:Assignment (63.0%) and Central examination (64.0%) both cite 'consolidating underlying concepts' and 'applying them more consistently' for SILO2/SILO3/SILO4. The Test (66.0%) shows stronger grasp but still requires clearer reasoning.",
+      "actions": "Revisit CSE2ALG:Assignment feedback on SILO2/SILO3; re-attempt SILO4 algorithm comparison exercises with detailed performance analysis."
+    }
+  ],
+  "strengths_to_build_on": [
+    "Project Management"
+  ]
+}
