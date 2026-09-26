@@ -1,0 +1,751 @@
+student_id,competency_label,attainment_pct,subjects_evidencing,n_observations,classification,classification_basis,relative_position
+STU0001,Object-Oriented Design and Implementation,50.3,1,8,developing,insufficient data,
+STU0001,Data Structures and Algorithms,50.7,2,15,developing,insufficient data,
+STU0001,Technical Communication and Documentation,49.7,1,3,isolated gap,absolute floor,
+STU0001,Industry Standards Application,48.0,1,2,isolated gap,absolute floor,
+STU0001,Project Management,46.0,1,1,isolated gap,absolute floor,
+STU0002,Object-Oriented Design and Implementation,71.3,1,8,proficient,relative position,1.08
+STU0002,Data Structures and Algorithms,71.0,2,15,proficient,relative position,1.0
+STU0002,Technical Communication and Documentation,67.2,1,3,developing,relative position,0.0
+STU0002,Industry Standards Application,66.0,1,2,developing,relative position,-0.3
+STU0002,Project Management,63.0,1,1,isolated gap,relative position,-1.08
+STU0003,Object-Oriented Design and Implementation,62.7,1,8,isolated gap,relative position,-2.29
+STU0003,Data Structures and Algorithms,63.7,2,15,persistent gap,relative position,-1.28
+STU0003,Technical Communication and Documentation,65.1,1,3,developing,relative position,0.08
+STU0003,Industry Standards Application,65.0,1,2,developing,relative position,0.0
+STU0003,Project Management,66.0,1,1,proficient,relative position,1.0
+STU0004,Object-Oriented Design and Implementation,53.4,1,8,developing,relative position,-0.22
+STU0004,Data Structures and Algorithms,48.9,2,15,persistent gap,absolute floor,
+STU0004,Technical Communication and Documentation,53.8,1,3,developing,relative position,0.0
+STU0004,Industry Standards Application,56.0,1,2,proficient,relative position,1.0
+STU0004,Project Management,56.0,1,1,proficient,relative position,1.0
+STU0005,Object-Oriented Design and Implementation,73.5,1,8,proficient,insufficient data,
+STU0005,Data Structures and Algorithms,73.8,2,15,proficient,insufficient data,
+STU0005,Technical Communication and Documentation,73.1,1,3,proficient,insufficient data,
+STU0005,Industry Standards Application,74.5,1,2,proficient,insufficient data,
+STU0005,Project Management,75.0,1,1,proficient,absolute ceiling,
+STU0006,Object-Oriented Design and Implementation,74.3,1,8,proficient,insufficient data,
+STU0006,Data Structures and Algorithms,73.4,2,15,proficient,insufficient data,
+STU0006,Technical Communication and Documentation,74.8,1,3,proficient,insufficient data,
+STU0006,Industry Standards Application,75.5,1,2,proficient,absolute ceiling,
+STU0006,Project Management,75.0,1,1,proficient,absolute ceiling,
+STU0007,Object-Oriented Design and Implementation,52.4,1,8,developing,insufficient data,
+STU0007,Data Structures and Algorithms,55.3,2,15,developing,insufficient data,
+STU0007,Technical Communication and Documentation,51.5,1,3,developing,insufficient data,
+STU0007,Industry Standards Application,52.5,1,2,developing,insufficient data,
+STU0007,Project Management,53.0,1,1,developing,insufficient data,
+STU0008,Object-Oriented Design and Implementation,77.2,1,8,proficient,absolute ceiling,
+STU0008,Data Structures and Algorithms,78.7,2,15,proficient,absolute ceiling,
+STU0008,Technical Communication and Documentation,80.0,1,3,proficient,absolute ceiling,
+STU0008,Industry Standards Application,81.5,1,2,proficient,absolute ceiling,
+STU0008,Project Management,81.0,1,1,proficient,absolute ceiling,
+STU0009,Object-Oriented Design and Implementation,65.2,1,8,proficient,insufficient data,
+STU0009,Data Structures and Algorithms,67.8,2,15,proficient,insufficient data,
+STU0009,Technical Communication and Documentation,71.1,1,3,proficient,insufficient data,
+STU0009,Industry Standards Application,72.0,1,2,proficient,insufficient data,
+STU0009,Project Management,72.0,1,1,proficient,insufficient data,
+STU0010,Object-Oriented Design and Implementation,67.4,1,8,proficient,insufficient data,
+STU0010,Data Structures and Algorithms,66.6,2,15,proficient,insufficient data,
+STU0010,Technical Communication and Documentation,67.2,1,3,proficient,insufficient data,
+STU0010,Industry Standards Application,66.5,1,2,proficient,insufficient data,
+STU0010,Project Management,64.0,1,1,developing,insufficient data,
+STU0011,Object-Oriented Design and Implementation,51.5,1,8,isolated gap,relative position,-3.05
+STU0011,Data Structures and Algorithms,54.9,2,15,developing,relative position,0.0
+STU0011,Technical Communication and Documentation,56.8,1,3,proficient,relative position,1.69
+STU0011,Industry Standards Application,56.0,1,2,proficient,relative position,1.0
+STU0011,Project Management,54.0,1,1,developing,relative position,-0.79
+STU0012,Object-Oriented Design and Implementation,64.2,1,8,proficient,relative position,1.77
+STU0012,Data Structures and Algorithms,69.0,2,15,proficient,relative position,5.9
+STU0012,Technical Communication and Documentation,62.2,1,3,developing,relative position,0.0
+STU0012,Industry Standards Application,61.5,1,2,developing,relative position,-0.57
+STU0012,Project Management,61.0,1,1,isolated gap,relative position,-1.0
+STU0013,Object-Oriented Design and Implementation,67.5,1,8,proficient,relative position,2.77
+STU0013,Data Structures and Algorithms,63.2,2,15,developing,relative position,0.59
+STU0013,Technical Communication and Documentation,58.0,1,3,isolated gap,relative position,-2.0
+STU0013,Industry Standards Application,60.0,1,2,isolated gap,relative position,-1.0
+STU0013,Project Management,62.0,1,1,developing,relative position,0.0
+STU0014,Object-Oriented Design and Implementation,85.4,1,8,proficient,absolute ceiling,
+STU0014,Data Structures and Algorithms,79.0,2,15,proficient,absolute ceiling,
+STU0014,Technical Communication and Documentation,80.3,1,3,proficient,absolute ceiling,
+STU0014,Industry Standards Application,80.5,1,2,proficient,absolute ceiling,
+STU0014,Project Management,79.0,1,1,proficient,absolute ceiling,
+STU0015,Object-Oriented Design and Implementation,52.1,1,8,developing,insufficient data,
+STU0015,Data Structures and Algorithms,56.1,2,15,developing,insufficient data,
+STU0015,Technical Communication and Documentation,54.5,1,3,developing,insufficient data,
+STU0015,Industry Standards Application,54.5,1,2,developing,insufficient data,
+STU0015,Project Management,55.0,1,1,developing,insufficient data,
+STU0016,Object-Oriented Design and Implementation,62.9,1,8,developing,insufficient data,
+STU0016,Data Structures and Algorithms,65.9,2,15,proficient,insufficient data,
+STU0016,Technical Communication and Documentation,60.5,1,3,developing,insufficient data,
+STU0016,Industry Standards Application,60.0,1,2,developing,insufficient data,
+STU0016,Project Management,60.0,1,1,developing,insufficient data,
+STU0017,Object-Oriented Design and Implementation,66.5,1,8,proficient,relative position,4.16
+STU0017,Data Structures and Algorithms,60.6,2,15,developing,relative position,0.0
+STU0017,Technical Communication and Documentation,57.6,1,3,isolated gap,relative position,-2.07
+STU0017,Industry Standards Application,59.5,1,2,developing,relative position,-0.75
+STU0017,Project Management,62.0,1,1,proficient,relative position,1.0
+STU0018,Object-Oriented Design and Implementation,62.0,1,8,developing,insufficient data,
+STU0018,Data Structures and Algorithms,59.9,2,15,developing,insufficient data,
+STU0018,Technical Communication and Documentation,60.8,1,3,developing,insufficient data,
+STU0018,Industry Standards Application,60.5,1,2,developing,insufficient data,
+STU0018,Project Management,60.0,1,1,developing,insufficient data,
+STU0019,Object-Oriented Design and Implementation,70.5,1,8,proficient,insufficient data,
+STU0019,Data Structures and Algorithms,69.5,2,15,proficient,insufficient data,
+STU0019,Technical Communication and Documentation,68.8,1,3,proficient,insufficient data,
+STU0019,Industry Standards Application,69.0,1,2,proficient,insufficient data,
+STU0019,Project Management,69.0,1,1,proficient,insufficient data,
+STU0020,Object-Oriented Design and Implementation,78.4,1,8,proficient,absolute ceiling,
+STU0020,Data Structures and Algorithms,80.9,2,15,proficient,absolute ceiling,
+STU0020,Technical Communication and Documentation,80.6,1,3,proficient,absolute ceiling,
+STU0020,Industry Standards Application,80.0,1,2,proficient,absolute ceiling,
+STU0020,Project Management,80.0,1,1,proficient,absolute ceiling,
+STU0021,Object-Oriented Design and Implementation,73.2,1,8,proficient,insufficient data,
+STU0021,Data Structures and Algorithms,70.7,2,15,proficient,insufficient data,
+STU0021,Technical Communication and Documentation,70.2,1,3,proficient,insufficient data,
+STU0021,Industry Standards Application,71.0,1,2,proficient,insufficient data,
+STU0021,Project Management,71.0,1,1,proficient,insufficient data,
+STU0022,Object-Oriented Design and Implementation,73.5,1,8,isolated gap,relative position,-1.57
+STU0022,Data Structures and Algorithms,71.5,2,15,persistent gap,relative position,-2.81
+STU0022,Technical Communication and Documentation,77.6,1,3,proficient,absolute ceiling,
+STU0022,Industry Standards Application,76.5,1,2,proficient,absolute ceiling,
+STU0022,Project Management,76.0,1,1,proficient,absolute ceiling,
+STU0023,Object-Oriented Design and Implementation,66.2,1,8,proficient,insufficient data,
+STU0023,Data Structures and Algorithms,61.7,2,15,developing,insufficient data,
+STU0023,Technical Communication and Documentation,61.2,1,3,developing,insufficient data,
+STU0023,Industry Standards Application,61.0,1,2,developing,insufficient data,
+STU0023,Project Management,62.0,1,1,developing,insufficient data,
+STU0024,Object-Oriented Design and Implementation,70.2,1,8,proficient,insufficient data,
+STU0024,Data Structures and Algorithms,71.0,2,15,proficient,insufficient data,
+STU0024,Technical Communication and Documentation,76.5,1,3,proficient,absolute ceiling,
+STU0024,Industry Standards Application,77.0,1,2,proficient,absolute ceiling,
+STU0024,Project Management,77.0,1,1,proficient,absolute ceiling,
+STU0025,Object-Oriented Design and Implementation,81.2,1,8,proficient,absolute ceiling,
+STU0025,Data Structures and Algorithms,82.8,2,15,proficient,absolute ceiling,
+STU0025,Technical Communication and Documentation,83.8,1,3,proficient,absolute ceiling,
+STU0025,Industry Standards Application,82.5,1,2,proficient,absolute ceiling,
+STU0025,Project Management,82.0,1,1,proficient,absolute ceiling,
+STU0026,Object-Oriented Design and Implementation,77.8,1,8,proficient,absolute ceiling,
+STU0026,Data Structures and Algorithms,79.1,2,15,proficient,absolute ceiling,
+STU0026,Technical Communication and Documentation,80.1,1,3,proficient,absolute ceiling,
+STU0026,Industry Standards Application,80.5,1,2,proficient,absolute ceiling,
+STU0026,Project Management,80.0,1,1,proficient,absolute ceiling,
+STU0027,Object-Oriented Design and Implementation,73.0,1,8,proficient,insufficient data,
+STU0027,Data Structures and Algorithms,71.5,2,15,proficient,insufficient data,
+STU0027,Technical Communication and Documentation,72.0,1,3,proficient,insufficient data,
+STU0027,Industry Standards Application,71.0,1,2,proficient,insufficient data,
+STU0027,Project Management,70.0,1,1,proficient,insufficient data,
+STU0028,Object-Oriented Design and Implementation,72.8,1,8,proficient,insufficient data,
+STU0028,Data Structures and Algorithms,75.4,2,15,proficient,absolute ceiling,
+STU0028,Technical Communication and Documentation,69.8,1,3,proficient,insufficient data,
+STU0028,Industry Standards Application,69.0,1,2,proficient,insufficient data,
+STU0028,Project Management,69.0,1,1,proficient,insufficient data,
+STU0029,Object-Oriented Design and Implementation,59.1,1,8,developing,insufficient data,
+STU0029,Data Structures and Algorithms,59.5,2,15,developing,insufficient data,
+STU0029,Technical Communication and Documentation,59.2,1,3,developing,insufficient data,
+STU0029,Industry Standards Application,58.5,1,2,developing,insufficient data,
+STU0029,Project Management,60.0,1,1,developing,insufficient data,
+STU0030,Object-Oriented Design and Implementation,63.8,1,8,developing,insufficient data,
+STU0030,Data Structures and Algorithms,64.0,2,15,developing,insufficient data,
+STU0030,Technical Communication and Documentation,66.5,1,3,proficient,insufficient data,
+STU0030,Industry Standards Application,64.5,1,2,developing,insufficient data,
+STU0030,Project Management,63.0,1,1,developing,insufficient data,
+STU0031,Object-Oriented Design and Implementation,78.3,1,8,proficient,absolute ceiling,
+STU0031,Data Structures and Algorithms,85.4,2,15,proficient,absolute ceiling,
+STU0031,Technical Communication and Documentation,87.2,1,3,proficient,absolute ceiling,
+STU0031,Industry Standards Application,85.0,1,2,proficient,absolute ceiling,
+STU0031,Project Management,83.0,1,1,proficient,absolute ceiling,
+STU0032,Object-Oriented Design and Implementation,60.3,1,8,developing,insufficient data,
+STU0032,Data Structures and Algorithms,62.5,2,15,developing,insufficient data,
+STU0032,Technical Communication and Documentation,65.2,1,3,proficient,insufficient data,
+STU0032,Industry Standards Application,66.0,1,2,proficient,insufficient data,
+STU0032,Project Management,66.0,1,1,proficient,insufficient data,
+STU0033,Object-Oriented Design and Implementation,82.2,1,8,proficient,absolute ceiling,
+STU0033,Data Structures and Algorithms,81.8,2,15,proficient,absolute ceiling,
+STU0033,Technical Communication and Documentation,84.1,1,3,proficient,absolute ceiling,
+STU0033,Industry Standards Application,82.0,1,2,proficient,absolute ceiling,
+STU0033,Project Management,79.0,1,1,proficient,absolute ceiling,
+STU0034,Object-Oriented Design and Implementation,72.7,1,8,proficient,relative position,3.2
+STU0034,Data Structures and Algorithms,68.8,2,15,proficient,relative position,1.3
+STU0034,Technical Communication and Documentation,66.1,1,3,developing,relative position,0.0
+STU0034,Industry Standards Application,65.5,1,2,developing,relative position,-0.28
+STU0034,Project Management,64.0,1,1,isolated gap,relative position,-1.0
+STU0035,Object-Oriented Design and Implementation,58.5,1,8,proficient,relative position,3.44
+STU0035,Data Structures and Algorithms,57.2,2,15,proficient,relative position,2.68
+STU0035,Technical Communication and Documentation,52.3,1,3,developing,relative position,0.0
+STU0035,Industry Standards Application,50.5,1,2,isolated gap,relative position,-1.0
+STU0035,Project Management,51.0,1,1,developing,relative position,-0.72
+STU0036,Object-Oriented Design and Implementation,57.4,1,8,isolated gap,relative position,-1.0
+STU0036,Data Structures and Algorithms,62.9,2,15,proficient,relative position,1.63
+STU0036,Technical Communication and Documentation,58.8,1,3,developing,relative position,-0.31
+STU0036,Industry Standards Application,59.5,1,2,developing,relative position,0.0
+STU0036,Project Management,62.0,1,1,proficient,relative position,1.2
+STU0037,Object-Oriented Design and Implementation,54.4,1,8,proficient,relative position,3.04
+STU0037,Data Structures and Algorithms,51.9,2,15,developing,relative position,0.73
+STU0037,Technical Communication and Documentation,51.1,1,3,developing,relative position,0.0
+STU0037,Industry Standards Application,50.0,1,2,isolated gap,relative position,-1.0
+STU0037,Project Management,50.0,1,1,isolated gap,relative position,-1.0
+STU0038,Object-Oriented Design and Implementation,62.6,1,8,developing,insufficient data,
+STU0038,Data Structures and Algorithms,62.9,2,15,developing,insufficient data,
+STU0038,Technical Communication and Documentation,57.6,1,3,developing,insufficient data,
+STU0038,Industry Standards Application,58.5,1,2,developing,insufficient data,
+STU0038,Project Management,58.0,1,1,developing,insufficient data,
+STU0039,Object-Oriented Design and Implementation,61.2,1,8,developing,insufficient data,
+STU0039,Data Structures and Algorithms,59.9,2,15,developing,insufficient data,
+STU0039,Technical Communication and Documentation,61.2,1,3,developing,insufficient data,
+STU0039,Industry Standards Application,62.0,1,2,developing,insufficient data,
+STU0039,Project Management,64.0,1,1,developing,insufficient data,
+STU0040,Object-Oriented Design and Implementation,61.7,1,8,developing,relative position,0.08
+STU0040,Data Structures and Algorithms,62.8,2,15,proficient,relative position,1.0
+STU0040,Technical Communication and Documentation,61.6,1,3,developing,relative position,0.0
+STU0040,Industry Standards Application,60.0,1,2,isolated gap,relative position,-1.41
+STU0040,Project Management,59.0,1,1,isolated gap,relative position,-2.28
+STU0041,Object-Oriented Design and Implementation,69.3,1,8,proficient,insufficient data,
+STU0041,Data Structures and Algorithms,67.7,2,15,proficient,insufficient data,
+STU0041,Technical Communication and Documentation,71.2,1,3,proficient,insufficient data,
+STU0041,Industry Standards Application,70.0,1,2,proficient,insufficient data,
+STU0041,Project Management,70.0,1,1,proficient,insufficient data,
+STU0042,Object-Oriented Design and Implementation,67.9,1,8,proficient,insufficient data,
+STU0042,Data Structures and Algorithms,67.4,2,15,proficient,insufficient data,
+STU0042,Technical Communication and Documentation,71.9,1,3,proficient,insufficient data,
+STU0042,Industry Standards Application,72.0,1,2,proficient,insufficient data,
+STU0042,Project Management,71.0,1,1,proficient,insufficient data,
+STU0043,Object-Oriented Design and Implementation,87.2,1,8,proficient,absolute ceiling,
+STU0043,Data Structures and Algorithms,87.8,2,15,proficient,absolute ceiling,
+STU0043,Technical Communication and Documentation,80.9,1,3,proficient,absolute ceiling,
+STU0043,Industry Standards Application,82.5,1,2,proficient,absolute ceiling,
+STU0043,Project Management,85.0,1,1,proficient,absolute ceiling,
+STU0044,Object-Oriented Design and Implementation,74.5,1,8,proficient,insufficient data,
+STU0044,Data Structures and Algorithms,79.1,2,15,proficient,absolute ceiling,
+STU0044,Technical Communication and Documentation,76.0,1,3,proficient,absolute ceiling,
+STU0044,Industry Standards Application,75.5,1,2,proficient,absolute ceiling,
+STU0044,Project Management,75.0,1,1,proficient,absolute ceiling,
+STU0045,Object-Oriented Design and Implementation,84.0,1,8,proficient,absolute ceiling,
+STU0045,Data Structures and Algorithms,84.8,2,15,proficient,absolute ceiling,
+STU0045,Technical Communication and Documentation,85.9,1,3,proficient,absolute ceiling,
+STU0045,Industry Standards Application,87.0,1,2,proficient,absolute ceiling,
+STU0045,Project Management,87.0,1,1,proficient,absolute ceiling,
+STU0046,Object-Oriented Design and Implementation,77.9,1,8,proficient,absolute ceiling,
+STU0046,Data Structures and Algorithms,78.1,2,15,proficient,absolute ceiling,
+STU0046,Technical Communication and Documentation,79.2,1,3,proficient,absolute ceiling,
+STU0046,Industry Standards Application,77.5,1,2,proficient,absolute ceiling,
+STU0046,Project Management,77.0,1,1,proficient,absolute ceiling,
+STU0047,Object-Oriented Design and Implementation,70.8,1,8,proficient,insufficient data,
+STU0047,Data Structures and Algorithms,72.9,2,15,proficient,insufficient data,
+STU0047,Technical Communication and Documentation,71.0,1,3,proficient,insufficient data,
+STU0047,Industry Standards Application,72.0,1,2,proficient,insufficient data,
+STU0047,Project Management,73.0,1,1,proficient,insufficient data,
+STU0048,Object-Oriented Design and Implementation,77.8,1,8,proficient,absolute ceiling,
+STU0048,Data Structures and Algorithms,73.9,2,15,proficient,insufficient data,
+STU0048,Technical Communication and Documentation,76.1,1,3,proficient,absolute ceiling,
+STU0048,Industry Standards Application,77.0,1,2,proficient,absolute ceiling,
+STU0048,Project Management,79.0,1,1,proficient,absolute ceiling,
+STU0049,Object-Oriented Design and Implementation,51.6,1,8,developing,insufficient data,
+STU0049,Data Structures and Algorithms,51.0,2,15,developing,insufficient data,
+STU0049,Technical Communication and Documentation,49.9,1,3,isolated gap,absolute floor,
+STU0049,Industry Standards Application,50.5,1,2,developing,insufficient data,
+STU0049,Project Management,52.0,1,1,developing,insufficient data,
+STU0050,Object-Oriented Design and Implementation,58.4,1,8,developing,insufficient data,
+STU0050,Data Structures and Algorithms,59.1,2,15,developing,insufficient data,
+STU0050,Technical Communication and Documentation,59.0,1,3,developing,insufficient data,
+STU0050,Industry Standards Application,57.5,1,2,developing,insufficient data,
+STU0050,Project Management,58.0,1,1,developing,insufficient data,
+STU0051,Object-Oriented Design and Implementation,77.4,1,8,proficient,absolute ceiling,
+STU0051,Data Structures and Algorithms,80.6,2,15,proficient,absolute ceiling,
+STU0051,Technical Communication and Documentation,80.0,1,3,proficient,absolute ceiling,
+STU0051,Industry Standards Application,80.0,1,2,proficient,absolute ceiling,
+STU0051,Project Management,80.0,1,1,proficient,absolute ceiling,
+STU0052,Object-Oriented Design and Implementation,68.6,1,8,proficient,insufficient data,
+STU0052,Data Structures and Algorithms,69.4,2,15,proficient,insufficient data,
+STU0052,Technical Communication and Documentation,70.3,1,3,proficient,insufficient data,
+STU0052,Industry Standards Application,71.0,1,2,proficient,insufficient data,
+STU0052,Project Management,72.0,1,1,proficient,insufficient data,
+STU0053,Object-Oriented Design and Implementation,81.5,1,8,proficient,absolute ceiling,
+STU0053,Data Structures and Algorithms,79.4,2,15,proficient,absolute ceiling,
+STU0053,Technical Communication and Documentation,77.5,1,3,proficient,absolute ceiling,
+STU0053,Industry Standards Application,77.5,1,2,proficient,absolute ceiling,
+STU0053,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0054,Object-Oriented Design and Implementation,47.6,1,8,isolated gap,absolute floor,
+STU0054,Data Structures and Algorithms,43.9,2,15,persistent gap,absolute floor,
+STU0054,Technical Communication and Documentation,45.3,1,3,isolated gap,absolute floor,
+STU0054,Industry Standards Application,43.5,1,2,isolated gap,absolute floor,
+STU0054,Project Management,44.0,1,1,isolated gap,absolute floor,
+STU0055,Object-Oriented Design and Implementation,72.7,1,8,developing,relative position,-0.96
+STU0055,Data Structures and Algorithms,72.6,2,15,persistent gap,relative position,-1.0
+STU0055,Technical Communication and Documentation,75.4,1,3,proficient,absolute ceiling,
+STU0055,Industry Standards Application,76.0,1,2,proficient,absolute ceiling,
+STU0055,Project Management,74.0,1,1,developing,relative position,0.0
+STU0056,Object-Oriented Design and Implementation,78.4,1,8,proficient,absolute ceiling,
+STU0056,Data Structures and Algorithms,81.3,2,15,proficient,absolute ceiling,
+STU0056,Technical Communication and Documentation,81.5,1,3,proficient,absolute ceiling,
+STU0056,Industry Standards Application,81.5,1,2,proficient,absolute ceiling,
+STU0056,Project Management,82.0,1,1,proficient,absolute ceiling,
+STU0057,Object-Oriented Design and Implementation,74.5,1,8,proficient,insufficient data,
+STU0057,Data Structures and Algorithms,74.0,2,15,proficient,insufficient data,
+STU0057,Technical Communication and Documentation,72.2,1,3,proficient,insufficient data,
+STU0057,Industry Standards Application,72.5,1,2,proficient,insufficient data,
+STU0057,Project Management,73.0,1,1,proficient,insufficient data,
+STU0058,Object-Oriented Design and Implementation,84.2,1,8,proficient,absolute ceiling,
+STU0058,Data Structures and Algorithms,80.2,2,15,proficient,absolute ceiling,
+STU0058,Technical Communication and Documentation,81.6,1,3,proficient,absolute ceiling,
+STU0058,Industry Standards Application,83.0,1,2,proficient,absolute ceiling,
+STU0058,Project Management,83.0,1,1,proficient,absolute ceiling,
+STU0059,Object-Oriented Design and Implementation,62.1,1,8,developing,insufficient data,
+STU0059,Data Structures and Algorithms,55.2,2,15,developing,insufficient data,
+STU0059,Technical Communication and Documentation,54.5,1,3,developing,insufficient data,
+STU0059,Industry Standards Application,53.5,1,2,developing,insufficient data,
+STU0059,Project Management,51.0,1,1,developing,insufficient data,
+STU0060,Object-Oriented Design and Implementation,69.6,1,8,proficient,insufficient data,
+STU0060,Data Structures and Algorithms,67.3,2,15,proficient,insufficient data,
+STU0060,Technical Communication and Documentation,69.0,1,3,proficient,insufficient data,
+STU0060,Industry Standards Application,69.5,1,2,proficient,insufficient data,
+STU0060,Project Management,70.0,1,1,proficient,insufficient data,
+STU0061,Object-Oriented Design and Implementation,47.8,1,8,isolated gap,absolute floor,
+STU0061,Data Structures and Algorithms,52.7,2,15,developing,insufficient data,
+STU0061,Technical Communication and Documentation,49.1,1,3,isolated gap,absolute floor,
+STU0061,Industry Standards Application,47.5,1,2,isolated gap,absolute floor,
+STU0061,Project Management,47.0,1,1,isolated gap,absolute floor,
+STU0062,Object-Oriented Design and Implementation,62.5,1,8,developing,insufficient data,
+STU0062,Data Structures and Algorithms,62.9,2,15,developing,insufficient data,
+STU0062,Technical Communication and Documentation,62.5,1,3,developing,insufficient data,
+STU0062,Industry Standards Application,62.0,1,2,developing,insufficient data,
+STU0062,Project Management,63.0,1,1,developing,insufficient data,
+STU0063,Object-Oriented Design and Implementation,91.3,1,8,proficient,absolute ceiling,
+STU0063,Data Structures and Algorithms,93.8,2,15,proficient,absolute ceiling,
+STU0063,Technical Communication and Documentation,93.5,1,3,proficient,absolute ceiling,
+STU0063,Industry Standards Application,93.0,1,2,proficient,absolute ceiling,
+STU0063,Project Management,95.0,1,1,proficient,absolute ceiling,
+STU0064,Object-Oriented Design and Implementation,51.8,1,8,isolated gap,relative position,-2.2
+STU0064,Data Structures and Algorithms,56.8,2,15,proficient,relative position,2.75
+STU0064,Technical Communication and Documentation,54.2,1,3,developing,relative position,0.23
+STU0064,Industry Standards Application,54.0,1,2,developing,relative position,0.0
+STU0064,Project Management,53.0,1,1,isolated gap,relative position,-1.0
+STU0065,Object-Oriented Design and Implementation,66.7,1,8,proficient,relative position,3.66
+STU0065,Data Structures and Algorithms,65.1,2,15,proficient,relative position,2.31
+STU0065,Technical Communication and Documentation,62.2,1,3,developing,relative position,0.0
+STU0065,Industry Standards Application,61.0,1,2,isolated gap,relative position,-1.0
+STU0065,Project Management,61.0,1,1,isolated gap,relative position,-1.0
+STU0066,Object-Oriented Design and Implementation,56.8,1,8,proficient,relative position,1.0
+STU0066,Data Structures and Algorithms,57.8,2,15,proficient,relative position,1.83
+STU0066,Technical Communication and Documentation,55.5,1,3,developing,relative position,0.0
+STU0066,Industry Standards Application,55.0,1,2,developing,relative position,-0.44
+STU0066,Project Management,52.0,1,1,isolated gap,relative position,-2.91
+STU0067,Object-Oriented Design and Implementation,42.6,1,8,isolated gap,absolute floor,
+STU0067,Data Structures and Algorithms,40.2,2,15,persistent gap,absolute floor,
+STU0067,Technical Communication and Documentation,46.2,1,3,isolated gap,absolute floor,
+STU0067,Industry Standards Application,46.0,1,2,isolated gap,absolute floor,
+STU0067,Project Management,45.0,1,1,isolated gap,absolute floor,
+STU0068,Object-Oriented Design and Implementation,81.3,1,8,proficient,absolute ceiling,
+STU0068,Data Structures and Algorithms,86.9,2,15,proficient,absolute ceiling,
+STU0068,Technical Communication and Documentation,84.5,1,3,proficient,absolute ceiling,
+STU0068,Industry Standards Application,84.0,1,2,proficient,absolute ceiling,
+STU0068,Project Management,82.0,1,1,proficient,absolute ceiling,
+STU0069,Object-Oriented Design and Implementation,45.6,1,8,isolated gap,absolute floor,
+STU0069,Data Structures and Algorithms,50.8,2,15,developing,insufficient data,
+STU0069,Technical Communication and Documentation,49.9,1,3,isolated gap,absolute floor,
+STU0069,Industry Standards Application,50.0,1,2,developing,insufficient data,
+STU0069,Project Management,51.0,1,1,developing,insufficient data,
+STU0070,Object-Oriented Design and Implementation,75.1,1,8,proficient,absolute ceiling,
+STU0070,Data Structures and Algorithms,74.3,2,15,proficient,insufficient data,
+STU0070,Technical Communication and Documentation,74.6,1,3,proficient,insufficient data,
+STU0070,Industry Standards Application,76.0,1,2,proficient,absolute ceiling,
+STU0070,Project Management,76.0,1,1,proficient,absolute ceiling,
+STU0071,Object-Oriented Design and Implementation,67.5,1,8,proficient,insufficient data,
+STU0071,Data Structures and Algorithms,61.9,2,15,developing,insufficient data,
+STU0071,Technical Communication and Documentation,68.5,1,3,proficient,insufficient data,
+STU0071,Industry Standards Application,68.0,1,2,proficient,insufficient data,
+STU0071,Project Management,67.0,1,1,proficient,insufficient data,
+STU0072,Object-Oriented Design and Implementation,77.4,1,8,proficient,absolute ceiling,
+STU0072,Data Structures and Algorithms,74.2,2,15,developing,relative position,0.0
+STU0072,Technical Communication and Documentation,75.0,1,3,proficient,absolute ceiling,
+STU0072,Industry Standards Application,72.5,1,2,isolated gap,relative position,-1.0
+STU0072,Project Management,70.0,1,1,isolated gap,relative position,-2.47
+STU0073,Object-Oriented Design and Implementation,73.7,1,8,proficient,insufficient data,
+STU0073,Data Structures and Algorithms,71.3,2,15,proficient,insufficient data,
+STU0073,Technical Communication and Documentation,70.8,1,3,proficient,insufficient data,
+STU0073,Industry Standards Application,71.5,1,2,proficient,insufficient data,
+STU0073,Project Management,73.0,1,1,proficient,insufficient data,
+STU0074,Object-Oriented Design and Implementation,49.2,1,8,isolated gap,absolute floor,
+STU0074,Data Structures and Algorithms,54.0,2,15,developing,insufficient data,
+STU0074,Technical Communication and Documentation,50.1,1,3,developing,insufficient data,
+STU0074,Industry Standards Application,49.0,1,2,isolated gap,absolute floor,
+STU0074,Project Management,47.0,1,1,isolated gap,absolute floor,
+STU0075,Object-Oriented Design and Implementation,72.0,1,8,isolated gap,relative position,-3.7
+STU0075,Data Structures and Algorithms,73.4,2,15,persistent gap,relative position,-2.84
+STU0075,Technical Communication and Documentation,79.6,1,3,proficient,absolute ceiling,
+STU0075,Industry Standards Application,78.5,1,2,proficient,absolute ceiling,
+STU0075,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0076,Object-Oriented Design and Implementation,68.5,1,8,isolated gap,relative position,-1.0
+STU0076,Data Structures and Algorithms,68.1,2,15,persistent gap,relative position,-1.22
+STU0076,Technical Communication and Documentation,71.6,1,3,proficient,relative position,1.05
+STU0076,Industry Standards Application,70.5,1,2,developing,relative position,0.33
+STU0076,Project Management,70.0,1,1,developing,relative position,0.0
+STU0077,Object-Oriented Design and Implementation,68.6,1,8,isolated gap,relative position,-1.34
+STU0077,Data Structures and Algorithms,69.4,2,15,persistent gap,relative position,-1.0
+STU0077,Technical Communication and Documentation,74.6,1,3,proficient,relative position,1.02
+STU0077,Industry Standards Application,74.0,1,2,developing,relative position,0.78
+STU0077,Project Management,72.0,1,1,developing,relative position,0.0
+STU0078,Object-Oriented Design and Implementation,71.8,1,8,isolated gap,relative position,-4.34
+STU0078,Data Structures and Algorithms,73.8,2,15,persistent gap,relative position,-3.05
+STU0078,Technical Communication and Documentation,78.5,1,3,proficient,absolute ceiling,
+STU0078,Industry Standards Application,79.0,1,2,proficient,absolute ceiling,
+STU0078,Project Management,80.0,1,1,proficient,absolute ceiling,
+STU0079,Object-Oriented Design and Implementation,64.8,1,8,isolated gap,relative position,-4.2
+STU0079,Data Structures and Algorithms,67.2,2,15,persistent gap,relative position,-1.77
+STU0079,Technical Communication and Documentation,69.9,1,3,developing,relative position,0.92
+STU0079,Industry Standards Application,70.0,1,2,proficient,relative position,1.0
+STU0079,Project Management,69.0,1,1,developing,relative position,0.0
+STU0080,Object-Oriented Design and Implementation,47.2,1,8,isolated gap,absolute floor,
+STU0080,Data Structures and Algorithms,50.6,2,15,developing,insufficient data,
+STU0080,Technical Communication and Documentation,48.5,1,3,isolated gap,absolute floor,
+STU0080,Industry Standards Application,47.0,1,2,isolated gap,absolute floor,
+STU0080,Project Management,47.0,1,1,isolated gap,absolute floor,
+STU0081,Object-Oriented Design and Implementation,85.0,1,8,proficient,absolute ceiling,
+STU0081,Data Structures and Algorithms,79.5,2,15,proficient,absolute ceiling,
+STU0081,Technical Communication and Documentation,83.2,1,3,proficient,absolute ceiling,
+STU0081,Industry Standards Application,83.5,1,2,proficient,absolute ceiling,
+STU0081,Project Management,84.0,1,1,proficient,absolute ceiling,
+STU0082,Object-Oriented Design and Implementation,62.0,1,8,developing,insufficient data,
+STU0082,Data Structures and Algorithms,54.1,2,15,developing,insufficient data,
+STU0082,Technical Communication and Documentation,56.5,1,3,developing,insufficient data,
+STU0082,Industry Standards Application,57.0,1,2,developing,insufficient data,
+STU0082,Project Management,57.0,1,1,developing,insufficient data,
+STU0083,Object-Oriented Design and Implementation,49.2,1,8,isolated gap,absolute floor,
+STU0083,Data Structures and Algorithms,53.9,2,15,developing,insufficient data,
+STU0083,Technical Communication and Documentation,54.5,1,3,developing,insufficient data,
+STU0083,Industry Standards Application,55.0,1,2,developing,insufficient data,
+STU0083,Project Management,58.0,1,1,developing,insufficient data,
+STU0084,Object-Oriented Design and Implementation,46.2,1,8,isolated gap,absolute floor,
+STU0084,Data Structures and Algorithms,47.2,2,15,persistent gap,absolute floor,
+STU0084,Technical Communication and Documentation,46.5,1,3,isolated gap,absolute floor,
+STU0084,Industry Standards Application,47.0,1,2,isolated gap,absolute floor,
+STU0084,Project Management,49.0,1,1,isolated gap,absolute floor,
+STU0085,Object-Oriented Design and Implementation,66.1,1,8,proficient,insufficient data,
+STU0085,Data Structures and Algorithms,62.5,2,15,developing,insufficient data,
+STU0085,Technical Communication and Documentation,66.2,1,3,proficient,insufficient data,
+STU0085,Industry Standards Application,66.5,1,2,proficient,insufficient data,
+STU0085,Project Management,68.0,1,1,proficient,insufficient data,
+STU0086,Object-Oriented Design and Implementation,84.7,1,8,proficient,absolute ceiling,
+STU0086,Data Structures and Algorithms,78.6,2,15,proficient,absolute ceiling,
+STU0086,Technical Communication and Documentation,79.2,1,3,proficient,absolute ceiling,
+STU0086,Industry Standards Application,81.5,1,2,proficient,absolute ceiling,
+STU0086,Project Management,83.0,1,1,proficient,absolute ceiling,
+STU0087,Object-Oriented Design and Implementation,56.8,1,8,developing,insufficient data,
+STU0087,Data Structures and Algorithms,59.0,2,15,developing,insufficient data,
+STU0087,Technical Communication and Documentation,62.5,1,3,developing,insufficient data,
+STU0087,Industry Standards Application,63.0,1,2,developing,insufficient data,
+STU0087,Project Management,62.0,1,1,developing,insufficient data,
+STU0088,Object-Oriented Design and Implementation,74.7,1,8,proficient,relative position,1.46
+STU0088,Data Structures and Algorithms,74.0,2,15,proficient,relative position,1.0
+STU0088,Technical Communication and Documentation,72.4,1,3,developing,relative position,0.0
+STU0088,Industry Standards Application,71.5,1,2,developing,relative position,-0.55
+STU0088,Project Management,70.0,1,1,isolated gap,relative position,-1.5
+STU0089,Object-Oriented Design and Implementation,67.8,1,8,proficient,relative position,1.69
+STU0089,Data Structures and Algorithms,63.7,2,15,persistent gap,relative position,-2.17
+STU0089,Technical Communication and Documentation,67.1,1,3,proficient,relative position,1.0
+STU0089,Industry Standards Application,66.0,1,2,developing,relative position,0.0
+STU0089,Project Management,66.0,1,1,developing,relative position,0.0
+STU0090,Object-Oriented Design and Implementation,67.2,1,8,developing,relative position,-0.8
+STU0090,Data Structures and Algorithms,70.5,2,15,proficient,relative position,2.51
+STU0090,Technical Communication and Documentation,66.4,1,3,isolated gap,relative position,-1.62
+STU0090,Industry Standards Application,68.0,1,2,developing,relative position,0.0
+STU0090,Project Management,69.0,1,1,proficient,relative position,1.0
+STU0091,Object-Oriented Design and Implementation,78.3,1,8,proficient,absolute ceiling,
+STU0091,Data Structures and Algorithms,80.6,2,15,proficient,absolute ceiling,
+STU0091,Technical Communication and Documentation,79.7,1,3,proficient,absolute ceiling,
+STU0091,Industry Standards Application,81.5,1,2,proficient,absolute ceiling,
+STU0091,Project Management,83.0,1,1,proficient,absolute ceiling,
+STU0092,Object-Oriented Design and Implementation,62.6,1,8,proficient,relative position,1.0
+STU0092,Data Structures and Algorithms,61.4,2,15,developing,relative position,-0.08
+STU0092,Technical Communication and Documentation,64.0,1,3,proficient,relative position,2.27
+STU0092,Industry Standards Application,61.5,1,2,developing,relative position,0.0
+STU0092,Project Management,59.0,1,1,isolated gap,relative position,-2.27
+STU0093,Object-Oriented Design and Implementation,64.2,1,8,developing,insufficient data,
+STU0093,Data Structures and Algorithms,64.4,2,15,developing,insufficient data,
+STU0093,Technical Communication and Documentation,65.1,1,3,proficient,insufficient data,
+STU0093,Industry Standards Application,65.5,1,2,proficient,insufficient data,
+STU0093,Project Management,67.0,1,1,proficient,insufficient data,
+STU0094,Object-Oriented Design and Implementation,66.4,1,8,proficient,relative position,1.63
+STU0094,Data Structures and Algorithms,65.2,2,15,developing,relative position,0.83
+STU0094,Technical Communication and Documentation,62.1,1,3,isolated gap,relative position,-1.28
+STU0094,Industry Standards Application,62.5,1,2,isolated gap,relative position,-1.0
+STU0094,Project Management,64.0,1,1,developing,relative position,0.0
+STU0095,Object-Oriented Design and Implementation,58.1,1,8,isolated gap,relative position,-1.61
+STU0095,Data Structures and Algorithms,60.8,2,15,developing,relative position,0.0
+STU0095,Technical Communication and Documentation,60.5,1,3,developing,relative position,-0.16
+STU0095,Industry Standards Application,62.5,1,2,proficient,relative position,1.0
+STU0095,Project Management,64.0,1,1,proficient,relative position,1.89
+STU0096,Object-Oriented Design and Implementation,56.4,1,8,developing,insufficient data,
+STU0096,Data Structures and Algorithms,58.1,2,15,developing,insufficient data,
+STU0096,Technical Communication and Documentation,56.8,1,3,developing,insufficient data,
+STU0096,Industry Standards Application,56.5,1,2,developing,insufficient data,
+STU0096,Project Management,57.0,1,1,developing,insufficient data,
+STU0097,Object-Oriented Design and Implementation,73.3,1,8,proficient,insufficient data,
+STU0097,Data Structures and Algorithms,75.3,2,15,proficient,absolute ceiling,
+STU0097,Technical Communication and Documentation,76.5,1,3,proficient,absolute ceiling,
+STU0097,Industry Standards Application,76.0,1,2,proficient,absolute ceiling,
+STU0097,Project Management,77.0,1,1,proficient,absolute ceiling,
+STU0098,Object-Oriented Design and Implementation,81.1,1,8,proficient,absolute ceiling,
+STU0098,Data Structures and Algorithms,76.3,2,15,proficient,absolute ceiling,
+STU0098,Technical Communication and Documentation,83.9,1,3,proficient,absolute ceiling,
+STU0098,Industry Standards Application,82.5,1,2,proficient,absolute ceiling,
+STU0098,Project Management,80.0,1,1,proficient,absolute ceiling,
+STU0099,Object-Oriented Design and Implementation,62.5,1,8,proficient,relative position,1.21
+STU0099,Data Structures and Algorithms,62.3,2,15,proficient,relative position,1.0
+STU0099,Technical Communication and Documentation,58.8,1,3,isolated gap,relative position,-1.69
+STU0099,Industry Standards Application,60.0,1,2,developing,relative position,-0.79
+STU0099,Project Management,61.0,1,1,developing,relative position,0.0
+STU0100,Object-Oriented Design and Implementation,58.8,1,8,developing,insufficient data,
+STU0100,Data Structures and Algorithms,59.5,2,15,developing,insufficient data,
+STU0100,Technical Communication and Documentation,58.0,1,3,developing,insufficient data,
+STU0100,Industry Standards Application,57.5,1,2,developing,insufficient data,
+STU0100,Project Management,57.0,1,1,developing,insufficient data,
+STU0101,Object-Oriented Design and Implementation,63.6,1,8,developing,insufficient data,
+STU0101,Data Structures and Algorithms,66.8,2,15,proficient,insufficient data,
+STU0101,Technical Communication and Documentation,61.1,1,3,developing,insufficient data,
+STU0101,Industry Standards Application,62.0,1,2,developing,insufficient data,
+STU0101,Project Management,62.0,1,1,developing,insufficient data,
+STU0102,Object-Oriented Design and Implementation,84.4,1,8,proficient,absolute ceiling,
+STU0102,Data Structures and Algorithms,87.6,2,15,proficient,absolute ceiling,
+STU0102,Technical Communication and Documentation,87.5,1,3,proficient,absolute ceiling,
+STU0102,Industry Standards Application,87.0,1,2,proficient,absolute ceiling,
+STU0102,Project Management,85.0,1,1,proficient,absolute ceiling,
+STU0103,Object-Oriented Design and Implementation,76.8,1,8,proficient,absolute ceiling,
+STU0103,Data Structures and Algorithms,77.6,2,15,proficient,absolute ceiling,
+STU0103,Technical Communication and Documentation,73.6,1,3,proficient,insufficient data,
+STU0103,Industry Standards Application,74.5,1,2,proficient,insufficient data,
+STU0103,Project Management,74.0,1,1,proficient,insufficient data,
+STU0104,Object-Oriented Design and Implementation,78.8,1,8,proficient,absolute ceiling,
+STU0104,Data Structures and Algorithms,74.9,2,15,proficient,insufficient data,
+STU0104,Technical Communication and Documentation,77.0,1,3,proficient,absolute ceiling,
+STU0104,Industry Standards Application,77.5,1,2,proficient,absolute ceiling,
+STU0104,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0105,Object-Oriented Design and Implementation,68.9,1,8,proficient,insufficient data,
+STU0105,Data Structures and Algorithms,71.6,2,15,proficient,insufficient data,
+STU0105,Technical Communication and Documentation,69.6,1,3,proficient,insufficient data,
+STU0105,Industry Standards Application,68.5,1,2,proficient,insufficient data,
+STU0105,Project Management,68.0,1,1,proficient,insufficient data,
+STU0106,Object-Oriented Design and Implementation,74.9,1,8,proficient,insufficient data,
+STU0106,Data Structures and Algorithms,78.0,2,15,proficient,absolute ceiling,
+STU0106,Technical Communication and Documentation,81.2,1,3,proficient,absolute ceiling,
+STU0106,Industry Standards Application,81.5,1,2,proficient,absolute ceiling,
+STU0106,Project Management,81.0,1,1,proficient,absolute ceiling,
+STU0107,Object-Oriented Design and Implementation,84.4,1,8,proficient,absolute ceiling,
+STU0107,Data Structures and Algorithms,88.8,2,15,proficient,absolute ceiling,
+STU0107,Technical Communication and Documentation,85.8,1,3,proficient,absolute ceiling,
+STU0107,Industry Standards Application,87.0,1,2,proficient,absolute ceiling,
+STU0107,Project Management,89.0,1,1,proficient,absolute ceiling,
+STU0108,Object-Oriented Design and Implementation,51.7,1,8,developing,insufficient data,
+STU0108,Data Structures and Algorithms,51.2,2,15,developing,insufficient data,
+STU0108,Technical Communication and Documentation,53.8,1,3,developing,insufficient data,
+STU0108,Industry Standards Application,53.0,1,2,developing,insufficient data,
+STU0108,Project Management,51.0,1,1,developing,insufficient data,
+STU0109,Object-Oriented Design and Implementation,68.5,1,8,proficient,insufficient data,
+STU0109,Data Structures and Algorithms,68.2,2,15,proficient,insufficient data,
+STU0109,Technical Communication and Documentation,70.7,1,3,proficient,insufficient data,
+STU0109,Industry Standards Application,69.0,1,2,proficient,insufficient data,
+STU0109,Project Management,67.0,1,1,proficient,insufficient data,
+STU0110,Object-Oriented Design and Implementation,66.5,1,8,proficient,insufficient data,
+STU0110,Data Structures and Algorithms,65.4,2,15,proficient,insufficient data,
+STU0110,Technical Communication and Documentation,65.4,1,3,proficient,insufficient data,
+STU0110,Industry Standards Application,65.5,1,2,proficient,insufficient data,
+STU0110,Project Management,65.0,1,1,proficient,insufficient data,
+STU0111,Object-Oriented Design and Implementation,69.3,1,8,proficient,relative position,2.21
+STU0111,Data Structures and Algorithms,71.1,2,15,proficient,relative position,3.41
+STU0111,Technical Communication and Documentation,65.3,1,3,developing,relative position,-0.46
+STU0111,Industry Standards Application,64.5,1,2,isolated gap,relative position,-1.0
+STU0111,Project Management,66.0,1,1,developing,relative position,0.0
+STU0112,Object-Oriented Design and Implementation,83.0,1,8,proficient,absolute ceiling,
+STU0112,Data Structures and Algorithms,79.0,2,15,proficient,absolute ceiling,
+STU0112,Technical Communication and Documentation,77.2,1,3,proficient,absolute ceiling,
+STU0112,Industry Standards Application,76.5,1,2,proficient,absolute ceiling,
+STU0112,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0113,Object-Oriented Design and Implementation,82.0,1,8,proficient,absolute ceiling,
+STU0113,Data Structures and Algorithms,80.8,2,15,proficient,absolute ceiling,
+STU0113,Technical Communication and Documentation,85.5,1,3,proficient,absolute ceiling,
+STU0113,Industry Standards Application,84.5,1,2,proficient,absolute ceiling,
+STU0113,Project Management,85.0,1,1,proficient,absolute ceiling,
+STU0114,Object-Oriented Design and Implementation,67.9,1,8,proficient,insufficient data,
+STU0114,Data Structures and Algorithms,69.1,2,15,proficient,insufficient data,
+STU0114,Technical Communication and Documentation,67.0,1,3,proficient,insufficient data,
+STU0114,Industry Standards Application,66.5,1,2,proficient,insufficient data,
+STU0114,Project Management,66.0,1,1,proficient,insufficient data,
+STU0115,Object-Oriented Design and Implementation,57.7,1,8,proficient,relative position,1.01
+STU0115,Data Structures and Algorithms,56.9,2,15,developing,relative position,0.57
+STU0115,Technical Communication and Documentation,55.8,1,3,developing,relative position,0.0
+STU0115,Industry Standards Application,54.0,1,2,isolated gap,relative position,-1.0
+STU0115,Project Management,54.0,1,1,isolated gap,relative position,-1.0
+STU0116,Object-Oriented Design and Implementation,70.3,1,8,proficient,insufficient data,
+STU0116,Data Structures and Algorithms,67.4,2,15,proficient,insufficient data,
+STU0116,Technical Communication and Documentation,70.3,1,3,proficient,insufficient data,
+STU0116,Industry Standards Application,70.0,1,2,proficient,insufficient data,
+STU0116,Project Management,70.0,1,1,proficient,insufficient data,
+STU0117,Object-Oriented Design and Implementation,74.4,1,8,proficient,insufficient data,
+STU0117,Data Structures and Algorithms,74.4,2,15,proficient,insufficient data,
+STU0117,Technical Communication and Documentation,70.2,1,3,proficient,insufficient data,
+STU0117,Industry Standards Application,72.0,1,2,proficient,insufficient data,
+STU0117,Project Management,75.0,1,1,proficient,absolute ceiling,
+STU0118,Object-Oriented Design and Implementation,52.8,1,8,developing,insufficient data,
+STU0118,Data Structures and Algorithms,57.2,2,15,developing,insufficient data,
+STU0118,Technical Communication and Documentation,53.2,1,3,developing,insufficient data,
+STU0118,Industry Standards Application,53.5,1,2,developing,insufficient data,
+STU0118,Project Management,55.0,1,1,developing,insufficient data,
+STU0119,Object-Oriented Design and Implementation,92.7,1,8,proficient,absolute ceiling,
+STU0119,Data Structures and Algorithms,89.2,2,15,proficient,absolute ceiling,
+STU0119,Technical Communication and Documentation,92.7,1,3,proficient,absolute ceiling,
+STU0119,Industry Standards Application,91.0,1,2,proficient,absolute ceiling,
+STU0119,Project Management,89.0,1,1,proficient,absolute ceiling,
+STU0120,Object-Oriented Design and Implementation,87.1,1,8,proficient,absolute ceiling,
+STU0120,Data Structures and Algorithms,88.4,2,15,proficient,absolute ceiling,
+STU0120,Technical Communication and Documentation,89.5,1,3,proficient,absolute ceiling,
+STU0120,Industry Standards Application,90.0,1,2,proficient,absolute ceiling,
+STU0120,Project Management,91.0,1,1,proficient,absolute ceiling,
+STU0121,Object-Oriented Design and Implementation,63.8,1,8,isolated gap,relative position,-1.0
+STU0121,Data Structures and Algorithms,65.1,2,15,developing,relative position,0.08
+STU0121,Technical Communication and Documentation,67.3,1,3,proficient,relative position,1.89
+STU0121,Industry Standards Application,65.0,1,2,developing,relative position,0.0
+STU0121,Project Management,63.0,1,1,isolated gap,relative position,-1.64
+STU0122,Object-Oriented Design and Implementation,70.3,1,8,proficient,relative position,1.22
+STU0122,Data Structures and Algorithms,69.0,2,15,developing,relative position,0.0
+STU0122,Technical Communication and Documentation,70.4,1,3,proficient,relative position,1.31
+STU0122,Industry Standards Application,68.5,1,2,developing,relative position,-0.52
+STU0122,Project Management,68.0,1,1,isolated gap,relative position,-1.0
+STU0123,Object-Oriented Design and Implementation,64.6,1,8,isolated gap,relative position,-3.36
+STU0123,Data Structures and Algorithms,69.0,2,15,persistent gap,relative position,-1.07
+STU0123,Technical Communication and Documentation,71.1,1,3,developing,relative position,0.0
+STU0123,Industry Standards Application,72.5,1,2,developing,relative position,0.74
+STU0123,Project Management,73.0,1,1,proficient,relative position,1.0
+STU0124,Object-Oriented Design and Implementation,63.1,1,8,developing,insufficient data,
+STU0124,Data Structures and Algorithms,61.9,2,15,developing,insufficient data,
+STU0124,Technical Communication and Documentation,63.9,1,3,developing,insufficient data,
+STU0124,Industry Standards Application,63.0,1,2,developing,insufficient data,
+STU0124,Project Management,61.0,1,1,developing,insufficient data,
+STU0125,Object-Oriented Design and Implementation,69.6,1,8,proficient,relative position,1.35
+STU0125,Data Structures and Algorithms,67.8,2,15,developing,relative position,0.0
+STU0125,Technical Communication and Documentation,69.2,1,3,proficient,relative position,1.0
+STU0125,Industry Standards Application,66.5,1,2,developing,relative position,-0.99
+STU0125,Project Management,66.0,1,1,isolated gap,relative position,-1.37
+STU0126,Object-Oriented Design and Implementation,50.9,1,8,isolated gap,relative position,-1.54
+STU0126,Data Structures and Algorithms,52.6,2,15,developing,relative position,-0.69
+STU0126,Technical Communication and Documentation,56.5,1,3,proficient,relative position,1.23
+STU0126,Industry Standards Application,56.0,1,2,proficient,relative position,1.0
+STU0126,Project Management,54.0,1,1,developing,relative position,0.0
+STU0127,Object-Oriented Design and Implementation,79.8,1,8,proficient,absolute ceiling,
+STU0127,Data Structures and Algorithms,82.2,2,15,proficient,absolute ceiling,
+STU0127,Technical Communication and Documentation,84.9,1,3,proficient,absolute ceiling,
+STU0127,Industry Standards Application,86.0,1,2,proficient,absolute ceiling,
+STU0127,Project Management,86.0,1,1,proficient,absolute ceiling,
+STU0128,Object-Oriented Design and Implementation,61.8,1,8,developing,insufficient data,
+STU0128,Data Structures and Algorithms,64.8,2,15,developing,insufficient data,
+STU0128,Technical Communication and Documentation,66.3,1,3,proficient,insufficient data,
+STU0128,Industry Standards Application,66.5,1,2,proficient,insufficient data,
+STU0128,Project Management,67.0,1,1,proficient,insufficient data,
+STU0129,Object-Oriented Design and Implementation,73.9,1,8,isolated gap,relative position,-1.05
+STU0129,Data Structures and Algorithms,72.9,2,15,persistent gap,relative position,-1.33
+STU0129,Technical Communication and Documentation,77.5,1,3,proficient,absolute ceiling,
+STU0129,Industry Standards Application,79.5,1,2,proficient,absolute ceiling,
+STU0129,Project Management,81.0,1,1,proficient,absolute ceiling,
+STU0130,Object-Oriented Design and Implementation,48.2,1,8,isolated gap,absolute floor,
+STU0130,Data Structures and Algorithms,45.8,2,15,persistent gap,absolute floor,
+STU0130,Technical Communication and Documentation,48.4,1,3,isolated gap,absolute floor,
+STU0130,Industry Standards Application,48.5,1,2,isolated gap,absolute floor,
+STU0130,Project Management,48.0,1,1,isolated gap,absolute floor,
+STU0131,Object-Oriented Design and Implementation,62.6,1,8,developing,insufficient data,
+STU0131,Data Structures and Algorithms,60.5,2,15,developing,insufficient data,
+STU0131,Technical Communication and Documentation,63.8,1,3,developing,insufficient data,
+STU0131,Industry Standards Application,63.0,1,2,developing,insufficient data,
+STU0131,Project Management,62.0,1,1,developing,insufficient data,
+STU0132,Object-Oriented Design and Implementation,64.9,1,8,developing,insufficient data,
+STU0132,Data Structures and Algorithms,62.4,2,15,developing,insufficient data,
+STU0132,Technical Communication and Documentation,64.7,1,3,developing,insufficient data,
+STU0132,Industry Standards Application,65.0,1,2,proficient,insufficient data,
+STU0132,Project Management,65.0,1,1,proficient,insufficient data,
+STU0133,Object-Oriented Design and Implementation,85.6,1,8,proficient,absolute ceiling,
+STU0133,Data Structures and Algorithms,83.9,2,15,proficient,absolute ceiling,
+STU0133,Technical Communication and Documentation,85.2,1,3,proficient,absolute ceiling,
+STU0133,Industry Standards Application,84.5,1,2,proficient,absolute ceiling,
+STU0133,Project Management,83.0,1,1,proficient,absolute ceiling,
+STU0134,Object-Oriented Design and Implementation,59.7,1,8,developing,insufficient data,
+STU0134,Data Structures and Algorithms,60.8,2,15,developing,insufficient data,
+STU0134,Technical Communication and Documentation,59.4,1,3,developing,insufficient data,
+STU0134,Industry Standards Application,60.5,1,2,developing,insufficient data,
+STU0134,Project Management,61.0,1,1,developing,insufficient data,
+STU0135,Object-Oriented Design and Implementation,62.3,1,8,proficient,relative position,3.29
+STU0135,Data Structures and Algorithms,56.5,2,15,persistent gap,relative position,-2.54
+STU0135,Technical Communication and Documentation,59.6,1,3,developing,relative position,0.62
+STU0135,Industry Standards Application,58.0,1,2,isolated gap,relative position,-1.0
+STU0135,Project Management,59.0,1,1,developing,relative position,0.0
+STU0136,Object-Oriented Design and Implementation,48.1,1,8,isolated gap,absolute floor,
+STU0136,Data Structures and Algorithms,48.3,2,15,persistent gap,absolute floor,
+STU0136,Technical Communication and Documentation,46.4,1,3,isolated gap,absolute floor,
+STU0136,Industry Standards Application,45.5,1,2,isolated gap,absolute floor,
+STU0136,Project Management,46.0,1,1,isolated gap,absolute floor,
+STU0137,Object-Oriented Design and Implementation,91.1,1,8,proficient,absolute ceiling,
+STU0137,Data Structures and Algorithms,89.0,2,15,proficient,absolute ceiling,
+STU0137,Technical Communication and Documentation,91.8,1,3,proficient,absolute ceiling,
+STU0137,Industry Standards Application,90.0,1,2,proficient,absolute ceiling,
+STU0137,Project Management,90.0,1,1,proficient,absolute ceiling,
+STU0138,Object-Oriented Design and Implementation,71.2,1,8,proficient,relative position,2.79
+STU0138,Data Structures and Algorithms,66.9,2,15,persistent gap,relative position,-1.0
+STU0138,Technical Communication and Documentation,68.0,1,3,developing,relative position,0.0
+STU0138,Industry Standards Application,68.0,1,2,developing,relative position,0.0
+STU0138,Project Management,70.0,1,1,proficient,relative position,1.75
+STU0139,Object-Oriented Design and Implementation,60.2,1,8,isolated gap,relative position,-1.0
+STU0139,Data Structures and Algorithms,60.0,2,15,persistent gap,relative position,-1.09
+STU0139,Technical Communication and Documentation,62.2,1,3,developing,relative position,0.0
+STU0139,Industry Standards Application,63.5,1,2,developing,relative position,0.69
+STU0139,Project Management,65.0,1,1,proficient,relative position,1.46
+STU0140,Object-Oriented Design and Implementation,55.0,1,8,isolated gap,relative position,-2.29
+STU0140,Data Structures and Algorithms,54.9,2,15,persistent gap,relative position,-2.32
+STU0140,Technical Communication and Documentation,57.8,1,3,developing,relative position,0.0
+STU0140,Industry Standards Application,59.0,1,2,proficient,relative position,1.0
+STU0140,Project Management,59.0,1,1,proficient,relative position,1.0
+STU0141,Object-Oriented Design and Implementation,65.4,1,8,developing,relative position,0.15
+STU0141,Data Structures and Algorithms,66.5,2,15,proficient,relative position,1.0
+STU0141,Technical Communication and Documentation,65.2,1,3,developing,relative position,0.0
+STU0141,Industry Standards Application,63.0,1,2,isolated gap,relative position,-1.61
+STU0141,Project Management,61.0,1,1,isolated gap,relative position,-3.11
+STU0142,Object-Oriented Design and Implementation,66.1,1,8,proficient,insufficient data,
+STU0142,Data Structures and Algorithms,68.6,2,15,proficient,insufficient data,
+STU0142,Technical Communication and Documentation,68.5,1,3,proficient,insufficient data,
+STU0142,Industry Standards Application,67.0,1,2,proficient,insufficient data,
+STU0142,Project Management,66.0,1,1,proficient,insufficient data,
+STU0143,Object-Oriented Design and Implementation,66.6,1,8,isolated gap,relative position,-2.5
+STU0143,Data Structures and Algorithms,67.3,2,15,persistent gap,relative position,-2.17
+STU0143,Technical Communication and Documentation,72.2,1,3,developing,relative position,0.0
+STU0143,Industry Standards Application,74.5,1,2,proficient,relative position,1.0
+STU0143,Project Management,74.0,1,1,developing,relative position,0.78
+STU0144,Object-Oriented Design and Implementation,73.5,1,8,isolated gap,relative position,-1.93
+STU0144,Data Structures and Algorithms,74.6,2,15,persistent gap,relative position,-1.18
+STU0144,Technical Communication and Documentation,76.5,1,3,proficient,absolute ceiling,
+STU0144,Industry Standards Application,78.0,1,2,proficient,absolute ceiling,
+STU0144,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0145,Object-Oriented Design and Implementation,66.3,1,8,proficient,relative position,1.0
+STU0145,Data Structures and Algorithms,70.2,2,15,proficient,relative position,2.67
+STU0145,Technical Communication and Documentation,61.1,1,3,isolated gap,relative position,-1.25
+STU0145,Industry Standards Application,63.0,1,2,developing,relative position,-0.43
+STU0145,Project Management,64.0,1,1,developing,relative position,0.0
+STU0146,Object-Oriented Design and Implementation,90.1,1,8,proficient,absolute ceiling,
+STU0146,Data Structures and Algorithms,93.3,2,15,proficient,absolute ceiling,
+STU0146,Technical Communication and Documentation,92.0,1,3,proficient,absolute ceiling,
+STU0146,Industry Standards Application,93.0,1,2,proficient,absolute ceiling,
+STU0146,Project Management,94.0,1,1,proficient,absolute ceiling,
+STU0147,Object-Oriented Design and Implementation,84.7,1,8,proficient,absolute ceiling,
+STU0147,Data Structures and Algorithms,86.3,2,15,proficient,absolute ceiling,
+STU0147,Technical Communication and Documentation,85.1,1,3,proficient,absolute ceiling,
+STU0147,Industry Standards Application,82.5,1,2,proficient,absolute ceiling,
+STU0147,Project Management,81.0,1,1,proficient,absolute ceiling,
+STU0148,Object-Oriented Design and Implementation,77.2,1,8,proficient,absolute ceiling,
+STU0148,Data Structures and Algorithms,73.0,2,15,persistent gap,relative position,-1.76
+STU0148,Technical Communication and Documentation,74.3,1,3,isolated gap,relative position,-1.0
+STU0148,Industry Standards Application,76.0,1,2,proficient,absolute ceiling,
+STU0148,Project Management,78.0,1,1,proficient,absolute ceiling,
+STU0149,Object-Oriented Design and Implementation,64.3,1,8,isolated gap,relative position,-1.0
+STU0149,Data Structures and Algorithms,69.3,2,15,proficient,relative position,1.26
+STU0149,Technical Communication and Documentation,67.6,1,3,developing,relative position,0.5
+STU0149,Industry Standards Application,66.5,1,2,developing,relative position,0.0
+STU0149,Project Management,64.0,1,1,isolated gap,relative position,-1.13
+STU0150,Object-Oriented Design and Implementation,86.2,1,8,proficient,absolute ceiling,
+STU0150,Data Structures and Algorithms,85.9,2,15,proficient,absolute ceiling,
+STU0150,Technical Communication and Documentation,85.5,1,3,proficient,absolute ceiling,
+STU0150,Industry Standards Application,84.5,1,2,proficient,absolute ceiling,
+STU0150,Project Management,85.0,1,1,proficient,absolute ceiling,
