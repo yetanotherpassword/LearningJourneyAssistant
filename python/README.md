@@ -348,6 +348,72 @@ IOLG-82 (PR #8) — once that merges, a plan built on a `rejected` cluster
 should be refused the same way the gap report is. And there is no
 dashboard rendering; the Markdown file is the deliverable for now.
 
+## Study strategies — how to study each gap (IOLG-123)
+
+A learning plan says *what* to work on. `python -m lja.strategy <xlsx> <student id>`
+says *how* to study it: one entry per gap, with evidence-based techniques applied to the
+student's own SILOs and assessments, a schedule, and a way to tell it is working. It
+mirrors `lja.plan` exactly: same context (`build_plan_context()`), same `--source`,
+`--clustering-cache`, `--review-file`, `--max-attempts` and `--extra-instructions`
+options, same staff-review gate (a rejected cluster exits 2, a pending one warns), and
+the same fail-closed loop (never grounds, exit 1, nothing written).
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx       # once: caches the clustering
+python -m lja.strategy ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+# writes output/strategies/study_strategy_STU0003.json and .md
+
+# offline, from the committed reference run
+R=../data-fixtures/reference-run
+python -m lja.strategy ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003 \
+    --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json
+```
+
+A student with no isolated or persistent gap gets a one-line message and exit 0, with no
+LLM call: a strategy for nothing would be invention.
+
+**Techniques are a closed list** (`STUDY_TECHNIQUES` in `lja/model/study_strategy.py`), so
+the model cannot recommend something plausible-sounding with no evidence behind it. It is
+the six strategies in Weinstein, Madan and Sumeracki (2018), *Teaching the science of
+learning* (spaced practice, retrieval practice, interleaving, elaboration, concrete
+examples, dual coding), plus worked examples and feedback review, which fit how this data
+records assessments. The schema rejects any other name.
+
+**Persistent and isolated gaps get structurally different strategies, checked in code.**
+
+| Gap | What it means | The strategy must |
+| --- | --- | --- |
+| Persistent | Shows in two or more subjects: a foundation, not one bad assessment | Name at least two of the subjects that evidence it, and use interleaving or spaced practice so practice connects them over time |
+| Isolated | Shows in one subject only | Include feedback review: rework the named assessment against the marker's comment |
+
+**Grounding is per competency, stricter than plans.** A plan checks that every name exists
+somewhere in the student's context. A strategy also checks it is filed under the right
+competency: an entry's subjects must be ones that evidence that competency, its
+assessments must be the student's assessments covering that competency's SILOs, its SILOs
+must be that competency's, and `prepare_for` may only name subjects the student has not
+taken yet that assess it. Plus: exactly one entry per gap and none for a strength,
+`gap_kind` must match the gap engine's classification, every entry cites at least one
+assessment and one SILO, and prose is scanned for inline codes.
+`tests/test_study_strategy.py` has one test per rule; `tests/test_strategy_cli.py` covers
+the gate, the no-gap exit and the fail-closed exit.
+
+**First live run** (2026-09-27, `qwen3-vl:30b` via Ollama, reference run): three students
+with both gap kinds, every one grounded on the first attempt, one call each.
+
+| Student | Gaps | Time | Tokens in / out |
+| --- | --- | --- | --- |
+| STU0003 | 1 persistent, 1 isolated | 28 s | 4.2k / 0.9k |
+| STU0022 | 1 persistent, 1 isolated | 20 s | 3.9k / 0.8k |
+| STU0054 | 1 persistent, 4 isolated | 97 s | 9.0k / 1.6k |
+
+Every persistent entry named CSE1OOF and CSE2ALG and used interleaving plus spaced
+practice; every isolated entry stayed in its one subject and led with feedback review.
+Two quality issues the validator is not meant to catch, the same two the first plan run
+showed: STU0003's entries list every assessment covering the competency (7 for one entry)
+rather than the weakest, and its "why" quotes marker feedback but not the student's
+percentages. The other two quote their figures. Both are prompt work, not grounding
+failures.
+
 ## The LLM layer — provider-agnostic, actually built now
 
 One interface, `lja.llm.LLMClient`, with a single method:
