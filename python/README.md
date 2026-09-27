@@ -57,6 +57,7 @@ setup.
 | `lja/model/learning_plan.py` | LLM-generated learning plan for one student, grounded in the gap output and validated by `lja/llm/grounding.py` — see "Learning plans" below |
 | `lja/plan.py` | `python -m lja.plan <xlsx path> <student id>` or `--source moodle <student id>` — generates and writes one student's plan; needs `lja.cli`'s clustering cache from the same source |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
+| `lja/export.py` | `python -m lja.export <xlsx path>` or `--source moodle` — structured CSV + manifest extract for longitudinal / A/B evaluation, with optional `--anonymise`. See "Export" below |
 | `tests/` | pytest — all offline (no live LLM call needed). The count is whatever CI reports; it is no longer quoted here because it went stale four times in a fortnight. |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
 | `environment.yml` | Conda environment: `pandas`, `openpyxl`, `psycopg2`, `anthropic`, `openai`, `pydantic`, `pytest`, `fastapi`, `uvicorn`, `jinja2` |
@@ -347,6 +348,40 @@ Not yet done: the plan does not consult the staff-confirmation states from
 IOLG-82 (PR #8) — once that merges, a plan built on a `rejected` cluster
 should be refused the same way the gap report is. And there is no
 dashboard rendering; the Markdown file is the deliverable for now.
+
+## Export — structured extract for longitudinal / A/B evaluation
+
+`python -m lja.export` (tender requirement 7) writes the pipeline run out as
+three CSVs plus a manifest, so the department can compare cohorts that used the
+assistant against cohorts that did not, and one semester against the next. Like
+`lja.plan` it never calls the LLM and never regenerates the clustering — it
+reads the cache `lja.cli` wrote for the same `--source`, so an export is always
+drawn from the same clustering as the dashboard and the plans.
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx   # once: caches the clustering
+python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --out output/export
+# from Moodle, with pseudonymised student ids:
+python -m lja.export --source moodle --out output/export --anonymise
+```
+
+It writes **`students.csv`** (one row per student, a column per subject),
+**`competencies.csv`** (one row per `(student, competency)` verdict, with the
+classification basis, a `trend`, and an `in_plan` flag), **`cohort.csv`** (per
+competency, aggregated — `gap_rate`, `proficient_rate`, no student ids) and
+**`manifest.json`** (source, git commit, clustering cache and the seven gap
+thresholds, so two exports can be diffed knowing they came from the same
+pipeline). Every column is documented in
+[`docs/export-schema.md`](../docs/export-schema.md), and
+[`docs/export-sample.ipynb`](../docs/export-sample.ipynb) loads
+`competencies.csv` and charts the classification counts.
+
+**`--anonymise`** replaces every `student_id` with an HMAC-SHA256 pseudonym
+keyed on `LJA_EXPORT_SALT` (set it in `.env`; see `.env.example`). The same
+student maps to the same pseudonym across every export taken with the same
+salt — which is what lets the two cohorts be lined up without either file
+carrying a real id — while the mapping cannot be reversed without the key. An
+empty salt is refused (exit 2) rather than silently keying on `""`.
 
 ## The LLM layer — provider-agnostic, actually built now
 
