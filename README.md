@@ -164,9 +164,12 @@ conda env create -f environment.yml
 conda activate lja
 cp .env.example .env                 # fill in LLM settings; Moodle settings optional for now
 
-# 3. Run the actual pipeline against the real dataset
-python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx
+# 3. Run the pipeline and dashboard against the real dataset, using the
+#    committed reference-run clustering (no LLM needed) — see
+#    data-fixtures/reference-run/README.md
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --clustering-cache ../data-fixtures/reference-run/silo_clustering.json
 python -m pytest tests/
+LJA_DASHBOARD_CLUSTERING_CACHE=../data-fixtures/reference-run/silo_clustering.json python -m lja.dashboard   # http://127.0.0.1:8000
 ```
 
 Moodle (production-path devenv) answers on `http://localhost:8081` — see

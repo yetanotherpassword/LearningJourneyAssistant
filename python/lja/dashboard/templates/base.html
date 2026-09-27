@@ -16,11 +16,17 @@
 <body>
 <header class="site-header">
   <a href="/">LJA Dashboard</a>
-  <span class="tag">gap report &middot; read-only</span>
+  <span class="tag">gap report &middot; read-only &middot; dev mode, no sign-in</span>
   <nav class="site-nav">
     <a href="/">Students</a>
     <a href="/clusters">Competency clusters</a>
   </nav>
+  <label class="picker">Student
+    <select onchange="if (this.value) location.href = '/student/' + this.value">
+      <option value="">choose&hellip;</option>
+      {% for sid in student_ids %}<option value="{{ sid }}">{{ sid }}</option>{% endfor %}
+    </select>
+  </label>
 </header>
 {% if review_warning %}
 {# The whole banner is a link: /clusters shows every cluster with its
