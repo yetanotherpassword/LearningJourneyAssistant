@@ -1,0 +1,23 @@
+flowchart LR
+    subgraph Workstation["Operator workstation (trusted)"]
+        CLI[lja.cli / lja.plan / lja.review]
+        DASH[lja.dashboard 127.0.0.1:8000]
+        FILES[(output/ .env)]
+    end
+    subgraph Local["Local network"]
+        MOODLE[(Moodle Postgres)]
+        OLLAMA[Ollama / LM Studio]
+    end
+    subgraph Internet
+        ANTH[Anthropic API]
+        CDN[jsDelivr CDN]
+        GH[GitHub + Actions]
+    end
+    BROWSER[Browser]
+    CLI -- SELECT as lja_reader --> MOODLE
+    CLI -- SILO text, gap context --> OLLAMA
+    CLI -- SILO text, gap context + API key --> ANTH
+    BROWSER --> DASH
+    BROWSER -- chart.js --> CDN
+    FILES --- CLI
+    FILES --- DASH
