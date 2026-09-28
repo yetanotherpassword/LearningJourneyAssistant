@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ summary.student_id }} &mdash; LJA Dashboard{% endblock %}
+{% from "_macros.html" import scrollbox %}
 {% block content %}
 <a class="back-link" href="/">&larr; all students</a>
 <h1>{{ summary.student_id }}</h1>
@@ -14,6 +15,7 @@
 
 <h2>Strengths</h2>
 {% if strengths %}
+{% call scrollbox(strengths|length, "strengths") %}
 <table class="evidence-table">
   <thead><tr><th>Competency</th><th>Attainment</th><th>Basis</th></tr></thead>
   <tbody>
@@ -29,6 +31,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No competency is classified proficient for this student yet.</p>
 {% endif %}
@@ -43,6 +46,7 @@
   <canvas id="progress-chart" height="110" aria-label="Attainment per competency across subjects in year order" role="img"></canvas>
   <p id="progress-chart-note" class="chart-note" hidden></p>
 </div>
+{% call scrollbox(progress_rows|length, "competencies") %}
 <table class="evidence-table progress-table">
   <thead>
     <tr>
@@ -61,6 +65,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No subject evidence for this student.</p>
 {% endif %}

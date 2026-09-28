@@ -264,6 +264,30 @@ unless some cell contains the text, with a "13 of 100 subjects match"
 count, and an Expand button that opens the same box full screen with the
 toolbar pinned, so every column is readable; Esc or Close returns. Sorting
 and filtering compose, since one permutes rows and the other hides them.
+The same box wraps every table that can exceed a screen, including the
+term table, progression table and subject-by-competency matrix on the
+outcome-quality page and the strengths and progress tables on the student
+page; tables that stay under a screen are left plain.
+
+**Competency traceability.** Every competency has a page (`/competency/<slug>`,
+single-subject ones included) that opens with a layered diagram: the
+competency on the left, the subjects whose outcomes were grouped into it in
+the middle (coloured by discipline, click to open), and those outcomes on
+the right (hover for the full wording; a red outline is a clustering flag,
+amber is vague wording). Under it, every path is listed with the assessments
+that evidence each outcome — the chain from a student's mark to their
+competency classification. The progression chart follows for competencies
+taught in two or more subjects. `/competencies` opens with a competency ×
+discipline map (cell = outcomes from that discipline, multi-discipline
+competencies first) so the organisation is visible at a glance; every
+competency name on the dashboard links to its page.
+
+**Enlarge any chart.** `static/chartzoom.js` adds an Enlarge button to every
+Chart.js chart; it opens the same chart (type, data, options and click
+handlers) full screen in a modal, with hover tooltips and a live readout of
+the pointer's position in data units on every axis. Esc or Close returns.
+The d3 figures on the outcome-quality page (word cloud, chord) are not
+Chart.js and have no Enlarge button.
 
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence

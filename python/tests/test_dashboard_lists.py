@@ -212,3 +212,14 @@ def test_competencies_page_has_the_discipline_map_and_enlarge_script() -> None:
     assert "<span>CSE</span>" in body
     assert 'title="Data Structures: 2 outcomes from CSE"' in body
     assert "/static/chartzoom.js" in body
+
+
+def test_remaining_long_tables_are_scroll_boxed() -> None:
+    client = _client()
+    silos = client.get("/silos").text
+    assert 'data-what="terms"' in silos
+    assert 'data-what="competencies"' in silos      # progression by competency
+    assert 'data-what="subjects"' in silos          # attainment by subject and competency matrix
+    student = client.get("/student/STU0001").text
+    assert 'data-what="strengths"' in student
+    assert 'data-what="competencies"' in student    # progress across subjects

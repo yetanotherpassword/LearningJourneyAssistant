@@ -17,7 +17,7 @@
   the same gap rows the student pages show. Nothing here calls the LLM.
 </p>
 
-{% from "_macros.html" import tile %}
+{% from "_macros.html" import tile, scrollbox %}
 <div class="stat-strip">
   {{ tile(totals.subjects, "subjects", "/subjects") }}
   {{ tile(totals.silos, "SILOs", "/silos/list/all") }}
@@ -43,6 +43,7 @@
 </div>
 <details class="fold">
   <summary>Term table ({{ terms|length }} terms)</summary>
+  {% call scrollbox(terms|length, "terms") %}
   <table class="sortable compact">
     <thead><tr>
       <th data-sort-type="text">Term</th><th data-sort-type="text">Kind</th>
@@ -63,6 +64,7 @@
     {% endfor %}
     </tbody>
   </table>
+  {% endcall %}
 </details>
 
 <h2>Subjects</h2>
@@ -82,6 +84,7 @@
   student pages use. Click a row for the chart and the outcomes behind it.
 </p>
 {% if progressions %}
+{% call scrollbox(progressions|length, "competencies") %}
 <table class="sortable">
   <thead><tr>
     <th data-sort-type="text" aria-sort="ascending">Competency</th><th data-sort-type="number">Subjects</th>
@@ -103,6 +106,7 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No competency spans more than one subject in this clustering, so there is no progression to draw.</p>
 {% endif %}
@@ -145,7 +149,7 @@
   Mean attainment on every subject&rsquo;s outcomes, grouped by the competency they were clustered into.
   An empty cell means the subject has no outcome in that competency, which is different from a low score.
 </p>
-<div class="heat-wrap">
+{% call scrollbox(matrix.subjects|length, "subjects") %}
   <table class="heat">
     <thead><tr><th>Subject</th>{% for c in matrix.competencies %}<th><span>{{ c }}</span></th>{% endfor %}</tr></thead>
     <tbody>
@@ -158,7 +162,7 @@
     {% endfor %}
     </tbody>
   </table>
-</div>
+{% endcall %}
 
 <h2>Every outcome</h2>
 <p class="dek">

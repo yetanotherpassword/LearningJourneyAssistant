@@ -569,3 +569,7 @@ table.comp-map td.m a { color: var(--ink); text-decoration: none; font-weight: 6
 table.comp-map td.tot { color: var(--muted); font-weight: 600; }
 table.comp-map tbody th a { color: var(--ink); text-decoration: none; }
 table.comp-map tbody th a:hover { color: var(--accent); }
+
+/* Heat matrix inside a scroll box: keep its own sticky first column and compact cells. */
+.scroll-box table.heat { width: max-content; min-width: 100%; }
+.scroll-box .evidence-table { border: none; }
