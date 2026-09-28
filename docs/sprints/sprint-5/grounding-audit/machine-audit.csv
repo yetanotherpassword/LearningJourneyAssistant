@@ -1,0 +1,11 @@
+student_id,attempts,failed_attempts,failed_checks,final_grounding,final_error,usage
+STU0003,1,0,None,PASS,,"1 call(s), 20.8s total, tokens in=4556 out=1708, cost=$0.0655"
+STU0004,1,0,None,PASS,,"1 call(s), 19.5s total, tokens in=4594 out=1652, cost=$0.0643"
+STU0022,1,0,None,PASS,,"1 call(s), 15.1s total, tokens in=4490 out=1153, cost=$0.0513"
+STU0054,1,0,None,PASS,,"1 call(s), 18.4s total, tokens in=4604 out=1581, cost=$0.0625"
+STU0055,1,0,None,PASS,,"1 call(s), 17.2s total, tokens in=4498 out=1366, cost=$0.0566"
+STU0067,1,0,None,PASS,,"1 call(s), 22.6s total, tokens in=4604 out=1870, cost=$0.0698"
+STU0075,1,0,None,PASS,,"1 call(s), 15.3s total, tokens in=4490 out=1287, cost=$0.0546"
+STU0001,1,0,None,PASS,,"1 call(s), 19.4s total, tokens in=4598 out=1617, cost=$0.0634"
+STU0005,1,0,None,PASS,,"1 call(s), 22.5s total, tokens in=4490 out=1915, cost=$0.0703"
+STU0007,1,0,None,PASS,,"1 call(s), 19.7s total, tokens in=4589 out=1649, cost=$0.0642"
