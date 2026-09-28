@@ -573,3 +573,11 @@ table.comp-map tbody th a:hover { color: var(--accent); }
 /* Heat matrix inside a scroll box: keep its own sticky first column and compact cells. */
 .scroll-box table.heat { width: max-content; min-width: 100%; }
 .scroll-box .evidence-table { border: none; }
+
+/* "?" beside a column heading: opens the glossary without sorting. */
+a.term-help {
+  display: inline-block; width: 15px; height: 15px; line-height: 15px; margin-left: 4px; text-align: center;
+  border-radius: 50%; font-size: 0.68rem; font-weight: 700; text-decoration: none; text-transform: none;
+  color: var(--muted); background: var(--surface); border: 1px solid var(--line); vertical-align: middle;
+}
+a.term-help:hover { color: var(--accent); border-color: var(--accent); }

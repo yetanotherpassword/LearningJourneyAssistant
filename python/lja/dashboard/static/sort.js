@@ -70,7 +70,12 @@
         rows.forEach((row) => body.appendChild(row));
       };
 
-      header.addEventListener("click", activate);
+      // A link inside the heading (the "?" to the glossary) is a link, not a
+      // sort: let it navigate without reordering the table.
+      header.addEventListener("click", (event) => {
+        if (event.target.closest("a")) return;
+        activate();
+      });
       header.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();

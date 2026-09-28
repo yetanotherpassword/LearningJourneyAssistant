@@ -33,7 +33,7 @@
       <td data-sort-value="{{ row.lowest_gap_pct if row.lowest_gap_pct is not none else '' }}">
         {% if row.lowest_gap_pct is not none %}
         {{ "%.1f"|format(row.lowest_gap_pct) }}%
-        {% if row.deepest_position is not none %}<span class="muted">{{ "%+.1f"|format(row.deepest_position) }} <a class="term" href="/glossary#mad">MAD</a></span>{% endif %}
+        {% if row.deepest_position is not none %}<span class="muted">{{ "%+.1f"|format(row.deepest_position) }} MAD <a class="term-help" href="/glossary#mad" title="Definition in the glossary">?</a></span>{% endif %}
         {% else %}
         &mdash;
         {% endif %}
@@ -61,15 +61,15 @@
 <table class="sortable">
   <thead>
     <tr>
-      <th data-sort-type="number" {% if default_sorted %}aria-sort="ascending"{% endif %} title="Priority group, 1 first (see the groups above)"><a class="term" href="/glossary#priority">Priority</a></th>
+      <th data-sort-type="number" {% if default_sorted %}aria-sort="ascending"{% endif %} title="Priority group, 1 first (see the groups above)">Priority <a class="term-help" href="/glossary#priority" title="Definition in the glossary">?</a></th>
       <th data-sort-type="text">Student</th>
       <th data-sort-type="number">Average</th>
       <th data-sort-type="text">Band</th>
-      <th data-sort-type="number" title="Gaps below the absolute floor"><a class="term" href="/glossary#absolute-floor">Below floor</a></th>
-      <th data-sort-type="number" title="The student's lowest flagged competency, and how far below their own median it sits"><a class="term" href="/glossary#lowest-gap">Lowest gap</a></th>
-      <th data-sort-type="number"><a class="term" href="/glossary#persistent-gap">Persistent gaps</a></th>
-      <th data-sort-type="number"><a class="term" href="/glossary#isolated-gap">Isolated gaps</a></th>
-      <th data-sort-type="number"><a class="term" href="/glossary#proficient">Strengths</a></th>
+      <th data-sort-type="number" title="Gaps below the absolute floor">Below floor <a class="term-help" href="/glossary#absolute-floor" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number" title="The student's lowest flagged competency, and how far below their own median it sits">Lowest gap <a class="term-help" href="/glossary#lowest-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Persistent gaps <a class="term-help" href="/glossary#persistent-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Isolated gaps <a class="term-help" href="/glossary#isolated-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Strengths <a class="term-help" href="/glossary#proficient" title="Definition in the glossary">?</a></th>
     </tr>
   </thead>
   <tbody>
