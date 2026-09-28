@@ -201,3 +201,13 @@ def test_every_page_links_to_run_and_glossary() -> None:
     for path in ("/", "/cohort/priority-1", "/student/STU0002", "/run", "/glossary"):
         body = client.get(path).text
         assert 'href="/run"' in body and 'href="/glossary"' in body, path
+
+
+def test_severity_chart_includes_unflagged_students_as_grey_points() -> None:
+    dataset, gaps = _four_students_one_per_priority()
+    body = _client(dataset, gaps).get("/").text
+    # STU0001 has no gap; its only competency row is 90% proficient, so it is
+    # plotted at y = 90 with priority 0 (the grey "no flag" series).
+    assert '{"id": "STU0001", "x": 70.0, "y": 90.0, "p": 0}' in body
+    assert '{"id": "STU0003", "x": 45.0, "y": 35.0, "p": 1}' in body
+    assert "The 1 students with no flag" in " ".join(body.split())

@@ -353,6 +353,10 @@ def create_app(
             # flagged mark, and how far below their own median it sits.
             "floor_gap_count": sum(1 for g in student_gap_rows if g.classification_basis == BASIS_FLOOR),
             "lowest_gap_pct": min((g.attainment_pct for g in student_gap_rows), default=None),
+            # The student's lowest mark over every competency, gap or not:
+            # the same measure for an unflagged student, so they can sit on
+            # the same chart as a grey point.
+            "lowest_pct": min((g.attainment_pct for g in student_gaps), default=None),
             "deepest_position": min(positions, default=None),
             "priority": priority_of(student_gaps),
         }
@@ -417,14 +421,20 @@ def create_app(
             ],
             "unflagged_count": sum(1 for r in rows if r["priority"] is None),
             "preview_size": PRIORITY_PREVIEW_SIZE,
-            # Outlier chart: one point per flagged student.
+            # Outlier chart: one point per student. Flagged students are
+            # placed at their lowest flagged mark; unflagged ones (p = 0)
+            # at their lowest competency mark, which by definition was not
+            # a gap, so they show where the "no flag" region sits.
             "severity_scatter": json.dumps(
                 [
-                    {"id": r["student_id"], "x": round(r["average_total"], 1), "y": round(r["lowest_gap_pct"], 1), "p": r["priority"]}
-                    for r in rows if r["priority"] is not None
+                    {"id": r["student_id"], "x": round(r["average_total"], 1),
+                     "y": round(r["lowest_gap_pct"] if r["priority"] is not None else r["lowest_pct"], 1),
+                     "p": r["priority"] or 0}
+                    for r in rows if (r["lowest_gap_pct"] if r["priority"] is not None else r["lowest_pct"]) is not None
                 ]
             ),
             "severity_scatter_n": sum(1 for r in rows if r["priority"] is not None),
+            "severity_scatter_unflagged": sum(1 for r in rows if r["priority"] is None and r["lowest_pct"] is not None),
             "rules": rules,
             "gap_summary": {
                 "students": len(rows),

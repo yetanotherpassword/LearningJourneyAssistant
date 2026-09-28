@@ -126,9 +126,10 @@
 <div class="chart-card">
   <h3>Where each flagged student sits</h3>
   <p class="chart-note">
-    One point per flagged student ({{ severity_scatter_n }}): their average total across subjects against their lowest flagged
-    competency mark, coloured by priority group. Points far below the diagonal are students who do well overall but
-    have one deep gap. Hover for the student; click to open them.
+    One point per student: average total across subjects against their lowest competency mark, coloured by priority
+    group for the {{ severity_scatter_n }} flagged students. The {{ severity_scatter_unflagged }} students with no flag
+    are the grey points, placed at their lowest mark of all, which the rules did not count as a gap.
+    Points far below the diagonal are students who do well overall but have one deep gap. Hover for the student; click to open them.
   </p>
   <canvas id="severity-chart" height="130"></canvas>
 </div>
@@ -181,14 +182,23 @@
   {{ chart_prelude() }}
 
   if (document.getElementById("severity-chart")) {
-    const groups = [1, 2, 3].map((rank) => ({
+    // Unflagged first so the coloured groups draw over the grey.
+    const groups = [{
+      label: "no flag",
+      data: severity.filter((p) => p.p === 0),
+      backgroundColor: cssVar("--muted") + "55",
+      borderColor: cssVar("--muted") + "88",
+      pointRadius: severity.length > 1500 ? 2 : 3,
+      pointHoverRadius: 5,
+    }];
+    groups.push(...[1, 2, 3].map((rank) => ({
       label: `${rank}${rank === 1 ? "st" : rank === 2 ? "nd" : "rd"} priority`,
       data: severity.filter((p) => p.p === rank),
       backgroundColor: PRIO[rank] + "aa",
       borderColor: PRIO[rank],
       pointRadius: severity.length > 1500 ? 2 : 3,
       pointHoverRadius: 5,
-    }));
+    })));
     const lo = Math.min(...severity.map((p) => Math.min(p.x, p.y)));
     groups.push({
       label: "lowest gap = average", type: "line", data: [{ x: lo, y: lo }, { x: 100, y: 100 }],
@@ -206,7 +216,7 @@
         },
         plugins: {
           legend: { position: "right" },
-          tooltip: { callbacks: { label: (item) => item.raw.id ? `${item.raw.id}: average ${item.raw.x}%, lowest gap ${item.raw.y}%` : "" } },
+          tooltip: { callbacks: { label: (item) => item.raw.id ? `${item.raw.id}: average ${item.raw.x}%, lowest ${item.raw.p ? "flagged " : ""}mark ${item.raw.y}%` : "" } },
         },
         onClick: (evt, els, chart) => {
           if (!els.length) return;
