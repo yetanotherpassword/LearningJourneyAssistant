@@ -68,8 +68,14 @@ Residual, plus an Action if one is needed.
 <td>Confirmed: the API has no function for rubric fills. The team built
 the read-only database query (Query 2) instead and proved it on the
 development Moodle for one subject, CSE1IOI, 15 fills (IOLG-56,
-IOLG-104, merged 20 Sep). The read-only database role is designed but
-not yet applied and proven on a shared instance (IOLG-111 open).</td>
+IOLG-104, merged 20 Sep). The dedicated read-only role
+<code>lja_reader</code> has now been created and its read-only
+enforcement observed on the dev instance: an <code>UPDATE m_user</code>
+as the reader returns &quot;permission denied&quot;, and a
+<code>--data-only</code> dump is byte-identical before and after
+<code>lja.cli --source moodle</code> (IOLG-111, evidence in
+docs/security-evidence.md, PR #44 under review). Not yet applied on a
+shared or production instance.</td>
 <td>sql/moodle_attainment_extraction.sql Query 2;
 lja/data/moodle_loader.py; sql/README.md role DDL</td>
 <td>T2 Extraction lead (Ayesha)</td>
