@@ -39,6 +39,7 @@ PySocks==1.7.1
 pytest==9.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
+PyYAML==6.0.3
 requests==2.34.2
 setuptools==84.0.0
 six==1.17.0
