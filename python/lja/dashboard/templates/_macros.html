@@ -4,8 +4,8 @@
    what it counts, and every statistic to the glossary entry that defines
    it. One macro so a tile cannot be a dead number by omission. #}
 
-{% macro tile(num, label, href, warn=False, title="") -%}
-<a class="stat stat-link" href="{{ href }}"{% if title %} title="{{ title }}"{% endif %}>
+{% macro tile(num, label, href, warn=False, title="", extra_class="") -%}
+<a class="stat stat-link{{ ' ' ~ extra_class if extra_class }}" href="{{ href }}"{% if title %} title="{{ title }}"{% endif %}>
   <div class="num{{ ' warn' if warn }}">{{ num }}</div>
   <div class="label">{{ label }}</div>
 </a>

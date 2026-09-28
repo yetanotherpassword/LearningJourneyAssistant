@@ -477,3 +477,14 @@ dl.glossary div:target { background: var(--surface); border-left: 3px solid var(
 .glossary-index { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.88rem; }
 .glossary-index a { color: var(--accent); text-decoration: none; }
 .glossary-index a:hover { text-decoration: underline; }
+
+/* Priority tiles on the index: red, amber, blue, one row of their own. */
+.priority-strip { margin-top: -12px; }
+.prio-tile { border-width: 2px; }
+.prio-tile-1 { border-color: var(--status-persistent); background: var(--status-persistent-bg); }
+.prio-tile-1 .num { color: var(--status-persistent); }
+.prio-tile-2 { border-color: var(--status-isolated); background: var(--status-isolated-bg); }
+.prio-tile-2 .num { color: var(--status-isolated); }
+.prio-tile-3 { border-color: var(--status-developing); background: var(--status-developing-bg); }
+.prio-tile-3 .num { color: var(--status-developing); }
+a.prio-tile:hover { filter: brightness(1.08); }

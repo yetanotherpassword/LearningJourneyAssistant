@@ -465,11 +465,16 @@ def create_app(
     @app.get("/")
     def index(request: Request):
         context = view_model(_COHORTS_BY_KEY["all"])
+        # Priority tiles sit on their own row, coloured by rank; the rest
+        # on the row above. The rank comes from the registry key so the
+        # template never has to know which cohorts are priorities.
+        priority_rank = {d["key"]: d["rank"] for d in _PRIORITY_DEFINITIONS}
         context["tiles"] = [
             {
                 "key": cohort.key,
                 "count": len(members(cohort)),
                 "label": format_text(cohort.tile_label),
+                "rank": priority_rank.get(cohort.key),
             }
             for cohort in _COHORTS
         ]
