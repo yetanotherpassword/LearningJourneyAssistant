@@ -1,0 +1,19 @@
+Source: GitHub Actions, retrieved 2026-09-28.
+Repository: yetanotherpassword/LearningJourneyAssistant
+Branch: main
+Commit: ffa53d54c65946d252e4e1f987c294da2e59da23
+Run: https://github.com/yetanotherpassword/LearningJourneyAssistant/actions/runs/36377877271
+Job: https://github.com/yetanotherpassword/LearningJourneyAssistant/actions/runs/36377877271/job/108787324090
+Job name: Security scanning
+Conclusion: success
+
+Selected verbatim log lines (ANSI colour codes removed only):
+2026-09-28T04:28:50.7816746Z 4:28AM INF 67 commits scanned.
+2026-09-28T04:28:50.7823186Z 4:28AM INF scan completed in 253ms
+2026-09-28T04:28:50.7825001Z 4:28AM INF no leaks found
+2026-09-28T04:28:55.1897629Z pip-audit --requirement requirements.txt --desc
+2026-09-28T04:29:05.1237773Z No known vulnerabilities found
+
+These results apply to the recorded run. The dependency scan is configured
+as non-blocking, although this particular dependency-audit step succeeded.
+No Moodle database permission or data-immutability test is represented here.
