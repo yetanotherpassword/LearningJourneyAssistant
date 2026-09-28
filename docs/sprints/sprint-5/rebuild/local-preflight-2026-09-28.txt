@@ -1,0 +1,29 @@
+README preflight observations; NOT a clean-machine rebuild transcript.
+Date: 2026-09-28
+Repository base: ffa53d54c65946d252e4e1f987c294da2e59da23
+Platform: Darwin arm64; Python 3.12.14
+
+An initial isolated pip install of requirements.txt failed before project execution:
+Error: pg_config executable not found.
+No Conda environment creation was attempted. No clean Ubuntu Codespace was created.
+Subsequent local checks used a virtual environment and a same-version binary PostgreSQL driver.
+
+Root README Quick start step 3, after assisted environment setup:
+Pipeline completed: 750 gap rows, 24 persistent-gap rows, byte-identical to reference.
+Tests: 258 passed, 1 skipped, 1 warning (includes IOLG-110 validation test).
+Reference dashboard opened locally in browser: 150 students; 24 with a persistent gap.
+
+The bare downstream examples failed because the default cache was absent:
+$ python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+No clustering cache at output/silo_clustering.json. Run python -m lja.cli --source excel first.
+Exit status: 2
+
+$ python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --out output/uat-default-export
+No clustering cache at output/silo_clustering.json. Run python -m lja.cli --source excel first.
+Exit status: 2
+
+Export with --clustering-cache ../data-fixtures/reference-run/silo_clustering.json completed successfully.
+No live learning-plan generation attempted.
+
+Missing prerequisites and model-setting inconsistencies in docs/rebuild-check.md are preflight findings.
+No human rebuild, independent sign-off, Codespace Ports check, Jira attachment or ticket update is claimed.
