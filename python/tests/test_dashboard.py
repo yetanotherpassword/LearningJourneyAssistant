@@ -613,5 +613,9 @@ def test_competency_page_renders_points_in_year_order_and_404s_unknown() -> None
     assert response.text.index("CSE1OOF") < response.text.index("CSE2ALG")
     assert '"attainment": [60.0, 45.0]' in response.text
     assert "Design and evaluate data structures" in response.text
-    assert client.get("/competency/vague-outcome").status_code == 404  # single-subject: no progression
+    # A single-subject competency has a page too (its trace), just no progression chart.
+    single = client.get("/competency/vague-outcome")
+    assert single.status_code == 200
+    assert "Taught in one subject only" in single.text
+    assert "progression-chart" not in single.text
     assert client.get("/competency/nope").status_code == 404

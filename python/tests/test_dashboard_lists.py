@@ -157,7 +157,7 @@ def test_competencies_page_totals_the_gap_rows() -> None:
     body = _client().get("/competencies").text
     assert "2 rows in all" in body
     assert 'href="/competency/data-structures"' in body          # spans two subjects
-    assert "Complexity</strong> <span class=\"muted\">(one subject)</span>" in body
+    assert 'href="/competency/complexity"' in body and "(one subject)" in body
     assert "Both build and assess structures." in body
     assert 'href="/subject/CSE1OOF"' in body
 
@@ -187,3 +187,28 @@ def test_scroll_boxed_tables_have_filter_and_expand_controls() -> None:
         assert 'class="scroll-search"' in body and 'class="scroll-expand"' in body, path
         assert '/static/scrollbox.js' in body, path
     assert client.get("/static/scrollbox.js").status_code == 200
+
+
+def test_competency_page_traces_subjects_outcomes_and_assessments() -> None:
+    body = _client().get("/competency/data-structures").text
+    assert "How this competency is put together" in body
+    assert '<svg class="trace"' in body
+    assert 'href="/subject/CSE1OOF"' in body and 'href="/subject/CSE2ALG"' in body
+    assert "Implement basic data structures" in body and "Design and evaluate data structures" in body
+    assert "Evidenced by Test (40%)" in body                 # CSE1OOF:SILO1 <- Test
+    assert "Evidenced by Assignment (60%)" in body           # CSE2ALG:SILO2 <- Assignment
+    assert "2 subjects in 1 discipline, 2 outcomes" in " ".join(body.split())
+
+
+def test_competency_page_says_when_no_assessment_evidences_an_outcome() -> None:
+    body = _client().get("/competency/complexity").text
+    assert "No assessment in CSE2ALG" in body
+
+
+def test_competencies_page_has_the_discipline_map_and_enlarge_script() -> None:
+    body = _client().get("/competencies").text
+    assert "How the competencies are organised" in body
+    assert '<table class="heat comp-map">' in body
+    assert "<span>CSE</span>" in body
+    assert 'title="Data Structures: 2 outcomes from CSE"' in body
+    assert "/static/chartzoom.js" in body

@@ -10,6 +10,31 @@
   The rationale is the clustering model&rsquo;s own words.
 </p>
 {% from "_macros.html" import scrollbox, chart_prelude %}
+<h2>How the competencies are organised</h2>
+<p class="dek">
+  One row per competency, one column per discipline (subject-code prefix); a cell is how many of that
+  discipline's outcomes were grouped into the competency. Competencies drawn from several disciplines sit at
+  the top: those are the ones where a mark in one field is evidence about another. Click a competency for
+  the full trace of subjects, outcomes and assessments behind it.
+</p>
+<div class="heat-wrap">
+  <table class="heat comp-map">
+    <thead><tr><th>Competency</th>{% for d in heat_disciplines %}<th><span>{{ d }}</span></th>{% endfor %}<th><span>SILOs</span></th></tr></thead>
+    <tbody>
+    {% for h in heat %}
+      <tr>
+        <th><a href="/competency/{{ h.slug }}">{{ h.label }}</a></th>
+        {% for c in h.cells %}
+        {% if c %}<td class="m" style="--w: {{ (c / heat_max)|round(2) }}" title="{{ h.label }}: {{ c }} outcome{{ 's' if c != 1 }} from {{ heat_disciplines[loop.index0] }}"><a href="/competency/{{ h.slug }}">{{ c }}</a></td>
+        {% else %}<td class="h-none"></td>{% endif %}
+        {% endfor %}
+        <td class="tot">{{ h.total }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 <div class="chart-card">
   <h3>How each competency's students are classified</h3>
   <p class="chart-note">One bar per competency, the share of its student rows in each classification, gap-heaviest first. A competency whose red and amber dominate is where the cohort struggles; one that is all green may be taught below the students' level. Click a bar to open the competency.</p>
@@ -30,7 +55,7 @@
       indexAxis: "y", animation: false, maintainAspectRatio: false,
       scales: { x: { stacked: true, max: 100, title: { display: true, text: "Share of student rows (%)" } }, y: { stacked: true, ticks: { autoSkip: false, font: { size: 10 } } } },
       plugins: { legend: { position: "top" }, tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw}% of ${C[item.dataIndex].n} rows` } } },
-      onClick: (evt, els) => { if (els.length && C[els[0].index].slug) location.href = `/competency/${C[els[0].index].slug}`; },
+      onClick: (evt, els) => { if (els.length) location.href = `/competency/${C[els[0].index].slug}`; },
     },
   });
 })();
@@ -49,7 +74,7 @@
   {% for c in rows %}
     <tr>
       <td data-sort-value="{{ c.label }}">
-        {% if c.has_progression %}<a href="/competency/{{ c.slug }}">{{ c.label }}</a>{% else %}<strong>{{ c.label }}</strong> <span class="muted">(one subject)</span>{% endif %}
+        <a href="/competency/{{ c.slug }}">{{ c.label }}</a>{% if not c.has_progression %} <span class="muted">(one subject)</span>{% endif %}
         <div class="muted">{% for m in c.members %}<a class="term" href="/subject/{{ m.subject_code }}">{{ m.subject_code }}</a> {{ m.silo_local_id }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
       </td>
       <td data-sort-value="{{ c.n_silos }}">{{ c.n_silos }}</td>

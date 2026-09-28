@@ -521,3 +521,51 @@ a.prio-tile:hover { filter: brightness(1.08); }
 .scroll-panel.is-full .scroll-box { flex: 1 1 auto; max-height: none; }
 .scroll-panel.is-full .scroll-note { margin: 8px 0 0; }
 body.has-modal { overflow: hidden; }
+
+/* Chart enlarge button and modal (static/chartzoom.js). */
+.chart-card.has-enlarge { position: relative; }
+.chart-enlarge {
+  position: absolute; top: 12px; right: 12px; z-index: 3; padding: 4px 10px; font-size: 0.78rem; font-weight: 600;
+  background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+}
+.chart-enlarge:hover { color: var(--accent); border-color: var(--accent); }
+.chart-zoom {
+  position: fixed; inset: 0; z-index: 110; display: flex; flex-direction: column;
+  background: var(--bg); padding: 14px 24px;
+}
+/* `hidden` must beat the display:flex above, or the empty modal covers every page. */
+.chart-zoom[hidden] { display: none; }
+.chart-zoom-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.chart-zoom-title { font-size: 1.05rem; }
+.chart-zoom-readout { flex: 1; color: var(--accent); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.chart-zoom-close { padding: 6px 14px; font-weight: 600; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.chart-zoom-body { flex: 1 1 auto; min-height: 0; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.chart-zoom-body canvas { width: 100% !important; height: 100% !important; }
+.chart-zoom-note { color: var(--muted); font-size: 0.82rem; margin: 8px 0 0; }
+
+/* Competency trace diagram (competency page). */
+.trace { width: 100%; height: auto; display: block; }
+.trace-link { fill: none; stroke: var(--line); stroke-width: 1.5; opacity: 0.9; }
+.trace-node rect { fill: var(--surface-2); stroke: var(--line); }
+.trace-node text { font-size: 12px; fill: var(--ink); }
+.trace-node.comp rect { fill: var(--accent); stroke: var(--accent); }
+.trace-node.comp text { fill: #fff; font-weight: 700; font-size: 13px; }
+.trace-node.subj text { font-weight: 700; font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px; }
+.trace-node.subj:hover rect { stroke: var(--accent); }
+.trace-node.silo text { font-size: 11px; }
+.trace-node.silo.vague rect { stroke: var(--status-isolated); }
+.trace-node.silo.flagged rect { stroke: var(--status-persistent); stroke-width: 2; }
+.disc-0 { --dc: var(--series-1); } .disc-1 { --dc: var(--series-2); } .disc-2 { --dc: var(--series-3); } .disc-3 { --dc: var(--series-4); }
+.disc-4 { --dc: var(--series-5); } .disc-5 { --dc: var(--series-6); } .disc-6 { --dc: var(--series-7); } .disc-7 { --dc: var(--series-8); }
+.trace-link[class*="disc-"] { stroke: var(--dc); opacity: 0.55; }
+.trace-node.subj[class*="disc-"] rect { stroke: var(--dc); stroke-width: 2; }
+.trace-paths { padding-left: 22px; }
+.trace-paths li { margin-bottom: 12px; line-height: 1.5; }
+.trace-text { display: block; margin-top: 2px; }
+
+/* Competency x discipline map. */
+table.comp-map td.m { background: color-mix(in srgb, var(--accent) calc(var(--w) * 85%), var(--surface)); }
+table.comp-map td.m a { color: var(--ink); text-decoration: none; font-weight: 600; display: block; }
+table.comp-map td.tot { color: var(--muted); font-weight: 600; }
+table.comp-map tbody th a { color: var(--ink); text-decoration: none; }
+table.comp-map tbody th a:hover { color: var(--accent); }

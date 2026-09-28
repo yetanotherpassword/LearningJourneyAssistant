@@ -19,8 +19,7 @@
         {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
       </td>
       <td data-sort-value="{{ r.competency_label or '' }}">
-        {% if r.competency_label and not r.orphan %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>
-        {% elif r.competency_label %}{{ r.competency_label }} <span class="muted">(this subject only)</span>
+        {% if r.competency_label %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>{% if r.orphan %} <span class="muted">(this subject only)</span>{% endif %}
         {% else %}<span class="muted">not clustered</span>{% endif %}
       </td>
       <td data-sort-value="{{ r.issues|length }}">

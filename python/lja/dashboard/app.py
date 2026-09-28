@@ -809,6 +809,80 @@ def create_app(
             },
         )
 
+    # --- competency traceability ------------------------------------------
+    #
+    # Competency -> discipline -> subject -> SILO -> assessments. Built from
+    # the clustering (membership), the dataset (SILO text, assessment map)
+    # and silo_rows (flags, vague terms). Pure data; the template draws it.
+
+    cluster_by_slug = {slugify(c.competency_label): c for c in clustering.clusters}
+    assessments_by_silo: dict[tuple[str, str], list] = defaultdict(list)
+    for a in dataset.assessments:
+        for sid in a.silo_ids:
+            assessments_by_silo[(a.subject_code, sid)].append(a)
+    year_by_subject = {s.subject_code: s.year_level for s in subject_rows}
+    disciplines_all = sorted({discipline_of(s.subject_code) for s in subject_rows})
+
+    def trace_for(cluster) -> dict:
+        by_disc: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+        for m in cluster.members:
+            row = silo_by_key.get(f"{m.subject_code}:{m.silo_local_id}")
+            silo = dataset.silos.get(f"{m.subject_code}:{m.silo_local_id}")
+            by_disc[discipline_of(m.subject_code)][m.subject_code].append(
+                {
+                    "id": m.silo_local_id,
+                    "text": silo.text if silo else "(outcome text not in the workbook)",
+                    "flagged": bool(row and row.flagged),
+                    "flag_reason": row.flag_reason if row else "",
+                    "vague_terms": list(row.vague_terms) if row else [],
+                    "assessments": [
+                        {"name": a.assessment_name, "weight": a.weight * 100 if 0 < a.weight <= 1 else a.weight}
+                        for a in assessments_by_silo.get((m.subject_code, m.silo_local_id), [])
+                    ],
+                }
+            )
+        disciplines = [
+            {
+                "code": disc,
+                "subjects": [
+                    {"code": code, "year": year_by_subject.get(code), "silos": sorted(silos, key=lambda o: o["id"])}
+                    for code, silos in sorted(by_disc[disc].items())
+                ],
+            }
+            for disc in sorted(by_disc)
+        ]
+        # Layered layout: one row per subject on the middle column, one per
+        # SILO on the right; the competency sits at the vertical middle.
+        row_h, top = 28, 30
+        subjects, silos = [], []
+        y_silo = top
+        y_subj_next = top
+        for di, d in enumerate(disciplines):
+            for s in d["subjects"]:
+                first = y_silo
+                for o in s["silos"]:
+                    silos.append({"y": y_silo, "subject": s["code"], "id": o["id"], "text": o["text"], "flagged": o["flagged"],
+                                  "flag_reason": o["flag_reason"], "vague": o["vague_terms"], "disc_index": di % 8})
+                    y_silo += row_h
+                last = y_silo - row_h
+                sy = max(y_subj_next, (first + last) // 2)
+                subjects.append({"code": s["code"], "year": s["year"], "n_silos": len(s["silos"]), "y": sy, "disc_index": di % 8})
+                y_subj_next = sy + row_h
+                for o in silos[-len(s["silos"]):]:
+                    o["subject_y"] = sy
+        height = max(y_silo, y_subj_next) + 10
+        return {
+            "label": cluster.competency_label,
+            "slug": slugify(cluster.competency_label),
+            "rationale": cluster.rationale,
+            "disciplines": disciplines,
+            "layout": {
+                "width": 980, "height": max(height, 90), "x_comp": 10, "y_comp": max(height, 90) // 2,
+                "x_subj": 250, "x_silo": 430, "silo_w": 540, "subjects": subjects, "silos": silos,
+                "n_subjects": len(subjects), "n_silos": len(silos),
+            },
+        }
+
     @app.get("/competencies")
     def competencies_page(request: Request):
         rows = []
@@ -834,13 +908,22 @@ def create_app(
             n = r["n_rows"] or 1
             chart.append(
                 {
-                    "label": r["label"], "slug": r["slug"] if r["has_progression"] else None, "n": r["n_rows"],
+                    "label": r["label"], "slug": r["slug"], "n": r["n_rows"],
                     "share": {c: round(100 * r["counts"][c] / n, 1) for c in _CLASSIFICATION_ORDER},
                 }
             )
+        # Organisation map: competency x discipline, cell = SILOs. Shows at a
+        # glance which disciplines feed each competency and which are shared.
+        heat = []
+        for r in rows:
+            counts = Counter(discipline_of(m.subject_code) for m in r["members"])
+            heat.append({"label": r["label"], "slug": r["slug"], "cells": [counts.get(d, 0) for d in disciplines_all], "total": len(r["members"])})
+        heat.sort(key=lambda h: (-sum(1 for c in h["cells"] if c), h["label"].lower()))
+        heat_max = max((c for h in heat for c in h["cells"]), default=1)
         return templates.TemplateResponse(
             request, "competencies.html",
             {"rows": rows, "competency_chart": json.dumps(chart), "total_gap_rows": len(gaps),
+             "heat": heat, "heat_disciplines": disciplines_all, "heat_max": heat_max,
              "review_warning": review_warning, "student_ids": student_ids},
         )
 
@@ -904,9 +987,12 @@ def create_app(
 
     @app.get("/competency/{slug}")
     def competency_detail(request: Request, slug: str):
+        """Every competency has a page: the trace always, the progression
+        chart only when two or more subjects teach it."""
+        cluster = cluster_by_slug.get(slug)
+        if cluster is None:
+            raise HTTPException(status_code=404, detail=f"No competency {slug!r}")
         progression = progression_by_slug.get(slug)
-        if progression is None:
-            raise HTTPException(status_code=404, detail=f"No cross-subject competency {slug!r}")
         chart_json = json.dumps(
             {
                 "labels": [p.subject_code for p in progression.points],
@@ -914,11 +1000,12 @@ def create_app(
                 "gap_rate": [p.gap_rate for p in progression.points],
                 "flagged": [p.flagged for p in progression.points],
             }
-        )
+        ) if progression else "null"
         return templates.TemplateResponse(
             request,
             "competency.html",
-            {"progression": progression, "silo_by_key": silo_by_key, "chart_json": chart_json},
+            {"progression": progression, "trace": trace_for(cluster), "silo_by_key": silo_by_key,
+             "chart_json": chart_json, "review_warning": review_warning, "student_ids": student_ids},
         )
 
     return app
