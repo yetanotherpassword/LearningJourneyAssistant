@@ -129,9 +129,9 @@
     One point per student: average total across subjects against their lowest competency mark, coloured by priority
     group for the {{ severity_scatter_n }} flagged students. The {{ severity_scatter_unflagged }} students with no flag
     are the grey points, placed at their lowest mark of all, which the rules did not count as a gap.
-    The dashed diagonal is a perfectly flat profile, where a student's lowest mark equals their average; nobody can sit above it.
-    Distance below the line is how far the student's weakest competency dips beneath their own level, which is what the relative rule measures,
-    so points far below it are students who do well overall but have one deep gap. Hover for the student; click to open them.
+    The dashed lines are the two absolute rules: below the red floor a mark is a gap whatever the profile, and at or above the green
+    ceiling it never is, so no flagged point can sit above it. Between the lines the relative rule decides, one line per student, so it cannot
+    be drawn. Points far to the right of the amber band are students who do well overall but have one deep gap. Hover for the student; click to open them.
   </p>
   <canvas id="severity-chart" height="130"></canvas>
 </div>
@@ -177,6 +177,7 @@
   const distribution = {{ distribution_data|safe }};
   const classification = {{ classification_data|safe }};
   const severity = {{ severity_scatter|safe }};
+  const severityLines = {{ severity_lines|safe }};
 
   // One colour source for the whole dashboard: read the same CSS custom
   // properties the badges use, so a chart segment and a badge for the same
@@ -201,10 +202,17 @@
       pointRadius: severity.length > 1500 ? 2 : 3,
       pointHoverRadius: 5,
     })));
-    const lo = Math.min(...severity.map((p) => Math.min(p.x, p.y)));
+    // The two absolute rules as horizontal lines: below the floor is always
+    // a gap (red), at or above the ceiling never is (so no colour above it).
+    // The relative rule cannot be drawn: it is a different line per student.
     groups.push({
-      label: "flat profile (lowest mark = average)", type: "line", data: [{ x: lo, y: lo }, { x: 100, y: 100 }],
-      borderColor: cssVar("--muted"), borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false,
+      label: `absolute floor (${severityLines.floor}%)`, type: "line",
+      data: [{ x: 0, y: severityLines.floor }, { x: 100, y: severityLines.floor }],
+      borderColor: cssVar("--status-persistent"), borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+    }, {
+      label: `absolute ceiling (${severityLines.ceiling}%)`, type: "line",
+      data: [{ x: 0, y: severityLines.ceiling }, { x: 100, y: severityLines.ceiling }],
+      borderColor: cssVar("--status-proficient"), borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
     });
     new Chart(document.getElementById("severity-chart"), {
       type: "scatter",

@@ -211,3 +211,9 @@ def test_severity_chart_includes_unflagged_students_as_grey_points() -> None:
     assert '{"id": "STU0001", "x": 70.0, "y": 90.0, "p": 0}' in body
     assert '{"id": "STU0003", "x": 45.0, "y": 35.0, "p": 1}' in body
     assert "The 1 students with no flag" in " ".join(body.split())
+
+
+def test_severity_chart_draws_the_floor_and_ceiling_in_force() -> None:
+    dataset, gaps = _four_students_one_per_priority()
+    body = _client(dataset, gaps, thresholds=GapThresholds(absolute_floor=45.0, absolute_ceiling=80.0)).get("/").text
+    assert 'const severityLines = {"floor": 45.0, "ceiling": 80.0};' in body

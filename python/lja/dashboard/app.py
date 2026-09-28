@@ -435,6 +435,8 @@ def create_app(
             ),
             "severity_scatter_n": sum(1 for r in rows if r["priority"] is not None),
             "severity_scatter_unflagged": sum(1 for r in rows if r["priority"] is None and r["lowest_pct"] is not None),
+            # The two absolute rules, drawn on the chart as the lines they are.
+            "severity_lines": json.dumps({"floor": thresholds.absolute_floor, "ceiling": thresholds.absolute_ceiling}),
             "rules": rules,
             "gap_summary": {
                 "students": len(rows),
