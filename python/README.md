@@ -258,7 +258,12 @@ hurdles in red. Below the charts, any table that can exceed a screen sits
 in a bounded scroll box (`scrollbox` macro in `_macros.html`, 60% of the
 viewport, sticky header, row count stated underneath) so a page is never
 more than a couple of screens long and a reader scrolls inside the box or
-straight past it.
+straight past it. Each box has a toolbar (`static/scrollbox.js`, hidden
+until JavaScript reveals it): a filter field that hides rows as you type
+unless some cell contains the text, with a "13 of 100 subjects match"
+count, and an Expand button that opens the same box full screen with the
+toolbar pinned, so every column is readable; Esc or Close returns. Sorting
+and filtering compose, since one permutes rows and the other hides them.
 
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence

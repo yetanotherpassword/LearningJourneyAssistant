@@ -15,10 +15,19 @@
    heading stays put (sticky) and the reader scrolls inside the box or past
    it in one wheel-flick. `n` prints the row count so the size is stated. #}
 {% macro scrollbox(n, what="rows") -%}
-<div class="scroll-box" tabindex="0" aria-label="{{ n }} {{ what }}, scrollable">
-  {{ caller() }}
+<div class="scroll-panel" data-what="{{ what }}">
+  {# Toolbar is hidden until static/scrollbox.js wires it, so a browser
+     without JavaScript never sees controls that do nothing. #}
+  <div class="scroll-tools" hidden>
+    <input type="search" class="scroll-search" placeholder="Filter {{ what }}: type to match any cell" aria-label="Filter {{ what }}">
+    <span class="scroll-count" aria-live="polite"></span>
+    <button type="button" class="scroll-expand" aria-expanded="false">Expand</button>
+  </div>
+  <div class="scroll-box" tabindex="0" aria-label="{{ n }} {{ what }}, scrollable">
+    {{ caller() }}
+  </div>
+  <p class="scroll-note">{{ n }} {{ what }} in the box above; scroll inside it, or past it. Expand opens it full screen; Esc closes.</p>
 </div>
-<p class="scroll-note">{{ n }} {{ what }} in the box above; scroll inside it, or past it.</p>
 {%- endmacro %}
 
 {# Chart.js helpers shared by every summary chart: one colour source. #}

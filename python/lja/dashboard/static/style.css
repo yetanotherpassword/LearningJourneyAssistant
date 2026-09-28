@@ -496,3 +496,28 @@ a.prio-tile:hover { filter: brightness(1.08); }
 .scroll-box table { border: none; border-radius: 0; }
 .scroll-box thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
 .scroll-note { color: var(--muted); font-size: 0.8rem; margin: 0 0 28px; }
+
+/* Scroll-panel toolbar: live filter + full-screen toggle (static/scrollbox.js). */
+.scroll-tools { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+.scroll-search {
+  flex: 1 1 260px; max-width: 420px; padding: 7px 10px; font-size: 0.9rem;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+}
+.scroll-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.scroll-count { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.is-filtered .scroll-count { color: var(--accent); font-weight: 600; }
+.scroll-expand {
+  margin-left: auto; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+}
+.scroll-expand:hover { border-color: var(--accent); color: var(--accent); }
+.scroll-expand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Full screen: the panel becomes a fixed overlay; toolbar pinned, box fills the rest. */
+.scroll-panel.is-full {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+  background: var(--bg); padding: 16px 24px;
+}
+.scroll-panel.is-full .scroll-box { flex: 1 1 auto; max-height: none; }
+.scroll-panel.is-full .scroll-note { margin: 8px 0 0; }
+body.has-modal { overflow: hidden; }

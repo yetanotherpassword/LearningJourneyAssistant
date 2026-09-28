@@ -174,3 +174,16 @@ def test_subject_codes_link_to_subject_pages_everywhere() -> None:
     client = _client()
     for path in ("/silos", "/silos/list/all", "/competency/data-structures", "/competencies", "/assessments"):
         assert 'href="/subject/CSE1OOF"' in client.get(path).text, path
+
+
+def test_scroll_boxed_tables_have_filter_and_expand_controls() -> None:
+    """The toolbar ships hidden and scrollbox.js reveals it, so a page with
+    JavaScript off never shows controls that do nothing."""
+    client = _client()
+    for path in ("/", "/subjects", "/silos/list/all", "/competencies", "/assessments"):
+        body = client.get(path).text
+        assert '<div class="scroll-panel" data-what="' in body, path
+        assert '<div class="scroll-tools" hidden>' in body, path
+        assert 'class="scroll-search"' in body and 'class="scroll-expand"' in body, path
+        assert '/static/scrollbox.js' in body, path
+    assert client.get("/static/scrollbox.js").status_code == 200
