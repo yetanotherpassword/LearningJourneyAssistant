@@ -468,3 +468,7 @@ dl.glossary div { padding: 12px 0; border-bottom: 1px solid var(--line); scroll-
 dl.glossary dt { font-weight: 700; margin-bottom: 4px; }
 dl.glossary dd { margin: 0; color: var(--ink); line-height: 1.55; }
 dl.glossary div:target { background: var(--surface); border-left: 3px solid var(--accent); padding-left: 12px; }
+
+/* Statistic tiles are links too (to the cohort or the glossary); the grid
+   blockifies the anchor, so only the hover treatment needs stating. */
+.stat-grid a.stat-link { display: block; }

@@ -1,0 +1,16 @@
+{# Shared macros.
+
+   tile(): every count on the dashboard is a link to the page that lists
+   what it counts, and every statistic to the glossary entry that defines
+   it. One macro so a tile cannot be a dead number by omission. #}
+
+{% macro tile(num, label, href, warn=False, title="") -%}
+<a class="stat stat-link" href="{{ href }}"{% if title %} title="{{ title }}"{% endif %}>
+  <div class="num{{ ' warn' if warn }}">{{ num }}</div>
+  <div class="label">{{ label }}</div>
+</a>
+{%- endmacro %}
+
+{% macro pct(value) -%}
+  {%- if value is none %}&mdash;{% else %}{{ "%.1f"|format(value) }}%{% endif -%}
+{%- endmacro %}

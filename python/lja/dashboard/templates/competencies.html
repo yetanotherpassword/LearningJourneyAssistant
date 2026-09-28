@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Competencies &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/silos">&larr; outcome quality</a>
+<h1>Competencies</h1>
+<p class="dek">
+  All {{ rows|length }} competencies the clustering produced, one row each: the SILOs grouped into it, how many
+  subjects they come from, and every student &times; competency row classified against it
+  ({{ total_gap_rows }} rows in all). A competency taught in two or more subjects links to its progression page.
+  The rationale is the clustering model&rsquo;s own words.
+</p>
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Competency</th>
+    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Subjects</th>
+    <th data-sort-type="number">Student rows</th>
+    <th data-sort-type="number">Persistent</th><th data-sort-type="number">Isolated</th>
+    <th data-sort-type="number">Developing</th><th data-sort-type="number">Proficient</th>
+    <th data-sort-type="text">Rationale</th>
+  </tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr>
+      <td data-sort-value="{{ c.label }}">
+        {% if c.has_progression %}<a href="/competency/{{ c.slug }}">{{ c.label }}</a>{% else %}<strong>{{ c.label }}</strong> <span class="muted">(one subject)</span>{% endif %}
+        <div class="muted">{% for m in c.members %}<a class="term" href="/subject/{{ m.subject_code }}">{{ m.subject_code }}</a> {{ m.silo_local_id }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
+      </td>
+      <td data-sort-value="{{ c.n_silos }}">{{ c.n_silos }}</td>
+      <td data-sort-value="{{ c.n_subjects }}">{{ c.n_subjects }}</td>
+      <td data-sort-value="{{ c.n_rows }}">{{ c.n_rows }}</td>
+      <td data-sort-value="{{ c.counts['persistent gap'] }}">{% if c.counts['persistent gap'] %}<span class="badge persistent-gap">{{ c.counts['persistent gap'] }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ c.counts['isolated gap'] }}">{% if c.counts['isolated gap'] %}<span class="badge isolated-gap">{{ c.counts['isolated gap'] }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ c.counts['developing'] }}">{{ c.counts['developing'] or "—" }}</td>
+      <td data-sort-value="{{ c.counts['proficient'] }}">{{ c.counts['proficient'] or "—" }}</td>
+      <td data-sort-value="{{ c.rationale }}" class="wording rationale">{{ c.rationale }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="empty-state">The clustering has no competencies.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

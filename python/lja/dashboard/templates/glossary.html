@@ -66,6 +66,36 @@
   <div id="cohort"><dt>Cohort</dt>
     <dd>A named subset of the loaded students: everyone, students with a persistent gap, or one priority group. Every cohort page states what put its students there.</dd></div>
 
+  <div id="subject"><dt>Subject</dt>
+    <dd>One unit of study, identified by its handbook code (the first three letters are the discipline, the first digit the year level). <a href="/subjects">All subjects</a>; each has a page listing its outcomes and assessments.</dd></div>
+
+  <div id="silo-issues"><dt>Outcome issues</dt>
+    <dd>The four things the outcome-quality page checks each SILO for: <em>flagged</em> (the clustering model declined to place it, and says why), <em>unlinked</em> (its competency contains outcomes from this subject only), <em>never assessed</em> (no assessment in the subject's map evidences it) and <em>vague wording</em> (it uses a verb that cannot be assessed as written). A subject's health is the share of its SILOs with none of them.</dd></div>
+
+  <div id="assessment"><dt>Assessment</dt>
+    <dd>One marked task in a subject, with its weight toward the subject total and the SILOs it evidences, as listed in the subject's assessment map. <a href="/assessments">All assessments</a>.</dd></div>
+
+  <div id="result-row"><dt>Result row</dt>
+    <dd>One student's mark on one assessment, as supplied in the workbook. Attainment in a competency is computed from the result rows on assessments that evidence one of its SILOs.</dd></div>
+
+  <div id="gap-rate"><dt>Gap rate</dt>
+    <dd>For a subject or an outcome: the share of the (student, competency) pairs it evidences whose classification is a gap.</dd></div>
+
+  <div id="mean"><dt>Mean</dt>
+    <dd>The arithmetic average: the sum of every student's average total divided by the number of students.</dd></div>
+
+  <div id="standard-deviation"><dt>Standard deviation</dt>
+    <dd>How far, typically, a student's average total sits from the mean, in percentage points. The square root of the variance. Population form: computed over every student in the cohort, not a sample.</dd></div>
+
+  <div id="variance"><dt>Variance</dt>
+    <dd>The mean of the squared distances from the mean. In squared percentage points, so the standard deviation is the readable version of the same spread.</dd></div>
+
+  <div id="range"><dt>Minimum and maximum</dt>
+    <dd>The lowest and highest average total in the cohort.</dd></div>
+
+  <div id="quartiles"><dt>Quartiles and interquartile range</dt>
+    <dd>The lower quartile is the average total a quarter of the cohort sits below; the upper quartile is the one three quarters sit below. The interquartile range is the gap between them: the spread of the middle half of the cohort, unaffected by extreme students.</dd></div>
+
   <div id="average-total"><dt>Average total</dt>
     <dd>A student's mean subject total across all their subjects, as supplied in the workbook. The Statistics panel and the distribution chart summarise this figure, not competency attainment.</dd></div>
 

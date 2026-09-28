@@ -27,14 +27,17 @@
 {% endif %}
 
 <h2>Inputs</h2>
+<p class="dek">Each count links to the list it counts.</p>
+{% from "_macros.html" import tile %}
 <div class="stat-grid">
-  <div class="stat"><div class="num">{{ inputs.students }}</div><div class="label">students</div></div>
-  <div class="stat"><div class="num">{{ inputs.silos }}</div><div class="label"><a class="term" href="/glossary#silo">SILOs</a></div></div>
-  <div class="stat"><div class="num">{{ inputs.assessments }}</div><div class="label">assessments</div></div>
-  <div class="stat"><div class="num">{{ inputs.results }}</div><div class="label">result rows</div></div>
-  <div class="stat"><div class="num">{{ inputs.clusters }}</div><div class="label"><a class="term" href="/glossary#competency">competencies</a> (clusters)</div></div>
-  <div class="stat"><div class="num">{{ inputs.silos_clustered }}</div><div class="label">SILOs clustered</div></div>
-  <div class="stat"><div class="num">{{ inputs.gap_rows }}</div><div class="label">student &times; competency rows</div></div>
+  {{ tile(inputs.students, "students", "/cohort/all") }}
+  {{ tile(inputs.subjects, "subjects", "/subjects") }}
+  {{ tile(inputs.silos, "SILOs", "/silos/list/all") }}
+  {{ tile(inputs.assessments, "assessments", "/assessments") }}
+  {{ tile(inputs.results, "result rows", "/assessments", title="One row per student per assessment; the assessments page totals them") }}
+  {{ tile(inputs.clusters, "competencies (clusters)", "/competencies") }}
+  {{ tile(inputs.silos_clustered, "SILOs clustered", "/competencies", title="Every SILO placed in a competency; the competencies page lists them per cluster") }}
+  {{ tile(inputs.gap_rows, "student × competency rows", "/competencies", title="Classified rows; the competencies page totals them per competency") }}
 </div>
 
 <h2 id="rules">Classification rules</h2>

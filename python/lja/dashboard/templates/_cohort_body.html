@@ -88,17 +88,20 @@
   {% endif %}
 </p>
 
+{# The count links to the cohort it counts; each statistic links to the
+   glossary entry that defines it. Same rule as every other tile. #}
+{% from "_macros.html" import tile %}
 <div class="stat-grid">
-  <div class="stat"><div class="num">{{ stats.n }}</div><div class="label">students</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.mean, "%") }}</div><div class="label">mean</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.median, "%") }}</div><div class="label">median</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.stdev) }}</div><div class="label">std deviation</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.variance) }}</div><div class="label">variance</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.minimum, "%") }}</div><div class="label">minimum</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.maximum, "%") }}</div><div class="label">maximum</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.q1, "%") }}</div><div class="label">lower quartile</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.q3, "%") }}</div><div class="label">upper quartile</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.iqr) }}</div><div class="label">interquartile range</div></div>
+  {{ tile(stats.n, "students", "/cohort/" ~ cohort.key ~ "#everyone") }}
+  {{ tile(figure(stats.mean, "%"), "mean", "/glossary#mean") }}
+  {{ tile(figure(stats.median, "%"), "median", "/glossary#median") }}
+  {{ tile(figure(stats.stdev), "std deviation", "/glossary#standard-deviation") }}
+  {{ tile(figure(stats.variance), "variance", "/glossary#variance") }}
+  {{ tile(figure(stats.minimum, "%"), "minimum", "/glossary#range") }}
+  {{ tile(figure(stats.maximum, "%"), "maximum", "/glossary#range") }}
+  {{ tile(figure(stats.q1, "%"), "lower quartile", "/glossary#quartiles") }}
+  {{ tile(figure(stats.q3, "%"), "upper quartile", "/glossary#quartiles") }}
+  {{ tile(figure(stats.iqr), "interquartile range", "/glossary#quartiles") }}
 </div>
 
 {% if rows %}

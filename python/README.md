@@ -225,6 +225,23 @@ statistics, synthetic cohort — with this run's values where a rule applies.
 Tables and the student page link terms to their entries rather than
 re-defining them.
 
+**Every count is a link.** A tile that says "448 SILOs" links to the 448;
+"5 link to no other subject" links to the 5. The rule holds on every page
+(the `tile` macro in `_macros.html` is the only way a tile is rendered), and
+the list pages are: `/subjects` (one row per subject) and `/subject/<code>`
+(its outcomes and assessments); `/silos/list/<all|flagged|orphan|unassessed|vague>`
+(the outcome table filtered, with a sentence stating the filter and the
+other lists' counts); `/competencies` (one row per cluster with its member
+SILOs, subjects spanned and the classification breakdown of its student
+rows, which total the "student × competency rows" tile on `/run`); and
+`/assessments` (every assessment with its SILOs and result-row count, which
+total the "result rows" tile). Subject codes link to their subject page
+wherever they appear. Statistic tiles (mean, quartiles, …) are not counts
+of anything, so they link to the glossary entry that defines them, and the
+students tile links to the cohort. Each list page decides membership in
+`app.py`, never in a template, and the tests in `tests/test_dashboard_lists.py`
+check that a list holds exactly what its tile counted.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in

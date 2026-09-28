@@ -1,0 +1,33 @@
+{# One row per subject. Expects `subjects` (SubjectQuality rows) in context.
+   Shared by /silos and /subjects so the two cannot drift. #}
+{% from "_macros.html" import pct %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text">Subject</th><th data-sort-type="number">Year</th>
+    <th data-sort-type="number" aria-sort="ascending">Health</th>
+    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Flagged</th>
+    <th data-sort-type="number">Unlinked</th><th data-sort-type="number">Unassessed</th>
+    <th data-sort-type="number">Vague</th><th data-sort-type="number">Students</th>
+    <th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for s in subjects %}
+    <tr>
+      <td data-sort-value="{{ s.subject_code }}"><a href="/subject/{{ s.subject_code }}"><strong>{{ s.subject_code }}</strong></a></td>
+      <td data-sort-value="{{ s.year_level if s.year_level is not none else 99 }}">{{ s.year_level if s.year_level is not none else "?" }}</td>
+      <td data-sort-value="{{ s.health }}">
+        <span class="health-bar" title="{{ s.n_clean }} of {{ s.n_silos }} SILOs have no issue"><i style="width: {{ s.health }}%"></i></span>
+        <span class="health-num">{{ "%.0f"|format(s.health) }}%</span>
+      </td>
+      <td data-sort-value="{{ s.n_silos }}">{{ s.n_silos }}</td>
+      <td data-sort-value="{{ s.n_flagged }}">{% if s.n_flagged %}<span class="badge persistent-gap">{{ s.n_flagged }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_orphan }}">{% if s.n_orphan %}<span class="badge isolated-gap">{{ s.n_orphan }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_unassessed }}">{% if s.n_unassessed %}<span class="badge isolated-gap">{{ s.n_unassessed }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_vague }}">{% if s.n_vague %}<span class="badge developing">{{ s.n_vague }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_students }}">{{ s.n_students }}</td>
+      <td data-sort-value="{{ s.mean_attainment if s.mean_attainment is not none else -1 }}">{{ pct(s.mean_attainment) }}</td>
+      <td data-sort-value="{{ s.gap_rate if s.gap_rate is not none else -1 }}">{{ pct(s.gap_rate) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

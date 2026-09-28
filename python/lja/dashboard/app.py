@@ -610,6 +610,7 @@ def create_app(
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {
                     "students": len(dataset.student_summaries),
+                    "subjects": len(subject_rows),
                     "silos": len(dataset.silos),
                     "assessments": len(dataset.assessments),
                     "results": len(dataset.results),
@@ -631,6 +632,146 @@ def create_app(
             {"rules": rules, "review_warning": review_warning, "student_ids": student_ids},
         )
 
+    # --- list pages: every count tile links to one of these -----------------
+    #
+    # A tile that shows "448 SILOs" links to the 448; "5 link to no other
+    # subject" links to the 5. Same rule as the cohort tiles on the index
+    # (tender requirement 5: a displayed figure is traceable), applied to
+    # every page. Membership is decided here, never in a template.
+
+    subject_by_code = {s.subject_code: s for s in subject_rows}
+    silos_by_subject: dict[str, list] = defaultdict(list)
+    for row in silo_rows:
+        silos_by_subject[row.subject_code].append(row)
+    results_per_assessment = Counter((r.subject_code, r.assessment_name) for r in dataset.results)
+    mapped_assessments = {(a.subject_code, a.assessment_name) for a in dataset.assessments}
+    unmapped_results = sum(n for key, n in results_per_assessment.items() if key not in mapped_assessments)
+    gap_counts_by_label: dict[str, Counter] = defaultdict(Counter)
+    for gap in gaps:
+        gap_counts_by_label[gap.competency_label][gap.classification] += 1
+
+    def assessment_rows(subject_code: str | None = None) -> list[dict]:
+        return [
+            {
+                "subject_code": a.subject_code,
+                "assessment_name": a.assessment_name,
+                # The supplied workbook carries weights as percentages (40.0);
+                # the catalogue generator as fractions (0.15). Show both as %.
+                "weight": a.weight * 100 if 0 < a.weight <= 1 else a.weight,
+                "contribution": a.contribution,
+                "hurdle": a.hurdle,
+                "early_assessment": a.early_assessment,
+                "silo_ids": a.silo_ids,
+                "n_results": results_per_assessment.get((a.subject_code, a.assessment_name), 0),
+            }
+            for a in dataset.assessments
+            if subject_code is None or a.subject_code == subject_code
+        ]
+
+    silo_listings = (
+        {"key": "all", "short": "every outcome", "title": "Every outcome",
+         "blurb": "All SILOs in the loaded dataset, outcomes with the most issues first.",
+         "predicate": lambda r: True},
+        {"key": "flagged", "short": "flagged", "title": "Outcomes flagged by the clustering",
+         "blurb": "SILOs the clustering model declined to place in a competency, with its reason.",
+         "predicate": lambda r: r.flagged},
+        {"key": "orphan", "short": "unlinked", "title": "Outcomes that link to no other subject",
+         "blurb": "SILOs whose competency contains outcomes from this one subject only, so a student's work here is evidence about nothing else.",
+         "predicate": lambda r: r.orphan},
+        {"key": "unassessed", "short": "never assessed", "title": "Outcomes never assessed",
+         "blurb": "SILOs no assessment in the subject's map evidences, so no student can have a mark against them.",
+         "predicate": lambda r: r.n_assessments == 0},
+        {"key": "vague", "short": "vaguely worded", "title": "Vaguely worded outcomes",
+         "blurb": "SILOs containing a verb that cannot be assessed as written (understand, appreciate, be aware of).",
+         "predicate": lambda r: bool(r.vague_terms)},
+    )
+    silo_listing_by_key = {d["key"]: d for d in silo_listings}
+    issue_order = sorted(silo_rows, key=lambda r: (-len(r.issues), r.key))
+
+    def listing_counts() -> list[dict]:
+        return [
+            {"key": d["key"], "short": d["short"], "count": sum(1 for r in silo_rows if d["predicate"](r))}
+            for d in silo_listings
+        ]
+
+    @app.get("/subjects")
+    def subjects_page(request: Request):
+        return templates.TemplateResponse(
+            request, "subjects.html",
+            {"subjects": subject_rows, "review_warning": review_warning, "student_ids": student_ids},
+        )
+
+    @app.get("/subject/{code}")
+    def subject_page(request: Request, code: str):
+        subject = subject_by_code.get(code)
+        if subject is None:
+            raise HTTPException(status_code=404, detail=f"No subject {code!r} in this dataset")
+        return templates.TemplateResponse(
+            request, "subject.html",
+            {
+                "subject": subject,
+                "silo_rows": sorted(silos_by_subject.get(code, []), key=lambda r: (-len(r.issues), r.key)),
+                "assessments": assessment_rows(code),
+                "review_warning": review_warning,
+                "student_ids": student_ids,
+            },
+        )
+
+    @app.get("/silos/list/{listing_key}")
+    def silo_list(request: Request, listing_key: str):
+        listing = silo_listing_by_key.get(listing_key)
+        if listing is None:
+            known = ", ".join(d["key"] for d in silo_listings)
+            raise HTTPException(status_code=404, detail=f"No outcome list {listing_key!r} -- known lists: {known}")
+        return templates.TemplateResponse(
+            request, "silo_list.html",
+            {
+                "listing": listing,
+                "silo_rows": [r for r in issue_order if listing["predicate"](r)],
+                "total": len(silo_rows),
+                "others": [c for c in listing_counts() if c["key"] != listing_key],
+                "review_warning": review_warning,
+                "student_ids": student_ids,
+            },
+        )
+
+    @app.get("/competencies")
+    def competencies_page(request: Request):
+        rows = []
+        for cluster in clustering.clusters:
+            counts = gap_counts_by_label.get(cluster.competency_label, Counter())
+            rows.append(
+                {
+                    "label": cluster.competency_label,
+                    "slug": slugify(cluster.competency_label),
+                    "has_progression": slugify(cluster.competency_label) in progression_by_slug,
+                    "rationale": cluster.rationale,
+                    "members": cluster.members,
+                    "n_silos": len(cluster.members),
+                    "n_subjects": len({m.subject_code for m in cluster.members}),
+                    "n_rows": sum(counts.values()),
+                    "counts": {c: counts[c] for c in _CLASSIFICATION_ORDER},
+                }
+            )
+        rows.sort(key=lambda r: r["label"].lower())
+        return templates.TemplateResponse(
+            request, "competencies.html",
+            {"rows": rows, "total_gap_rows": len(gaps), "review_warning": review_warning, "student_ids": student_ids},
+        )
+
+    @app.get("/assessments")
+    def assessments_page(request: Request):
+        return templates.TemplateResponse(
+            request, "assessments.html",
+            {
+                "rows": assessment_rows(),
+                "total_results": len(dataset.results),
+                "unmapped_results": unmapped_results,
+                "review_warning": review_warning,
+                "student_ids": student_ids,
+            },
+        )
+
     @app.get("/silos")
     def outcome_quality(request: Request):
         context = {
@@ -642,8 +783,10 @@ def create_app(
                 "unassessed": sum(1 for r in silo_rows if r.n_assessments == 0),
                 "vague": sum(1 for r in silo_rows if r.vague_terms),
             },
-            "silo_rows": sorted(silo_rows, key=lambda r: (-len(r.issues), r.key)),
+            "silo_rows": issue_order,
             "subjects": subject_rows,
+            "review_warning": review_warning,
+            "student_ids": student_ids,
             "terms": terms,
             "terms_json": json.dumps(
                 [

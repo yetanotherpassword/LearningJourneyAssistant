@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Assessments &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/run">&larr; this run</a>
+<h1>Assessments</h1>
+<p class="dek">
+  All {{ rows|length }} assessments in the dataset's assessment map, one row each, with the SILOs each evidences
+  and the number of result rows (one per student per assessment) the workbook holds for it:
+  {{ total_results }} result rows in all.
+  {% if unmapped_results %}<strong>{{ unmapped_results }}</strong> result rows name an assessment that is not in the map.{% endif %}
+</p>
+<table class="sortable compact">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Subject</th><th data-sort-type="text">Assessment</th>
+    <th data-sort-type="number">Weight</th><th data-sort-type="text">Contribution</th>
+    <th data-sort-type="text">Flags</th><th data-sort-type="text">SILOs</th><th data-sort-type="number">Result rows</th>
+  </tr></thead>
+  <tbody>
+  {% for a in rows %}
+    <tr>
+      <td data-sort-value="{{ a.subject_code }}"><a href="/subject/{{ a.subject_code }}"><strong>{{ a.subject_code }}</strong></a></td>
+      <td data-sort-value="{{ a.assessment_name }}">{{ a.assessment_name }}</td>
+      <td data-sort-value="{{ a.weight }}">{{ "%g"|format(a.weight) }}%</td>
+      <td data-sort-value="{{ a.contribution }}">{{ a.contribution }}</td>
+      <td data-sort-value="{{ 'hurdle' if a.hurdle }}{{ ' early' if a.early_assessment }}">
+        {% if a.hurdle %}<span class="issue">hurdle</span>{% endif %}
+        {% if a.early_assessment %}<span class="issue">early</span>{% endif %}
+        {% if not a.hurdle and not a.early_assessment %}&mdash;{% endif %}
+      </td>
+      <td data-sort-value="{{ a.silo_ids|join(' ') }}">{{ a.silo_ids|join(", ") or "—" }}</td>
+      <td data-sort-value="{{ a.n_results }}">{{ a.n_results }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="empty-state">No assessment map in this dataset.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

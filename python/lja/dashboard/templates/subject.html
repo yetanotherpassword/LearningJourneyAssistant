@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tile, pct %}
+{% block title %}{{ subject.subject_code }} &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/subjects">&larr; all subjects</a>
+<h1>{{ subject.subject_code }}</h1>
+<p class="dek">
+  Year {{ subject.year_level if subject.year_level is not none else "unknown" }} subject.
+  {{ subject.n_clean }} of {{ subject.n_silos }} outcomes have no issue
+  ({{ "%.0f"|format(subject.health) }}% health).
+</p>
+
+<div class="stat-strip">
+  {{ tile(subject.n_silos, "SILOs", "#outcomes") }}
+  {{ tile(assessments|length, "assessments", "#assessments") }}
+  {{ tile(subject.n_students, "students with results", "/cohort/all", title="Every student; the dashboard has no per-subject cohort yet") }}
+  {{ tile(pct(subject.mean_attainment), "mean attainment", "/glossary#attainment") }}
+  {{ tile(pct(subject.gap_rate), "gap rate", "/glossary#gap-rate") }}
+</div>
+
+<h2 id="outcomes">Outcomes</h2>
+<p class="dek">The subject's SILOs, issues first. The flag reason is the clustering model&rsquo;s own words.</p>
+{% include "_silo_table.html" %}
+
+<h2 id="assessments">Assessments</h2>
+<p class="dek">
+  Every assessment in the subject's map, the SILOs it evidences, and how many result rows the dataset holds for it.
+</p>
+{% if assessments %}
+<table class="sortable compact">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Assessment</th><th data-sort-type="number">Weight</th>
+    <th data-sort-type="text">Contribution</th><th data-sort-type="text">Flags</th>
+    <th data-sort-type="text">SILOs</th><th data-sort-type="number">Result rows</th>
+  </tr></thead>
+  <tbody>
+  {% for a in assessments %}
+    <tr>
+      <td data-sort-value="{{ a.assessment_name }}">{{ a.assessment_name }}</td>
+      <td data-sort-value="{{ a.weight }}">{{ "%g"|format(a.weight) }}%</td>
+      <td data-sort-value="{{ a.contribution }}">{{ a.contribution }}</td>
+      <td data-sort-value="{{ 'hurdle' if a.hurdle }}{{ ' early' if a.early_assessment }}">
+        {% if a.hurdle %}<span class="issue">hurdle</span>{% endif %}
+        {% if a.early_assessment %}<span class="issue">early</span>{% endif %}
+        {% if not a.hurdle and not a.early_assessment %}&mdash;{% endif %}
+      </td>
+      <td data-sort-value="{{ a.silo_ids|join(' ') }}">{{ a.silo_ids|join(", ") or "—" }}</td>
+      <td data-sort-value="{{ a.n_results }}">{{ a.n_results }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No assessment map for this subject.</p>
+{% endif %}
+{% endblock %}

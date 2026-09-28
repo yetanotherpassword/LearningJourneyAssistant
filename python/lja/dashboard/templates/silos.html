@@ -17,13 +17,14 @@
   the same gap rows the student pages show. Nothing here calls the LLM.
 </p>
 
+{% from "_macros.html" import tile %}
 <div class="stat-strip">
-  <div class="stat"><div class="num">{{ totals.subjects }}</div><div class="label">subjects</div></div>
-  <div class="stat"><div class="num">{{ totals.silos }}</div><div class="label">SILOs</div></div>
-  <div class="stat"><div class="num {{ 'warn' if totals.flagged }}">{{ totals.flagged }}</div><div class="label">flagged by the clustering</div></div>
-  <div class="stat"><div class="num {{ 'warn' if totals.orphan }}">{{ totals.orphan }}</div><div class="label">link to no other subject</div></div>
-  <div class="stat"><div class="num {{ 'warn' if totals.unassessed }}">{{ totals.unassessed }}</div><div class="label">never assessed</div></div>
-  <div class="stat"><div class="num {{ 'warn' if totals.vague }}">{{ totals.vague }}</div><div class="label">vaguely worded</div></div>
+  {{ tile(totals.subjects, "subjects", "/subjects") }}
+  {{ tile(totals.silos, "SILOs", "/silos/list/all") }}
+  {{ tile(totals.flagged, "flagged by the clustering", "/silos/list/flagged", warn=totals.flagged) }}
+  {{ tile(totals.orphan, "link to no other subject", "/silos/list/orphan", warn=totals.orphan) }}
+  {{ tile(totals.unassessed, "never assessed", "/silos/list/unassessed", warn=totals.unassessed) }}
+  {{ tile(totals.vague, "vaguely worded", "/silos/list/vague", warn=totals.vague) }}
 </div>
 
 <h2>The vocabulary of the outcomes</h2>
@@ -69,37 +70,9 @@
   Health is the share of a subject's SILOs with none of the four issues. It is a count, not a weighted
   score; the four counts sit beside it so the reader can weigh them. Gap rate is the share of
   (student, competency) pairs this subject evidences that are classified as a gap.
+  Click a subject for its outcomes and assessments; <a href="/subjects">the same table on its own page</a>.
 </p>
-<table class="sortable">
-  <thead><tr>
-    <th data-sort-type="text">Subject</th><th data-sort-type="number">Year</th>
-    <th data-sort-type="number" aria-sort="ascending">Health</th>
-    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Flagged</th>
-    <th data-sort-type="number">Unlinked</th><th data-sort-type="number">Unassessed</th>
-    <th data-sort-type="number">Vague</th><th data-sort-type="number">Students</th>
-    <th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
-  </tr></thead>
-  <tbody>
-  {% for s in subjects %}
-    <tr>
-      <td data-sort-value="{{ s.subject_code }}"><strong>{{ s.subject_code }}</strong></td>
-      <td data-sort-value="{{ s.year_level if s.year_level is not none else 99 }}">{{ s.year_level if s.year_level is not none else "?" }}</td>
-      <td data-sort-value="{{ s.health }}">
-        <span class="health-bar" title="{{ s.n_clean }} of {{ s.n_silos }} SILOs have no issue"><i style="width: {{ s.health }}%"></i></span>
-        <span class="health-num">{{ "%.0f"|format(s.health) }}%</span>
-      </td>
-      <td data-sort-value="{{ s.n_silos }}">{{ s.n_silos }}</td>
-      <td data-sort-value="{{ s.n_flagged }}">{% if s.n_flagged %}<span class="badge persistent-gap">{{ s.n_flagged }}</span>{% else %}&mdash;{% endif %}</td>
-      <td data-sort-value="{{ s.n_orphan }}">{% if s.n_orphan %}<span class="badge isolated-gap">{{ s.n_orphan }}</span>{% else %}&mdash;{% endif %}</td>
-      <td data-sort-value="{{ s.n_unassessed }}">{% if s.n_unassessed %}<span class="badge isolated-gap">{{ s.n_unassessed }}</span>{% else %}&mdash;{% endif %}</td>
-      <td data-sort-value="{{ s.n_vague }}">{% if s.n_vague %}<span class="badge developing">{{ s.n_vague }}</span>{% else %}&mdash;{% endif %}</td>
-      <td data-sort-value="{{ s.n_students }}">{{ s.n_students }}</td>
-      <td data-sort-value="{{ s.mean_attainment if s.mean_attainment is not none else -1 }}">{% if s.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(s.mean_attainment) }}%{% endif %}</td>
-      <td data-sort-value="{{ s.gap_rate if s.gap_rate is not none else -1 }}">{% if s.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(s.gap_rate) }}%{% endif %}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+{% include "_subjects_table.html" %}
 
 <h2>Progression by competency</h2>
 <p class="dek">
@@ -187,38 +160,12 @@
 </div>
 
 <h2>Every outcome</h2>
-<p class="dek">Sorted so the outcomes with the most issues come first. The flag reason is the clustering model&rsquo;s own words.</p>
-<table class="sortable compact">
-  <thead><tr>
-    <th data-sort-type="text">SILO</th><th data-sort-type="text">Wording</th><th data-sort-type="text">Competency</th>
-    <th data-sort-type="number" aria-sort="descending">Issues</th><th data-sort-type="number">Assessments</th>
-    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
-  </tr></thead>
-  <tbody>
-  {% for r in silo_rows %}
-    <tr class="{{ 'has-issue' if r.issues }}">
-      <td data-sort-value="{{ r.key }}"><strong>{{ r.subject_code }}</strong> {{ r.silo_local_id }}</td>
-      <td data-sort-value="{{ r.text }}" class="wording">
-        {{ r.text }}
-        {% if r.flagged %}<div class="flag-reason">Flagged: {{ r.flag_reason }}</div>{% endif %}
-        {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
-      </td>
-      <td data-sort-value="{{ r.competency_label or '' }}">
-        {% if r.competency_label and not r.orphan %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>
-        {% elif r.competency_label %}{{ r.competency_label }} <span class="muted">(this subject only)</span>
-        {% else %}<span class="muted">not clustered</span>{% endif %}
-      </td>
-      <td data-sort-value="{{ r.issues|length }}">
-        {% for issue in r.issues %}<span class="issue">{{ issue }}</span>{% else %}&mdash;{% endfor %}
-      </td>
-      <td data-sort-value="{{ r.n_assessments }}">{{ r.n_assessments }}</td>
-      <td data-sort-value="{{ r.n_students }}">{{ r.n_students }}</td>
-      <td data-sort-value="{{ r.mean_attainment if r.mean_attainment is not none else -1 }}">{% if r.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(r.mean_attainment) }}%{% endif %}</td>
-      <td data-sort-value="{{ r.gap_rate if r.gap_rate is not none else -1 }}">{% if r.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(r.gap_rate) }}%{% endif %}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+<p class="dek">
+  Sorted so the outcomes with the most issues come first. The flag reason is the clustering model&rsquo;s own words.
+  Filtered lists: <a href="/silos/list/flagged">flagged</a> &middot; <a href="/silos/list/orphan">unlinked</a> &middot;
+  <a href="/silos/list/unassessed">never assessed</a> &middot; <a href="/silos/list/vague">vaguely worded</a>.
+</p>
+{% include "_silo_table.html" %}
 
 <script>
 (function () {

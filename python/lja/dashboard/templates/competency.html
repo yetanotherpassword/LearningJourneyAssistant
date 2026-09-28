@@ -25,7 +25,7 @@
   <tbody>
   {% for pt in progression.points %}
     <tr>
-      <td><strong>{{ pt.subject_code }}</strong></td>
+      <td><a href="/subject/{{ pt.subject_code }}"><strong>{{ pt.subject_code }}</strong></a></td>
       <td>{{ pt.year_level if pt.year_level is not none else "?" }}</td>
       <td>{{ pt.n_students }}</td>
       <td>{% if pt.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(pt.mean_attainment) }}%{% endif %}</td>
