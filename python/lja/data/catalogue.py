@@ -53,9 +53,9 @@ class Competency(BaseModel):
     # Loadings onto the cohort's latent aptitude traits (see
     # catalogue_generator's ability model). Competencies with similar loadings
     # co-vary across students -- a student strong in one quantitative
-    # competency tends to be strong in the others. Written by
-    # competency_tagger.py from the SILO embeddings; None means "independent",
-    # which is what the hand-written catalogue gets.
+    # competency tends to be strong in the others. Set per competency in the
+    # catalogue; None means "independent", which is what the hand-written
+    # catalogue gets.
     traits: list[float] | None = None
 
 

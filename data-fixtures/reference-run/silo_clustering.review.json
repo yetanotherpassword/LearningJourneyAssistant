@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "reviews": {
+    "32bd1ef2c59b": {
+      "cluster_id": "32bd1ef2c59b",
+      "competency_label": "Data Structures and Algorithms Design and Implementation",
+      "members": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO2",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "state": "pending",
+      "note": ""
+    },
+    "457722af7334": {
+      "cluster_id": "457722af7334",
+      "competency_label": "Project Management and Technical Communication",
+      "members": [
+        "CSE3CAP:SILO1",
+        "CSE3CAP:SILO2",
+        "CSE3CAP:SILO3",
+        "CSE3CAP:SILO4"
+      ],
+      "state": "pending",
+      "note": ""
+    },
+    "846074a7fe86": {
+      "cluster_id": "846074a7fe86",
+      "competency_label": "Vague Outcome",
+      "members": [
+        "CSE2ALG:SILO1"
+      ],
+      "state": "pending",
+      "note": ""
+    },
+    "23e861d5a7c6": {
+      "cluster_id": "23e861d5a7c6",
+      "competency_label": "Data Structures and Algorithms",
+      "members": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "state": "pending",
+      "note": ""
+    },
+    "4f3d3f2ebf15": {
+      "cluster_id": "4f3d3f2ebf15",
+      "competency_label": "Object-Oriented Design and Implementation",
+      "members": [
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "state": "pending",
+      "note": ""
+    },
+    "3cc7cf957629": {
+      "cluster_id": "3cc7cf957629",
+      "competency_label": "Data Structures and Algorithms",
+      "members": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "state": "confirmed",
+      "note": "Reference-run fixture, bulk-confirmed so the pipeline runs offline; not a staff review (see docs/cluster-review-sprint5.md)."
+    },
+    "0453535ab4f0": {
+      "cluster_id": "0453535ab4f0",
+      "competency_label": "Object-Oriented Design and Implementation",
+      "members": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "state": "confirmed",
+      "note": "Reference-run fixture, bulk-confirmed so the pipeline runs offline; not a staff review (see docs/cluster-review-sprint5.md)."
+    },
+    "147046ec057b": {
+      "cluster_id": "147046ec057b",
+      "competency_label": "Technical Communication and Documentation",
+      "members": [
+        "CSE3CAP:SILO3",
+        "CSE3CAP:SILO4"
+      ],
+      "state": "confirmed",
+      "note": "Reference-run fixture, bulk-confirmed so the pipeline runs offline; not a staff review (see docs/cluster-review-sprint5.md)."
+    },
+    "bc4002cb406c": {
+      "cluster_id": "bc4002cb406c",
+      "competency_label": "Project Management",
+      "members": [
+        "CSE3CAP:SILO1"
+      ],
+      "state": "confirmed",
+      "note": "Reference-run fixture, bulk-confirmed so the pipeline runs offline; not a staff review (see docs/cluster-review-sprint5.md)."
+    },
+    "35e60655b027": {
+      "cluster_id": "35e60655b027",
+      "competency_label": "Industry Standards Application",
+      "members": [
+        "CSE3CAP:SILO2"
+      ],
+      "state": "confirmed",
+      "note": "Reference-run fixture, bulk-confirmed so the pipeline runs offline; not a staff review (see docs/cluster-review-sprint5.md)."
+    }
+  }
+}

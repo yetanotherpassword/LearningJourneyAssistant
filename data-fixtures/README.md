@@ -30,15 +30,6 @@ paths:
   for `devenv/fixtures/mark_rubric_from_json.php`, and `seed_subjects.txt` for
   `devenv/seed.sh --from-file`.
 
-**At scale, from the La Trobe handbook.** `handbook/` (gitignored) holds a
-crawl of the 2026 handbook's science and engineering subjects -- 314 subjects,
-1,436 real SILOs -- turned into a catalogue by `python -m lja.data.handbook`,
-tagged into 48 competencies by `python -m lja.data.competency_tagger` (embeddings,
-not an LLM clustering call), and given seven degree programs so that a
-3,000-student cohort shares first-year subjects and diverges by program. See
-`python/README.md`, "Hundreds of real subjects". Assessment maps in that
-catalogue are synthetic; the handbook does not serve them server-side.
-
 Rules the file enforces on load (`lja/data/catalogue.py`): assessment weights
 sum to 1, every SILO an assessment lists exists, every competency a SILO names
 exists, SILO text contains no semicolon (the workbook cell delimiter), and the
