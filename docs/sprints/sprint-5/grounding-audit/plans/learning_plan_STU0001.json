@@ -1,0 +1,75 @@
+{
+  "student_id": "STU0001",
+  "summary": "You're building a solid foundation across your computing subjects, with everything currently sitting in the developing-to-limited range. The clearest gaps are in your capstone (CSE3CAP), especially project management and industry-standard practice, while your data structures and object-oriented work are steadier. This plan targets the capstone gaps first, then helps you push your CSE1OOF and CSE2ALG results from developing into confident territory. These are formative signals to guide your study, not a judgement on you.",
+  "priorities": [
+    {
+      "competency_label": "Project Management",
+      "silo_keys": [
+        "CSE3CAP:SILO1"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Sprint Project management reports"
+      ],
+      "evidence": "This is your lowest attainment at 46.0% in CSE3CAP and is flagged as an isolated gap. Your Sprint Project management reports scored 46.0% (limited), with the marker noting gaps in advanced project management during substantive development implementation.",
+      "actions": "Revisit the feedback on CSE3CAP:Assignment: Sprint Project management reports and rebuild one sprint plan from your capstone as a smaller, well-tested example: set clear milestones, track progress, and document decisions as required by CSE3CAP:SILO1. Seek feedback early on a draft before your next submission."
+    },
+    {
+      "competency_label": "Industry Standards Application",
+      "silo_keys": [
+        "CSE3CAP:SILO2"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Final written Project Report",
+        "CSE3CAP:Assignment: Sprint Project management reports"
+      ],
+      "evidence": "Attainment is 48.0% in CSE3CAP, an isolated gap. This is evidenced across your Final written Project Report (50.0%) and Sprint reports (46.0%), where markers highlighted the need for industry standard technical solutions in software or cybersecurity practice.",
+      "actions": "Re-read the marker comments on CSE3CAP:Assignment: Final written Project Report and re-work one section of your solution against a recognised industry standard or coding convention tied to CSE3CAP:SILO2, explaining your design decisions with stronger evidence."
+    },
+    {
+      "competency_label": "Technical Communication and Documentation",
+      "silo_keys": [
+        "CSE3CAP:SILO3",
+        "CSE3CAP:SILO4"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Final written Project Report",
+        "CSE3CAP:Oral presentation: Final Project Presentation",
+        "CSE3CAP:Oral presentation: Project Milestone Presentation"
+      ],
+      "evidence": "Attainment is 49.7% in CSE3CAP, an isolated gap. Your Final Project Presentation (49.0%) drew limited-result feedback on reporting outcomes to technical and non-technical audiences (CSE3CAP:SILO3), and the Final written Project Report (50.0%) noted documentation gaps against CSE3CAP:SILO4.",
+      "actions": "Revisit the feedback on CSE3CAP:Oral presentation: Final Project Presentation and re-record a short version of the presentation aimed at a non-technical audience, then reflect on the marker's comments. Redraft one part of CSE3CAP:Assignment: Final written Project Report to meet professional documentation standards (CSE3CAP:SILO4)."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE1OOF",
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Central examination",
+        "CSE2ALG:Assignment",
+        "CSE2ALG:Test"
+      ],
+      "evidence": "Attainment is 50.7% (developing), stable across CSE1OOF (50.6%) and CSE2ALG (50.8%). Your CSE2ALG:Central examination was your weakest at 48.0% (limited), with feedback on identifying and implementing data structures and sorting/searching algorithms in Java.",
+      "actions": "Revisit the feedback on CSE2ALG:Central examination and re-attempt exam-style problems in Java that implement and compare data structures and sorting/searching algorithms (CSE2ALG:SILO3, CSE2ALG:SILO4), practising in smaller well-tested examples first. Redo the algorithm-comparison questions from CSE2ALG:Assignment with performance measures (CSE2ALG:SILO5)."
+    }
+  ],
+  "strengths_to_build_on": []
+}
