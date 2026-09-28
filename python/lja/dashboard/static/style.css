@@ -15,6 +15,17 @@
   --status-developing-bg: #dde9f7;
   --status-proficient: #2f7a4f;
   --status-proficient-bg: #dcf0e2;
+  /* Categorical series for multi-line charts (progress view). Fixed order,
+     validated for colour-vision deficiency in both modes; never reuse a
+     status colour as a series. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +46,14 @@
     --status-developing-bg: #142433;
     --status-proficient: #7fd7a0;
     --status-proficient-bg: #12291c;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
   }
 }
 
@@ -274,6 +293,11 @@ th.sortable-header[aria-sort="descending"]::after { content: "\2193"; opacity: 1
 .trend-badge.stable { color: var(--status-developing); background: var(--status-developing-bg); }
 .trend-badge.declining { color: var(--status-persistent); background: var(--status-persistent-bg); }
 .trend-badge.insufficient-evidence { color: var(--muted); background: var(--surface-2); }
+
+/* Progress across subjects (student page): one column per subject in year order. */
+.progress-table td:not(:first-child) { text-align: center; font-variant-numeric: tabular-nums; }
+.progress-table td:last-child { text-align: left; }
+.chart-note { margin: 8px 0 0; color: var(--muted); font-size: 0.85rem; }
 
 .future-subjects {
   border: 1px solid var(--status-isolated-bg);
