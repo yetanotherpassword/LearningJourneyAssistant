@@ -54,6 +54,10 @@ from ..model.silo_quality import (
 )
 from .stats import histogram, summarise
 
+# The progress chart on the student page draws at most this many competency
+# lines; beyond that a line chart is unreadable and the table carries the rest.
+PROGRESS_CHART_MAX = 8
+
 # Below this many subjects the chord draws one arc per subject; above it,
 # one arc per discipline (subject-code prefix), because a subject-level chord
 # is a hairball well before a hundred arcs. The subject explorer below the
@@ -316,6 +320,37 @@ def create_app(
                 }
             )
 
+        # Progress across subjects (IOLG-107): the same per-subject evidence,
+        # pivoted so each competency is a row and each subject a column, in
+        # year-level order. Order, not time: the data carries no dates, so
+        # this is "first-year subject, then second, then third" and nothing
+        # more. The trend word is the one the gap card already shows.
+        year_of = {e.subject_code: e.year_level for d in gap_details for e in d["evidence"]}
+        progress_subjects = sorted(year_of, key=lambda c: (year_of[c] is None, year_of[c] or 0, c))
+        progress_rows = []
+        for d in gap_details:
+            by_subject = {e.subject_code: e.attainment_pct for e in d["evidence"]}
+            progress_rows.append(
+                {
+                    "competency_label": d["gap"].competency_label,
+                    "classification": d["gap"].classification,
+                    "values": [by_subject.get(c) for c in progress_subjects],
+                    "trend": d["trend"],
+                }
+            )
+        # The chart draws only competencies seen in two or more subjects (a
+        # single point is not a progression) and at most PROGRESS_CHART_MAX
+        # of them, gaps first because gap_details is already in severity
+        # order; the table underneath always carries every row.
+        chartable = [r for r in progress_rows if sum(v is not None for v in r["values"]) >= 2]
+        progress_chart = json.dumps(
+            {
+                "labels": progress_subjects,
+                "rows": chartable[:PROGRESS_CHART_MAX],
+                "omitted": max(0, len(chartable) - PROGRESS_CHART_MAX),
+            }
+        )
+
         return templates.TemplateResponse(
             request,
             "student.html",
@@ -323,6 +358,9 @@ def create_app(
                 "summary": summary,
                 "strengths": strengths,
                 "gap_details": gap_details,
+                "progress_subjects": progress_subjects,
+                "progress_rows": progress_rows,
+                "progress_chart": progress_chart,
                 "chart_data": chart_data,
                 "review_warning": review_warning,
                 "student_ids": student_ids,

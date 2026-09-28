@@ -165,6 +165,19 @@ also says **dev mode, no sign-in**: the dashboard has no authentication and
 lists every student ID to anyone who can reach the port, so bind it to
 `127.0.0.1` (the default) outside a demo.
 
+**Progress across subjects.** Between Strengths and the gap cards, each student
+page has a Progress section: a table with one row per competency and one column
+per subject in year-level order (`CSE1…`, then `CSE2…`, then `CSE3…`), showing
+the student's attainment in that competency in each subject, plus the same trend
+word the gap card uses (`improving`, `stable`, `declining`, or `insufficient
+evidence` when fewer than two subjects with a known year level carry it). A line
+chart above the table draws the competencies seen in two or more subjects, gaps
+first, up to eight lines; the table always has every row. This is order, not
+time: the workbook carries no dates, so the section says so and never claims a
+time series. The year level is read from the subject code, as
+`gap_evidence.py` documents, and a code that does not follow that pattern sorts
+last with no trend. The 5-point stable band is unratified (action A-01).
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
