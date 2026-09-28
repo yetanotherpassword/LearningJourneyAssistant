@@ -121,6 +121,8 @@ def create_app(
     for gap in gaps:
         gaps_by_student[gap.student_id].append(gap)
     students_by_id = {s.student_id: s for s in dataset.student_summaries}
+    # Header picker (base.html) -- every page needs it, so it is computed once.
+    student_ids = sorted(students_by_id)
 
     def members(cohort: _Cohort) -> list[StudentSummary]:
         return [
@@ -138,6 +140,7 @@ def create_app(
             "performance_band": summary.performance_band,
             "persistent_gap_count": counts["persistent gap"],
             "isolated_gap_count": counts["isolated gap"],
+            "strength_count": counts["proficient"],
         }
 
     def view_model(cohort: _Cohort) -> dict:
@@ -159,6 +162,7 @@ def create_app(
             # Banner from base.html (IOLG-116): the same warning on every
             # page, sourced once here rather than per route.
             "review_warning": review_warning,
+            "student_ids": student_ids,
             "rows": rows,
             "stats": summarise(averages),
             # Charts read their colours from the CSS custom properties at
@@ -208,6 +212,12 @@ def create_app(
             gaps_by_student.get(student_id, []),
             key=lambda g: _CLASSIFICATION_ORDER.index(g.classification),
         )
+        # Strongest first: furthest above the student's own median, then by
+        # attainment for those classified on the absolute ceiling (no position).
+        strengths = sorted(
+            (g for g in student_gaps if g.classification == "proficient"),
+            key=lambda g: (-(g.relative_position or 0.0), -g.attainment_pct),
+        )
         chart_data = json.dumps(
             {
                 "labels": [g.competency_label for g in student_gaps],
@@ -242,9 +252,11 @@ def create_app(
             "student.html",
             {
                 "summary": summary,
+                "strengths": strengths,
                 "gap_details": gap_details,
                 "chart_data": chart_data,
                 "review_warning": review_warning,
+                "student_ids": student_ids,
             },
         )
 

@@ -1,0 +1,98 @@
+{
+  "clusters": [
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "rationale": "Includes identifying, implementing, comparing, and evaluating data structures and algorithms (e.g., CSE1OOF SILO2 on abstract data types; CSE2ALG SILO2-5 on identifying, implementing, and applying algorithms), spanning CSE1OOF and CSE2ALG.",
+      "members": [
+        {
+          "subject_code": "CSE1OOF",
+          "silo_local_id": "SILO2"
+        },
+        {
+          "subject_code": "CSE2ALG",
+          "silo_local_id": "SILO1"
+        },
+        {
+          "subject_code": "CSE2ALG",
+          "silo_local_id": "SILO2"
+        },
+        {
+          "subject_code": "CSE2ALG",
+          "silo_local_id": "SILO3"
+        },
+        {
+          "subject_code": "CSE2ALG",
+          "silo_local_id": "SILO4"
+        },
+        {
+          "subject_code": "CSE2ALG",
+          "silo_local_id": "SILO5"
+        }
+      ]
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "rationale": "No equivalent outcome found in the other subjects; includes analysis, design, and implementation of object-oriented systems (e.g., CSE1OOF SILO1, 3, 4 on OOP modelling and code reuse).",
+      "members": [
+        {
+          "subject_code": "CSE1OOF",
+          "silo_local_id": "SILO1"
+        },
+        {
+          "subject_code": "CSE1OOF",
+          "silo_local_id": "SILO3"
+        },
+        {
+          "subject_code": "CSE1OOF",
+          "silo_local_id": "SILO4"
+        }
+      ]
+    },
+    {
+      "competency_label": "Technical Communication and Documentation",
+      "rationale": "No equivalent outcome found in the other subjects; includes reporting outcomes to diverse audiences and professional system documentation (e.g., CSE3CAP SILO3 and SILO4).",
+      "members": [
+        {
+          "subject_code": "CSE3CAP",
+          "silo_local_id": "SILO3"
+        },
+        {
+          "subject_code": "CSE3CAP",
+          "silo_local_id": "SILO4"
+        }
+      ]
+    },
+    {
+      "competency_label": "Project Management",
+      "rationale": "No equivalent outcome found in the other subjects; includes advanced project management during substantive development implementation (CSE3CAP SILO1).",
+      "members": [
+        {
+          "subject_code": "CSE3CAP",
+          "silo_local_id": "SILO1"
+        }
+      ]
+    },
+    {
+      "competency_label": "Industry Standards Application",
+      "rationale": "No equivalent outcome found in the other subjects; includes applying industry standards to technical solutions (CSE3CAP SILO2).",
+      "members": [
+        {
+          "subject_code": "CSE3CAP",
+          "silo_local_id": "SILO2"
+        }
+      ]
+    }
+  ],
+  "flagged_silos": [
+    {
+      "subject_code": "CSE2ALG",
+      "silo_local_id": "SILO1",
+      "reason": "vague, does not specify a specific skill or knowledge area"
+    },
+    {
+      "subject_code": "CSE3CAP",
+      "silo_local_id": "SILO2",
+      "reason": "vague, lacks specific assessment criteria"
+    }
+  ]
+}

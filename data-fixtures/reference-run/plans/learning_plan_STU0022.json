@@ -1,0 +1,50 @@
+{
+  "student_id": "STU0022",
+  "summary": "Your strongest areas are Project Management, Industry Standards Application, and Technical Communication (all 76%+), showing a solid foundation in professional software development practices. However, Data Structures and Algorithms (71.5%) and Object-Oriented Design (73.5%) remain gaps where consistent feedback highlights the need for clearer reasoning, more complete testing, and tighter links between decisions and implementation. Prioritizing these will build your core technical skills.",
+  "priorities": [
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Central examination",
+        "CSE2ALG:Assignment",
+        "CSE2ALG:Test"
+      ],
+      "evidence": "Attainment 71.5% across CSE2ALG (71.0%) and CSE1OOF (73.5%), with consistent marker feedback across assessments (e.g., CSE2ALG:Central examination: \"To strengthen the result, the student should provide clearer reasoning, improve technical precision and show more complete testing or reflection\"), indicating persistent gaps in applying algorithms/data structures to problems.",
+      "actions": "Revisit CSE2ALG:Central examination feedback to practice justifying algorithm choices with performance measures; redo CSE2ALG:Test exercises on implementing data structures in Java with complete testing."
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "subject_codes": [
+        "CSE1OOF"
+      ],
+      "assessment_keys": [
+        "CSE1OOF:Assignment",
+        "CSE1OOF:Central examination",
+        "CSE1OOF:Practical demonstration",
+        "CSE1OOF:Test"
+      ],
+      "evidence": "Attainment 73.5% in CSE1OOF, with repeated feedback (e.g., CSE1OOF:Assignment: \"Further improvement would come from deeper justification, more consistent evaluation evidence and tighter links between decisions and implementation details\") across all assessments, indicating gaps in connecting design to implementation.",
+      "actions": "Re-examine CSE1OOF:Assignment feedback to strengthen links between object-oriented design decisions and code implementation; practice CSE1OOF:Test exercises on encapsulation with detailed reasoning."
+    }
+  ],
+  "strengths_to_build_on": [
+    "Project Management",
+    "Industry Standards Application",
+    "Technical Communication and Documentation"
+  ]
+}

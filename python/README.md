@@ -153,6 +153,17 @@ badges never disagree about what a color means. `--port` and `--host` are
 both flags on `python -m lja.dashboard`; neither has an `LJA_*` environment
 variable yet.
 
+**Strengths.** Each student page opens with a Strengths table, above the gap
+cards, listing every competency classified `proficient`, strongest first. As
+with the gaps, each row gives its basis: `relative position` shows how many MADs
+the competency sits above the student's own median, and `absolute ceiling`
+means the attainment passed the fixed ceiling. The student table has a
+sortable Strengths column alongside the gap counts. The header on every page
+has a student picker that jumps straight to `/student/<id>`. The header
+also says **dev mode, no sign-in**: the dashboard has no authentication and
+lists every student ID to anyone who can reach the port, so bind it to
+`127.0.0.1` (the default) outside a demo.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
