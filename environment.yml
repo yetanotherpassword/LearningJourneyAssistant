@@ -10,5 +10,6 @@ dependencies:
   - pytest
   - python=3.12
   - pydantic
+  - pyyaml
   - openpyxl
 prefix: /home/acampton/miniconda3/envs/lja
