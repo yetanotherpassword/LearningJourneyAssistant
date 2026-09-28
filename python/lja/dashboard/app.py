@@ -38,7 +38,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from ..data.excel_loader import LjaDataset, StudentSummary
-from ..model.gap_detection import CompetencyGap
+from ..model.gap_detection import (
+    BASIS_CEILING,
+    BASIS_FLOOR,
+    BASIS_INSUFFICIENT,
+    BASIS_RELATIVE,
+    CompetencyGap,
+    GapThresholds,
+)
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
@@ -52,6 +59,7 @@ from ..model.silo_quality import (
     summarise_subjects,
     term_weights,
 )
+from .run_info import RunInfo
 from .stats import histogram, summarise
 
 # The progress chart on the student page draws at most this many competency
@@ -76,6 +84,68 @@ _CLASSIFICATION_ORDER = ["persistent gap", "isolated gap", "developing", "profic
 # warn a student about yet.
 _AT_RISK_CLASSIFICATIONS = {"persistent gap", "isolated gap"}
 
+# A gap is persistent when this many subjects evidence it (gap_detection's
+# _gap_label). Stated here so the rules panel prints the same number the
+# classifier uses rather than a hand-typed copy of it.
+PERSISTENT_MIN_SUBJECTS = 2
+
+# Each priority group on the index shows this many of its students; the
+# group's cohort page and the full table underneath carry everyone.
+PRIORITY_PREVIEW_SIZE = 10
+
+# Priority groups. Three, because that is how many distinctions the
+# classifier's existing rules make between flagged students without a new
+# number: a floor breach is a gap whatever the profile (absolute rule), a
+# persistent relative gap recurs across subjects, an isolated one does not.
+# Splitting any group further (by depth, by count) needs a cut-off nobody
+# has ratified -- that is the A-01 decision, not a dashboard default.
+_PRIORITY_DEFINITIONS: tuple[dict, ...] = (
+    {"rank": 1, "key": "priority-1", "ordinal": "1st", "label": "below the {floor}% floor",
+     "blurb": ("At least one competency below the absolute floor of {floor}% -- a gap regardless of how "
+               "the rest of the profile looks. Ordered by the student's lowest flagged mark.")},
+    {"rank": 2, "key": "priority-2", "ordinal": "2nd", "label": "persistent gap, relative only",
+     "blurb": ("No mark below the {floor}% floor, but at least one persistent gap: a competency evidenced in "
+               "{persistent_min_subjects}+ subjects that sits {gap_cutoff} MAD or more below the student's own "
+               "median. These students are weaker in one area than in their others, not failing it. "
+               "Ordered by the student's lowest flagged mark.")},
+    {"rank": 3, "key": "priority-3", "ordinal": "3rd", "label": "isolated gaps only",
+     "blurb": ("No floor breach and no persistent gap; every flag is an isolated gap, seen in a single "
+               "subject. Ordered by the student's lowest flagged mark.")},
+)
+
+# One row per threshold for the /run page: which GapThresholds field, how it
+# is set, and what it means. The meaning is text because the number alone
+# ("-1.0") tells a coordinator nothing. Defaults are read from GapThresholds()
+# at request time, not copied here, so this list cannot go stale on a value.
+_THRESHOLD_ROWS: tuple[dict, ...] = (
+    {"field": "absolute_floor", "unit": "%", "env": "LJA_GAP_ABSOLUTE_FLOOR", "flag": "--absolute-floor",
+     "dashboard_flag": True,
+     "meaning": "Attainment below this is a gap regardless of the student's own profile."},
+    {"field": "absolute_ceiling", "unit": "%", "env": "LJA_GAP_ABSOLUTE_CEILING", "flag": "--absolute-ceiling",
+     "dashboard_flag": True,
+     "meaning": "Attainment at or above this is never a gap and always proficient."},
+    {"field": "relative_gap_cutoff", "unit": "MAD", "env": "LJA_GAP_RELATIVE_GAP_CUTOFF", "flag": "--relative-gap-cutoff",
+     "dashboard_flag": False,
+     "meaning": "A competency this many MAD or more below the student's own median is a gap."},
+    {"field": "relative_strong_cutoff", "unit": "MAD", "env": "LJA_GAP_RELATIVE_STRONG_CUTOFF", "flag": "--relative-strong-cutoff",
+     "dashboard_flag": False,
+     "meaning": "A competency this many MAD or more above the student's own median is proficient."},
+    {"field": "min_competencies", "unit": "", "env": "LJA_GAP_MIN_COMPETENCIES", "flag": "--min-competencies",
+     "dashboard_flag": False,
+     "meaning": "Fewer competencies than this and the relative rule is not used for that student."},
+    {"field": "min_spread", "unit": "MAD", "env": "LJA_GAP_MIN_SPREAD", "flag": "--min-spread",
+     "dashboard_flag": False,
+     "meaning": "A profile whose MAD is below this is treated as flat and the relative rule is not used."},
+    {"field": "fallback_proficient", "unit": "%", "env": "LJA_GAP_FALLBACK_PROFICIENT", "flag": None,
+     "dashboard_flag": False,
+     "meaning": "When the relative rule is not used, attainment at or above this is proficient, below it developing."},
+)
+
+# Gap-mark histogram bins. Finer than the 10-point cohort histogram because
+# the interesting question -- how many flagged gaps sit just under the
+# ceiling versus under the floor -- lives inside a ten-point band.
+_GAP_MARK_BIN = 5.0
+
 
 @dataclass(frozen=True)
 class _Cohort:
@@ -95,6 +165,26 @@ class _Cohort:
 
 def _has_persistent_gap(_summary: StudentSummary, gaps: list[CompetencyGap]) -> bool:
     return any(g.classification == "persistent gap" for g in gaps)
+
+
+def _is_gap(gap: CompetencyGap) -> bool:
+    return gap.classification in _AT_RISK_CLASSIFICATIONS
+
+
+def priority_of(gaps: list[CompetencyGap]) -> int | None:
+    """1, 2, 3 per _PRIORITY_DEFINITIONS, or None for a student with no gap."""
+    gap_rows = [g for g in gaps if _is_gap(g)]
+    if not gap_rows:
+        return None
+    if any(g.classification_basis == BASIS_FLOOR for g in gap_rows):
+        return 1
+    if any(g.classification == "persistent gap" for g in gap_rows):
+        return 2
+    return 3
+
+
+def _priority_predicate(rank: int) -> Callable[[StudentSummary, list[CompetencyGap]], bool]:
+    return lambda _summary, gaps: priority_of(gaps) == rank
 
 
 # Registry, in tile order. Adding the "At Risk" cohort the team asked for is
@@ -123,6 +213,22 @@ _COHORTS: tuple[_Cohort, ...] = (
         ),
         predicate=_has_persistent_gap,
     ),
+    # The priority groups are not the "At Risk" cohort (see above): they add
+    # no new number. Each is a combination of classifications the pipeline
+    # already made, and the relative rule flags the weakest competencies of
+    # almost everyone (the A-01 threshold finding, IOLG-113), so the split
+    # that matters is floor breach versus relative-only. Blurbs and labels
+    # are format strings so they print the thresholds actually in force.
+    *(
+        _Cohort(
+            key=d["key"],
+            title=f"{d['ordinal']} priority: {d['label']}",
+            tile_label=f"{d['ordinal']} priority: {d['label']}",
+            blurb=d["blurb"],
+            predicate=_priority_predicate(d["rank"]),
+        )
+        for d in _PRIORITY_DEFINITIONS
+    ),
 )
 
 _COHORTS_BY_KEY = {cohort.key: cohort for cohort in _COHORTS}
@@ -133,7 +239,19 @@ def create_app(
     gaps: list[CompetencyGap],
     clustering: SiloClusteringResult,
     review_warning: str | None = None,
+    thresholds: GapThresholds | None = None,
+    run_info: RunInfo | None = None,
 ) -> FastAPI:
+    """`thresholds` must be the object compute_gaps() was given for `gaps`.
+
+    The dashboard cannot recover the cut-offs from the gap rows, and the
+    /run page prints them, so a caller that classified with one set and
+    displays another would put an untrue statement on the page. Defaults
+    to GapThresholds() because that is also compute_gaps()'s default.
+    `run_info` is the provenance __main__.py collected; None (tests, or an
+    embedding caller) leaves the /run page's command section out honestly.
+    """
+    thresholds = thresholds or GapThresholds()
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     templates.env.filters["slug"] = slugify
@@ -197,6 +315,20 @@ def create_app(
     # Header picker (base.html) -- every page needs it, so it is computed once.
     student_ids = sorted(students_by_id)
 
+    # The rules in force, for the panel every cohort page opens with. One
+    # dict built once from the thresholds object, so the panel cannot say
+    # one thing while the classifier did another.
+    rules = {
+        "absolute_floor": thresholds.absolute_floor,
+        "absolute_ceiling": thresholds.absolute_ceiling,
+        "relative_gap_cutoff": thresholds.relative_gap_cutoff,
+        "relative_strong_cutoff": thresholds.relative_strong_cutoff,
+        "min_competencies": thresholds.min_competencies,
+        "min_spread": thresholds.min_spread,
+        "fallback_proficient": thresholds.fallback_proficient,
+        "persistent_min_subjects": PERSISTENT_MIN_SUBJECTS,
+    }
+
     def members(cohort: _Cohort) -> list[StudentSummary]:
         return [
             summary
@@ -207,6 +339,8 @@ def create_app(
     def row_for(summary: StudentSummary) -> dict:
         student_gaps = gaps_by_student.get(summary.student_id, [])
         counts = Counter(g.classification for g in student_gaps)
+        student_gap_rows = [g for g in student_gaps if _is_gap(g)]
+        positions = [g.relative_position for g in student_gap_rows if g.relative_position is not None]
         return {
             "student_id": summary.student_id,
             "average_total": summary.average_total,
@@ -214,7 +348,33 @@ def create_app(
             "persistent_gap_count": counts["persistent gap"],
             "isolated_gap_count": counts["isolated gap"],
             "strength_count": counts["proficient"],
+            # Severity, from the classifier's own outputs and nothing else:
+            # how many gaps tripped the absolute floor, the student's lowest
+            # flagged mark, and how far below their own median it sits.
+            "floor_gap_count": sum(1 for g in student_gap_rows if g.classification_basis == BASIS_FLOOR),
+            "lowest_gap_pct": min((g.attainment_pct for g in student_gap_rows), default=None),
+            "deepest_position": min(positions, default=None),
+            "priority": priority_of(student_gaps),
         }
+
+    def severity_key(row: dict) -> tuple:
+        # Priority group first, then the lowest flagged mark within it, then
+        # the number of persistent gaps. Student id last so the order is
+        # total and a page reload cannot reshuffle equal rows.
+        lowest = row["lowest_gap_pct"]
+        return (
+            row["priority"] if row["priority"] is not None else 99,
+            lowest if lowest is not None else float("inf"),
+            -row["persistent_gap_count"],
+            row["student_id"],
+        )
+
+    def format_text(text: str) -> str:
+        return text.format(
+            floor=f"{thresholds.absolute_floor:g}",
+            gap_cutoff=f"{-thresholds.relative_gap_cutoff:g}",
+            persistent_min_subjects=PERSISTENT_MIN_SUBJECTS,
+        )
 
     def view_model(cohort: _Cohort) -> dict:
         """Rows + descriptive statistics + both charts' data, for one cohort.
@@ -223,15 +383,63 @@ def create_app(
         into computing the same figure two different ways.
         """
         summaries = members(cohort)
-        rows = [row_for(summary) for summary in summaries]
+        rows = sorted((row_for(summary) for summary in summaries), key=severity_key)
         averages = [summary.average_total for summary in summaries]
 
         cohort_gaps = [g for summary in summaries for g in gaps_by_student.get(summary.student_id, [])]
         classification_counts = Counter(g.classification for g in cohort_gaps)
         bins = histogram(averages)
 
+        # What actually put the flagged competencies where they are: how
+        # many gap rows tripped the floor versus the relative rule, and how
+        # the flagged marks are spread. This is the context the raw
+        # "N with a persistent gap" tile lacks.
+        gap_rows = [g for g in cohort_gaps if _is_gap(g)]
+        basis_counts = Counter(g.classification_basis for g in gap_rows)
+        gap_bins = histogram([g.attainment_pct for g in gap_rows], bin_width=_GAP_MARK_BIN)
+        flagged_students = sum(1 for r in rows if r["persistent_gap_count"] or r["isolated_gap_count"])
+        floor_students = sum(1 for r in rows if r["floor_gap_count"])
+
         return {
             "cohort": cohort,
+            "cohort_blurb": format_text(cohort.blurb),
+            # One entry per priority group: definition, size, and a preview
+            # of its worst rows. The cohort page for the group has them all.
+            "priority_groups": [
+                {
+                    **d,
+                    "label": format_text(d["label"]),
+                    "blurb": format_text(d["blurb"]),
+                    "count": sum(1 for r in rows if r["priority"] == d["rank"]),
+                    "rows": [r for r in rows if r["priority"] == d["rank"]][:PRIORITY_PREVIEW_SIZE],
+                }
+                for d in _PRIORITY_DEFINITIONS
+            ],
+            "unflagged_count": sum(1 for r in rows if r["priority"] is None),
+            "preview_size": PRIORITY_PREVIEW_SIZE,
+            "rules": rules,
+            "gap_summary": {
+                "students": len(rows),
+                "flagged_students": flagged_students,
+                "floor_students": floor_students,
+                "relative_only_students": flagged_students - floor_students,
+                "gap_rows": len(gap_rows),
+                "basis_floor": basis_counts[BASIS_FLOOR],
+                "basis_relative": basis_counts[BASIS_RELATIVE],
+                # Counted so the panel can say "none" honestly; neither basis
+                # can produce a gap (the ceiling means proficient, and the
+                # fallback path never classifies below developing).
+                "basis_other": basis_counts[BASIS_CEILING] + basis_counts[BASIS_INSUFFICIENT],
+            },
+            "gap_marks_data": json.dumps(
+                {
+                    "labels": [b.label for b in gap_bins],
+                    "values": [b.count for b in gap_bins],
+                    "below_floor": [b.upper <= thresholds.absolute_floor for b in gap_bins],
+                    "floor": thresholds.absolute_floor,
+                    "ceiling": thresholds.absolute_ceiling,
+                }
+            ),
             # Banner from base.html (IOLG-116): the same warning on every
             # page, sourced once here rather than per route.
             "review_warning": review_warning,
@@ -261,7 +469,7 @@ def create_app(
             {
                 "key": cohort.key,
                 "count": len(members(cohort)),
-                "label": cohort.tile_label,
+                "label": format_text(cohort.tile_label),
             }
             for cohort in _COHORTS
         ]
@@ -365,6 +573,62 @@ def create_app(
                 "review_warning": review_warning,
                 "student_ids": student_ids,
             },
+        )
+
+    @app.get("/run")
+    def run_details(request: Request):
+        """Provenance and rules for the run every other page is showing."""
+        defaults = GapThresholds()
+        threshold_rows = []
+        for spec in _THRESHOLD_ROWS:
+            value = getattr(thresholds, spec["field"])
+            default = getattr(defaults, spec["field"])
+            env_value = run_info.environment.get(spec["env"]) if run_info else None
+            threshold_rows.append(
+                {
+                    **spec,
+                    "value": value,
+                    "default": default,
+                    "env_value": env_value,
+                    # "changed" means the value on this page differs from the
+                    # code default in gap_detection/config; how it was changed
+                    # (env var or flag) is shown beside it when known.
+                    "changed": value != default,
+                }
+            )
+        everyone = view_model(_COHORTS_BY_KEY["all"])
+        n_clusters = len(clustering.clusters)
+        n_silos_clustered = sum(len(c.members) for c in clustering.clusters)
+        return templates.TemplateResponse(
+            request,
+            "run.html",
+            {
+                "run_info": run_info,
+                "rules": rules,
+                "threshold_rows": threshold_rows,
+                "gap_summary": everyone["gap_summary"],
+                "gap_marks_data": everyone["gap_marks_data"],
+                "inputs": {
+                    "students": len(dataset.student_summaries),
+                    "silos": len(dataset.silos),
+                    "assessments": len(dataset.assessments),
+                    "results": len(dataset.results),
+                    "clusters": n_clusters,
+                    "silos_clustered": n_silos_clustered,
+                    "gap_rows": len(gaps),
+                },
+                "review_warning": review_warning,
+                "student_ids": student_ids,
+            },
+        )
+
+    @app.get("/glossary")
+    def glossary(request: Request):
+        """Every term, defined once, with this run's values where a rule applies."""
+        return templates.TemplateResponse(
+            request,
+            "glossary.html",
+            {"rules": rules, "review_warning": review_warning, "student_ids": student_ids},
         )
 
     @app.get("/silos")

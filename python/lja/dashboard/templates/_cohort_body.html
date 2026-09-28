@@ -1,8 +1,81 @@
 {# Shared by index.html and cohort.html. Everything here is already computed
-   by app.py's view_model() -- this file formats, it does not aggregate. #}
+   by app.py's view_model() -- this file formats, it does not aggregate.
+
+   Order: the cohort's statistics and charts as they always were, then the
+   priority groups (who to look at, in what order, and how many there are),
+   then everyone. The rules behind the labels live on /run and the words on
+   /glossary, linked rather than repeated. #}
 
 {% macro figure(value, suffix="") -%}
   {%- if value is none %}&mdash;{% else %}{{ "%.2f"|format(value) }}{{ suffix }}{% endif -%}
+{%- endmacro %}
+
+{% macro student_rows(some_rows) -%}
+    {% for row in some_rows %}
+    <tr class="{{ 'priority-%d'|format(row.priority) if row.priority else '' }}">
+      <td data-sort-value="{{ row.priority if row.priority else 9 }}">
+        {% if row.priority %}<span class="prio prio-{{ row.priority }}">{{ row.priority }}</span>{% else %}&mdash;{% endif %}
+      </td>
+      <td data-sort-value="{{ row.student_id }}">
+        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
+          {{ row.student_id }}
+        </a>
+      </td>
+      <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
+      <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
+      <td data-sort-value="{{ row.floor_gap_count }}">
+        {% if row.floor_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.floor_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.lowest_gap_pct if row.lowest_gap_pct is not none else '' }}">
+        {% if row.lowest_gap_pct is not none %}
+        {{ "%.1f"|format(row.lowest_gap_pct) }}%
+        {% if row.deepest_position is not none %}<span class="muted">{{ "%+.1f"|format(row.deepest_position) }} <a class="term" href="/glossary#mad">MAD</a></span>{% endif %}
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.persistent_gap_count }}">
+        {% if row.persistent_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.isolated_gap_count }}">
+        {% if row.isolated_gap_count > 0 %}
+        <span class="badge isolated-gap">{{ row.isolated_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.strength_count }}">{{ row.strength_count }}</td>
+    </tr>
+    {% endfor %}
+{%- endmacro %}
+
+{% macro student_table(some_rows, default_sorted) -%}
+<table class="sortable">
+  <thead>
+    <tr>
+      <th data-sort-type="number" {% if default_sorted %}aria-sort="ascending"{% endif %} title="Priority group, 1 first (see the groups above)"><a class="term" href="/glossary#priority">Priority</a></th>
+      <th data-sort-type="text">Student</th>
+      <th data-sort-type="number">Average</th>
+      <th data-sort-type="text">Band</th>
+      <th data-sort-type="number" title="Gaps below the absolute floor"><a class="term" href="/glossary#absolute-floor">Below floor</a></th>
+      <th data-sort-type="number" title="The student's lowest flagged competency, and how far below their own median it sits"><a class="term" href="/glossary#lowest-gap">Lowest gap</a></th>
+      <th data-sort-type="number"><a class="term" href="/glossary#persistent-gap">Persistent gaps</a></th>
+      <th data-sort-type="number"><a class="term" href="/glossary#isolated-gap">Isolated gaps</a></th>
+      <th data-sort-type="number"><a class="term" href="/glossary#proficient">Strengths</a></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ student_rows(some_rows) }}
+  </tbody>
+</table>
 {%- endmacro %}
 
 <h2>Statistics</h2>
@@ -42,48 +115,37 @@
   </div>
 </div>
 
-<h2>Students</h2>
-<p class="dek">Click any column heading to sort by it; click again to reverse.</p>
-<table class="sortable">
-  <thead>
-    <tr>
-      <th data-sort-type="text" aria-sort="ascending">Student</th>
-      <th data-sort-type="number">Average</th>
-      <th data-sort-type="text">Band</th>
-      <th data-sort-type="number">Strengths</th>
-      <th data-sort-type="number">Persistent gaps</th>
-      <th data-sort-type="number">Isolated gaps</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in rows %}
-    <tr>
-      <td data-sort-value="{{ row.student_id }}">
-        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
-          {{ row.student_id }}
-        </a>
-      </td>
-      <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
-      <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
-      <td data-sort-value="{{ row.strength_count }}">{{ row.strength_count }}</td>
-      <td data-sort-value="{{ row.persistent_gap_count }}">
-        {% if row.persistent_gap_count > 0 %}
-        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
-        {% else %}
-        &mdash;
-        {% endif %}
-      </td>
-      <td data-sort-value="{{ row.isolated_gap_count }}">
-        {% if row.isolated_gap_count > 0 %}
-        <span class="badge isolated-gap">{{ row.isolated_gap_count }}</span>
-        {% else %}
-        &mdash;
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{# --- Priority groups: who to look at, in what order, and how many. --- #}
+<h2 id="priority">Students by priority</h2>
+<p class="dek">
+  {{ gap_summary.flagged_students }} of {{ gap_summary.students }} students have at least one flagged competency;
+  {{ unflagged_count }} have none. Flagged students fall into three groups from the classification rules already applied
+  (<a href="/run#rules">how these are decided</a>, <a href="/glossary">what the words mean</a>).
+  Each group shows its {{ preview_size }} most severe; the group heading links to all of them, and the
+  <a href="#everyone">full table</a> below lists everyone in the same order.
+</p>
+
+{% for group in priority_groups %}
+<section class="priority-group priority-group-{{ group.rank }}">
+  <h3>
+    <span class="prio prio-{{ group.rank }}">{{ group.rank }}</span>
+    <a href="/cohort/{{ group.key }}">{{ group.ordinal }} priority &mdash; {{ group.label }}: {{ group.count }} student{{ 's' if group.count != 1 }}</a>
+  </h3>
+  <p class="group-blurb">{{ group.blurb }}</p>
+  {% if group.rows %}
+  {{ student_table(group.rows, false) }}
+  {% if group.count > group.rows|length %}
+  <p class="group-more"><a href="/cohort/{{ group.key }}">All {{ group.count }} in this group &rarr;</a></p>
+  {% endif %}
+  {% else %}
+  <p class="empty-state">No students in this group.</p>
+  {% endif %}
+</section>
+{% endfor %}
+
+<h2 id="everyone">All students</h2>
+<p class="dek">Priority order, worst first within each group. Click any column heading to sort by it; click again to reverse.</p>
+{{ student_table(rows, true) }}
 {% else %}
 <p class="empty-state">No students in this cohort.</p>
 {% endif %}

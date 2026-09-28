@@ -14,6 +14,7 @@ a coverage failure, write the cache" logic here.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from ..model.gap_detection import GapThresholds, compute_gaps
 from ..model.silo_clustering import SiloClusteringResult
 from ..review import ReviewStore, cluster_id, default_review_path
 from .app import create_app
+from .run_info import collect_run_info
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,11 +85,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     review_warning = " ".join(warning_parts) or None
 
-    gaps = compute_gaps(
-        dataset,
-        clustering,
-        thresholds=GapThresholds(absolute_floor=args.absolute_floor, absolute_ceiling=args.absolute_ceiling),
-    )
+    # One thresholds object for both the classifier and the rules panel the
+    # dashboard prints, so the page can only ever describe the run it shows.
+    thresholds = GapThresholds(absolute_floor=args.absolute_floor, absolute_ceiling=args.absolute_ceiling)
+    gaps = compute_gaps(dataset, clustering, thresholds=thresholds)
     print(f"Serving {len(dataset.student_summaries)} students, {len(gaps)} gap rows, from {cache_path}")
 
     app = create_app(
@@ -95,6 +96,13 @@ def main(argv: list[str] | None = None) -> int:
         gaps,
         clustering,
         review_warning=review_warning,
+        thresholds=thresholds,
+        run_info=collect_run_info(
+            excel_path=args.excel_path,
+            clustering_cache=str(cache_path),
+            review_file=str(review_path) if review_path.exists() else None,
+            environ=dict(os.environ),
+        ),
     )
     uvicorn.run(app, host=args.host, port=args.port)
     return 0

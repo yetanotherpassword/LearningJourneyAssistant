@@ -178,11 +178,59 @@ time series. The year level is read from the subject code, as
 `gap_evidence.py` documents, and a code that does not follow that pattern sorts
 last with no trend. The 5-point stable band is unratified (action A-01).
 
+**Priority groups.** Below the statistics and charts, flagged students are
+split into three groups that combine classifications the pipeline already
+made — no new threshold: **1st** at least one competency below the absolute
+floor (a gap whatever the profile), **2nd** no floor breach but a persistent
+gap (flagged only relative to the student's own median), **3rd** isolated gaps
+only. Each group shows its count, its definition, and its ten most severe
+students (lowest flagged mark first), and links to a cohort page with all of
+them; the full table at the bottom lists everyone in the same order with a
+Priority column and a coloured left edge per group. Two columns support the
+ordering: *Below floor* (gaps that tripped the absolute floor) and *Lowest
+gap* (the student's lowest flagged mark, with its MAD position where the
+relative rule decided it). The split matters because on a cohort with real
+per-competency spread the relative rule fires for most students (the A-01
+finding on IOLG-113: 4,195 of 5,000 synthetic students carry a "persistent
+gap", but only 1,145 have anything under the 50% floor), and a tile that says
+"4195" without saying why is misleading. Splitting a group further needs a
+cut-off nobody has ratified, which is action A-01, not a dashboard default.
+Severity is computed from the classifier's own outputs and nothing else: the
+dashboard never reads a generator's answer key, and on the 100-subject
+synthetic cohort no such ordering surfaces the planted gaps (62 of 371 in the
+top 371 by lowest mark) — a finding about the method, not something the page
+can fix.
+
+**This run (`/run`).** Provenance for the numbers on every other page: the
+command that started the dashboard (reconstructed from argv), when, the git
+hash of the code, the workbook, clustering cache and review file, input
+counts, the classification rules as an ordered list with this run's values,
+and a parameters table with one row per `LJA_GAP_*` threshold showing the
+value used, the code default, the environment variable and the CLI flag, with
+changed values marked. `create_app()` takes the `GapThresholds` object so the
+page can only describe the run it shows; `__main__.py` passes the same object
+to `compute_gaps()` and a `RunInfo` from `run_info.py`. When a
+`<workbook>.truth.json` sits beside the workbook the page also shows the
+generator's seed and parameters — and only those; the answer key in that file
+is deliberately not read. A chart, "Where the flagged marks sit", bins every
+flagged competency's attainment in 5-point steps and colours the bins under
+the floor red. When A-01 ratifies the seven thresholds, this table is where
+the ratified values are visible.
+
+**Glossary (`/glossary`).** Every term defined once — SILO, competency,
+attainment, median, MAD (median absolute deviation, with a worked example),
+relative position, the absolute floor and ceiling, flat profile, the four
+classifications, basis, lowest gap, priority groups, cohort, population
+statistics, synthetic cohort — with this run's values where a rule applies.
+Tables and the student page link terms to their entries rather than
+re-defining them.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
 `_COHORTS` in `app.py`, so adding one is a registry entry rather than a new
-route and a new template. Two exist today: `all` and `persistent-gap`.
+route and a new template. Five exist today: `all`, `persistent-gap` and the
+three priority groups `priority-1`, `priority-2`, `priority-3`.
 
 > **No "At Risk" cohort yet, and that is a decision.** The Sprint 3 runbook
 > (§9) lists the at-risk threshold as a stop-and-ask: the project owner
@@ -204,8 +252,9 @@ sample drawn from a larger body.
 
 **Sorting.** Every column heading on those tables sorts, ascending then
 descending. That is client-side progressive enhancement
-(`lja/dashboard/static/sort.js`): the server always renders rows in student-id
-order, so the table is still correct with JavaScript disabled. Cells carry a
+(`lja/dashboard/static/sort.js`): the server always renders rows in priority
+order (group, then lowest flagged mark, then student id), so the table is
+still correct with JavaScript disabled. Cells carry a
 `data-sort-value` with the raw figure, because sorting the *rendered* text
 would order "100.0%" before "20.0%".
 

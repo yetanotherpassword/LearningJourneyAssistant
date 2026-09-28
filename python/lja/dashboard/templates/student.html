@@ -23,7 +23,7 @@
       <td>{{ "%.1f"|format(s.attainment_pct) }}%</td>
       <td>
         <span class="basis-badge">{{ s.classification_basis }}</span>
-        {% if s.relative_position is not none %}{{ "%+.2f"|format(s.relative_position) }} MAD above this student's own median{% endif %}
+        {% if s.relative_position is not none %}{{ "%+.2f"|format(s.relative_position) }} <a class="term" href="/glossary#mad">MAD</a> above this student's own median{% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -106,7 +106,7 @@
         <span class="basis-badge">{{ gap.classification_basis }}</span>
         {% if gap.relative_position is not none %}
         <span class="basis-detail">
-          {{ "%+.2f"|format(gap.relative_position) }} MAD from this student's own median
+          {{ "%+.2f"|format(gap.relative_position) }} <a class="term" href="/glossary#mad">MAD</a> from this student's own median
           across all their competencies
         </span>
         {% endif %}

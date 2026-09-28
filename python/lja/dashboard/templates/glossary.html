@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Glossary &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<h1>Glossary</h1>
+<p class="dek">
+  Every term the dashboard uses, defined once. The values the rules were run with are on
+  <a href="/run#parameters">this run</a>. Rules are stated with this run's numbers where they apply.
+</p>
+
+<dl class="glossary">
+  <div id="silo"><dt>SILO</dt>
+    <dd>Subject Intended Learning Outcome: one statement in a subject's handbook entry of what a student should be able to do on completing it. Assessments are mapped to SILOs by the subject.</dd></div>
+
+  <div id="competency"><dt>Competency</dt>
+    <dd>A group of SILOs from different subjects that describe the same underlying skill. The grouping is proposed by the language model and confirmed, rejected or left pending by staff (the review states on the <a href="/silos">outcome quality</a> page). Every student &times; competency pair gets one classification.</dd></div>
+
+  <div id="attainment"><dt>Attainment</dt>
+    <dd>A student's mark in one competency, as a percentage: the weighted average of their marks on every assessment mapped to a SILO in that competency, across every subject that assessed it.</dd></div>
+
+  <div id="median"><dt>Median</dt>
+    <dd>The middle value. For a student, the median of their attainment across all their competencies; half their competencies sit above it and half below.</dd></div>
+
+  <div id="mad"><dt>MAD (median absolute deviation)</dt>
+    <dd>How spread out a student's competency marks are, in percentage points: take each competency's distance from the student's median (ignoring sign), then take the median of those distances. A student with marks of 60, 65, 70, 75 and 80 has a median of 70 and a MAD of 5. It is not scaled to approximate a standard deviation. Relative cut-offs are expressed in MAD units, so &ldquo;{{ "%g"|format(rules.relative_gap_cutoff) }} MAD&rdquo; means {{ "%g"|format(-rules.relative_gap_cutoff) }} MAD-widths below the student's own median.</dd></div>
+
+  <div id="relative-position"><dt>Relative position</dt>
+    <dd>(attainment &minus; the student's median) &divide; the student's MAD. Negative is below their own typical mark, positive above. Shown on each student page beside every competency the relative rule decided.</dd></div>
+
+  <div id="absolute-floor"><dt>Absolute floor</dt>
+    <dd>{{ "%g"|format(rules.absolute_floor) }}% in this run. Attainment below it is a gap whatever the rest of the student's profile looks like. The one rule that does not depend on the student's other marks.</dd></div>
+
+  <div id="absolute-ceiling"><dt>Absolute ceiling</dt>
+    <dd>{{ "%g"|format(rules.absolute_ceiling) }}% in this run. Attainment at or above it is proficient and can never be a gap, however it compares with the student's other marks.</dd></div>
+
+  <div id="flat-profile"><dt>Flat profile / insufficient data</dt>
+    <dd>A student with fewer than {{ rules.min_competencies }} competencies, or whose MAD is below {{ "%g"|format(rules.min_spread) }}, is not judged relatively: their marks are too few or too alike for &ldquo;below their own median&rdquo; to mean anything. They fall back to a fixed split at {{ "%g"|format(rules.fallback_proficient) }}%.</dd></div>
+
+  <div id="gap"><dt>Gap</dt>
+    <dd>A competency classified as either a persistent gap or an isolated gap. &ldquo;Flagged&rdquo; on this dashboard means the same thing.</dd></div>
+
+  <div id="persistent-gap"><dt>Persistent gap</dt>
+    <dd>A gap evidenced in {{ rules.persistent_min_subjects }} or more subjects: the student was below the floor, or well below their own median, in this competency in more than one place. The tile on the front page counts students with at least one.</dd></div>
+
+  <div id="isolated-gap"><dt>Isolated gap</dt>
+    <dd>A gap evidenced in a single subject. It may be a real weakness or a one-off; the data cannot tell.</dd></div>
+
+  <div id="developing"><dt>Developing</dt>
+    <dd>Not a gap and not a strength: attainment between the student's relative cut-offs (or, for a flat profile, below the fallback split of {{ "%g"|format(rules.fallback_proficient) }}%).</dd></div>
+
+  <div id="proficient"><dt>Proficient (strength)</dt>
+    <dd>Attainment at or above the ceiling, or {{ "%+g"|format(rules.relative_strong_cutoff) }} MAD or more above the student's own median. The Strengths column counts these.</dd></div>
+
+  <div id="basis"><dt>Basis</dt>
+    <dd>Which rule decided a classification: <em>absolute floor</em>, <em>absolute ceiling</em>, <em>relative position</em> or <em>insufficient data</em>. Every competency on a student page states its basis.</dd></div>
+
+  <div id="lowest-gap"><dt>Lowest gap</dt>
+    <dd>The lowest attainment among a student's flagged competencies, with its relative position where the relative rule decided it. Used to order students within a priority group.</dd></div>
+
+  <div id="priority"><dt>Priority groups</dt>
+    <dd>Three groups of flagged students, ordered by how much the flag depends on the student's own profile:
+      <strong>1st</strong> &mdash; at least one competency below the {{ "%g"|format(rules.absolute_floor) }}% floor;
+      <strong>2nd</strong> &mdash; no floor breach but at least one persistent gap, so flagged only relative to their own median;
+      <strong>3rd</strong> &mdash; isolated gaps only.
+      The groups combine classifications already made; they introduce no new threshold. Within a group, students are ordered by lowest gap. A student with no flagged competency is in no group.</dd></div>
+
+  <div id="cohort"><dt>Cohort</dt>
+    <dd>A named subset of the loaded students: everyone, students with a persistent gap, or one priority group. Every cohort page states what put its students there.</dd></div>
+
+  <div id="average-total"><dt>Average total</dt>
+    <dd>A student's mean subject total across all their subjects, as supplied in the workbook. The Statistics panel and the distribution chart summarise this figure, not competency attainment.</dd></div>
+
+  <div id="population"><dt>Population statistics</dt>
+    <dd>Variance and standard deviation computed over every student in the cohort (dividing by n), because the cohort is the whole group being described, not a sample of a larger one.</dd></div>
+
+  <div id="synthetic"><dt>Synthetic cohort</dt>
+    <dd>Students generated from a subject catalogue rather than exported from Moodle. When the generator's record sits beside the workbook, <a href="/run#generator">this run</a> shows its seed and parameters. A synthetic cohort has real subjects and SILOs but invented marks.</dd></div>
+</dl>
+{% endblock %}

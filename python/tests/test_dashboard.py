@@ -352,7 +352,10 @@ def test_index_tile_count_and_cohort_page_row_count_agree() -> None:
     assert match is not None
 
     cohort_body = client.get("/cohort/persistent-gap").text
-    assert int(match.group(1)) == cohort_body.count('href="/student/')
+    # Count the full table only: the priority-group previews above it
+    # repeat the most severe rows on purpose.
+    full_table = cohort_body[cohort_body.index('<h2 id="everyone">'):]
+    assert int(match.group(1)) == full_table.count('href="/student/')
 
 
 def test_unknown_cohort_is_404_and_names_the_ones_that_exist() -> None:
@@ -511,7 +514,7 @@ def test_student_page_lists_proficient_competencies_under_strengths() -> None:
     assert "Algorithms" not in strengths
     # Every strength states how it was reached, as the gap cards do.
     assert BASIS_RELATIVE in strengths and BASIS_CEILING in strengths
-    assert "+1.50 MAD above" in strengths
+    assert '+1.50 <a class="term" href="/glossary#mad">MAD</a> above' in strengths
 
 
 def test_strengths_are_ordered_strongest_relative_position_first() -> None:

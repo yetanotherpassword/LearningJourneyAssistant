@@ -415,3 +415,56 @@ button.linkish:hover { text-decoration: underline; }
   .partner-labels { grid-column: 1 / -1; }
 }
 #chord-min { vertical-align: middle; margin: 0 6px; } #chord-min-out { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- priority groups (index/cohort), /run and /glossary --- */
+
+/* A defined term links to the glossary without looking like a body link. */
+a.term { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+a.term:hover { color: var(--accent); }
+th a.term { color: inherit; }
+
+.prio {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.prio-1 { color: var(--status-persistent); background: var(--status-persistent-bg); }
+.prio-2 { color: var(--status-isolated); background: var(--status-isolated-bg); }
+.prio-3 { color: var(--status-developing); background: var(--status-developing-bg); }
+
+.priority-group { margin: 0 0 28px; }
+.priority-group h3 { font-size: 1rem; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+.priority-group h3 a { color: var(--ink); text-decoration: none; }
+.priority-group h3 a:hover { color: var(--accent); }
+.group-blurb { color: var(--muted); font-size: 0.9rem; margin: 0 0 10px; }
+.group-more { margin: 8px 0 0; font-size: 0.9rem; }
+.group-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+/* The priority group shows as a coloured left edge on the row, so a sorted
+   table still reads which group each student is in. */
+table.sortable tr.priority-1 td:first-child { border-left: 3px solid var(--status-persistent); }
+table.sortable tr.priority-2 td:first-child { border-left: 3px solid var(--status-isolated); }
+table.sortable tr.priority-3 td:first-child { border-left: 3px solid var(--status-developing); }
+table.sortable td .muted { margin-left: 6px; font-size: 0.8rem; }
+
+/* /run */
+pre.command {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 18px; overflow-x: auto; font-size: 0.85rem; margin: 0 0 14px;
+}
+dl.kv { margin: 0 0 12px; }
+dl.kv div { display: flex; gap: 12px; padding: 4px 0; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
+dl.kv dt { flex: 0 0 140px; color: var(--muted); }
+dl.kv dd { margin: 0; word-break: break-all; }
+.rule-steps { padding-left: 22px; line-height: 1.7; }
+.rule-steps li { margin-bottom: 6px; }
+.rule-basis { color: var(--muted); font-size: 0.88rem; margin: 0 0 24px; }
+table.params td.val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.params tr.changed td.val:nth-child(2) { font-weight: 700; }
+table.params { margin-bottom: 28px; }
+
+/* /glossary */
+dl.glossary div { padding: 12px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+dl.glossary dt { font-weight: 700; margin-bottom: 4px; }
+dl.glossary dd { margin: 0; color: var(--ink); line-height: 1.55; }
+dl.glossary div:target { background: var(--surface); border-left: 3px solid var(--accent); padding-left: 12px; }

@@ -1,7 +1,8 @@
 /* Click-to-sort for any <table class="sortable">.
  *
  * Progressive enhancement, deliberately. The server already emits rows in a
- * sensible default order (student id, ascending), so a browser with no
+ * sensible default order (priority group, then the lowest flagged mark,
+ * then student id), so a browser with no
  * JavaScript still gets a correct and readable table -- this file only adds
  * reordering on top of one that was already right. Nothing here fetches, and
  * nothing here recomputes a figure: it permutes rows the server rendered.
