@@ -1,0 +1,75 @@
+Local preliminary checks — not the live human acceptance review.
+Date: 2026-09-28
+Base revision: ffa53d54c65946d252e4e1f987c294da2e59da23
+Platform: Darwin arm64; Python 3.12.14
+Environment: isolated virtual environment; pinned requirements except psycopg2-binary 2.9.12 substituted locally for psycopg2 2.9.12.
+Repository dependency files were not changed.
+
+S1 command (from python/):
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --clustering-cache ../data-fixtures/reference-run/silo_clustering.json
+Exit status: 0
+Selected verbatim output:
+Loaded 13 SILOs, 11 assessments, 1650 result rows, 150 students.
+Loaded cached SILO clustering from ../data-fixtures/reference-run/silo_clustering.json (5 competencies).
+Wrote 13 SILO rows and 13 SILO definitions to output/clusters.csv
+Wrote 750 gap rows to output/gap_report.csv
+24 persistent-gap rows across 24 of 150 students.
+Verified: gap_report.csv byte-identical to data-fixtures/reference-run/gap_report.csv.
+
+S2: not run; no available configured live Moodle environment.
+
+S3 and S4 literal commands after S1:
+$ python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+No clustering cache at output/silo_clustering.json. Run python -m lja.cli --source excel first.
+Exit status: 2
+
+$ python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --out output/uat-default-export
+No clustering cache at output/silo_clustering.json. Run python -m lja.cli --source excel first.
+Exit status: 2
+
+S4 command with the reference cache:
+python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --clustering-cache ../data-fixtures/reference-run/silo_clustering.json --out output/export
+Exit status: 0
+Wrote output/export/students.csv, competencies.csv, cohort.csv, manifest.json
+Verified: students.csv has 150 data rows.
+Verified: competencies.csv has 750 data rows.
+Verified: cohort.csv has 5 data rows.
+Notebook: docs/export-sample.ipynb executed in an isolated kernel with docs/ as working directory.
+All 3 cells completed; classification counts: developing 216, isolated gap 93, persistent gap 24, proficient 417.
+A bar chart was generated and visually inspected. The source notebook was not edited.
+
+S5: temporary reference cache/review copies under python/output/uat-review/.
+Cluster 3cc7cf957629 (Data Structures and Algorithms) changed confirmed -> pending -> rejected using lja.review.
+Note: Local UAT fixture only; not a staff judgement.
+Reference dashboard (port 8000): 150 students; 24 with a persistent gap; no AI-review warning.
+Temporary rejected dashboard (port 8001), observed browser text:
+AI review warning:
+1 AI-generated SILO cluster(s) have been rejected by staff.
+The banner does not name the rejected cluster. Naming acceptance criterion: FAIL.
+The original reference cache and review file remain unchanged.
+Rejected fixture CLI exit status: 2; requested gap report not created.
+ERROR: 1 competency cluster(s) have been rejected by staff. Gap generation is blocked.
+Rejected cluster: Data Structures and Algorithms [3cc7cf957629]
+
+S6 command: python -m pytest -q
+The full run included the 7 new IOLG-110 profiles.
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+258 passed, 1 skipped, 1 warning in 2.23s
+The skipped test is the live Moodle integration test, which requires LJA_RUN_MOODLE_INTEGRATION=1 and a running fixture database.
+The warning is the installed FastAPI/Starlette TestClient deprecation concerning httpx.
+
+IOLG-110 targeted run: 7 passed in 3.55s.
+ruff check tests/test_validation_cases.py: All checks passed!
+
+Grounding checks against saved evidence (not live generation or human sign-off):
+STU0003 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0004 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0022 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0054 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0055 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0067 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0075 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0001 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0005 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+STU0007 PASS: saved context equals fresh workbook context; structured grounding valid; Markdown matches saved plan
+10/10 reproducible contexts and saved plans; no model calls. This does not validate the truth of prose claims.
