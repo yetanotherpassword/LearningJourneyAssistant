@@ -1,7 +1,8 @@
 {# One row per SILO. Expects `silo_rows` (SiloQuality rows, already in the
    order the page wants) in context. Shared by /silos, /silos/list/* and
    /subject/* so a SILO reads the same everywhere. #}
-{% from "_macros.html" import pct %}
+{% from "_macros.html" import pct, scrollbox %}
+{% call scrollbox(silo_rows|length, "outcomes") %}
 <table class="sortable compact">
   <thead><tr>
     <th data-sort-type="text">SILO</th><th data-sort-type="text">Wording</th><th data-sort-type="text">Competency</th>
@@ -35,3 +36,4 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}

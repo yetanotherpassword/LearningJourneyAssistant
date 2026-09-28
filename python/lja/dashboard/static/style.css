@@ -488,3 +488,11 @@ dl.glossary div:target { background: var(--surface); border-left: 3px solid var(
 .prio-tile-3 { border-color: var(--status-developing); background: var(--status-developing-bg); }
 .prio-tile-3 .num { color: var(--status-developing); }
 a.prio-tile:hover { filter: brightness(1.08); }
+
+/* Bounded scroll box for long tables: the page stays one or two screens
+   long and the reader scrolls inside the box, or straight past it. */
+.scroll-box { max-height: 60vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 4px; }
+.scroll-box:focus-visible { outline: 2px solid var(--accent); }
+.scroll-box table { border: none; border-radius: 0; }
+.scroll-box thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
+.scroll-note { color: var(--muted); font-size: 0.8rem; margin: 0 0 28px; }

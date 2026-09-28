@@ -9,11 +9,55 @@
   {{ total_results }} result rows in all.
   {% if unmapped_results %}<strong>{{ unmapped_results }}</strong> result rows name an assessment that is not in the map.{% endif %}
 </p>
+{% from "_macros.html" import scrollbox, chart_prelude %}
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Spread of assessment mean scores</h3>
+    <p class="chart-note">Mean score on each assessment across the students who sat it, in 5-point bins. The low tail is where to look first.</p>
+    <canvas id="assess-hist-chart" height="150"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Every assessment: weight against mean score</h3>
+    <p class="chart-note">One point per assessment. A heavily weighted task with a low mean score costs students most; hurdles are marked in red. Hover for the task; click to open its subject.</p>
+    <canvas id="assess-scatter-chart" height="150"></canvas>
+  </div>
+</div>
+<script>
+(function () {
+  const A = {{ assessment_charts|safe }};
+  {{ chart_prelude() }}
+  new Chart(document.getElementById("assess-hist-chart"), {
+    type: "bar",
+    data: { labels: A.hist.labels, datasets: [{ label: "Assessments", data: A.hist.values, backgroundColor: cssVar("--accent") }] },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Assessments" } }, x: { title: { display: true, text: "Mean score (%)" } } }, plugins: { legend: { display: false } } },
+  });
+  const sets = [
+    { label: "hurdle", data: A.points.filter((p) => p.hurdle), backgroundColor: cssVar("--status-persistent") + "aa", borderColor: cssVar("--status-persistent") },
+    { label: "other", data: A.points.filter((p) => !p.hurdle), backgroundColor: cssVar("--status-developing") + "aa", borderColor: cssVar("--status-developing") },
+  ].filter((d) => d.data.length);
+  new Chart(document.getElementById("assess-scatter-chart"), {
+    type: "scatter",
+    data: { datasets: sets.map((d) => ({ ...d, pointRadius: 3, pointHoverRadius: 5 })) },
+    options: {
+      animation: false, parsing: false,
+      scales: { x: { title: { display: true, text: "Weight (%)" }, beginAtZero: true }, y: { title: { display: true, text: "Mean score (%)" }, min: 0, max: 100 } },
+      plugins: { legend: { position: "right" }, tooltip: { callbacks: { label: (item) => `${item.raw.subject} ${item.raw.name}: weight ${item.raw.x}%, mean ${item.raw.y}% over ${item.raw.n} results` } } },
+      onClick: (evt, els, chart) => {
+        if (!els.length) return;
+        const p = chart.data.datasets[els[0].datasetIndex].data[els[0].index];
+        if (p && p.subject) location.href = `/subject/${p.subject}`;
+      },
+    },
+  });
+})();
+</script>
+{% call scrollbox(rows|length, "assessments") %}
 <table class="sortable compact">
   <thead><tr>
     <th data-sort-type="text" aria-sort="ascending">Subject</th><th data-sort-type="text">Assessment</th>
     <th data-sort-type="number">Weight</th><th data-sort-type="text">Contribution</th>
     <th data-sort-type="text">Flags</th><th data-sort-type="text">SILOs</th><th data-sort-type="number">Result rows</th>
+    <th data-sort-type="number">Mean score</th>
   </tr></thead>
   <tbody>
   {% for a in rows %}
@@ -29,10 +73,12 @@
       </td>
       <td data-sort-value="{{ a.silo_ids|join(' ') }}">{{ a.silo_ids|join(", ") or "—" }}</td>
       <td data-sort-value="{{ a.n_results }}">{{ a.n_results }}</td>
+      <td data-sort-value="{{ a.mean_score if a.mean_score is not none else -1 }}">{% if a.mean_score is none %}&mdash;{% else %}{{ "%.1f"|format(a.mean_score) }}%{% endif %}</td>
     </tr>
   {% else %}
-    <tr><td colspan="7" class="empty-state">No assessment map in this dataset.</td></tr>
+    <tr><td colspan="8" class="empty-state">No assessment map in this dataset.</td></tr>
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% endblock %}

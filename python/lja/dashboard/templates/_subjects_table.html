@@ -1,6 +1,7 @@
 {# One row per subject. Expects `subjects` (SubjectQuality rows) in context.
    Shared by /silos and /subjects so the two cannot drift. #}
-{% from "_macros.html" import pct %}
+{% from "_macros.html" import pct, scrollbox %}
+{% call scrollbox(subjects|length, "subjects") %}
 <table class="sortable">
   <thead><tr>
     <th data-sort-type="text">Subject</th><th data-sort-type="number">Year</th>
@@ -31,3 +32,4 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}

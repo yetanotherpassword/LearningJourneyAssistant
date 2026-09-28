@@ -11,6 +11,28 @@
 </a>
 {%- endmacro %}
 
+{# A bounded, scrollable box for any table that can exceed a screen. The
+   heading stays put (sticky) and the reader scrolls inside the box or past
+   it in one wheel-flick. `n` prints the row count so the size is stated. #}
+{% macro scrollbox(n, what="rows") -%}
+<div class="scroll-box" tabindex="0" aria-label="{{ n }} {{ what }}, scrollable">
+  {{ caller() }}
+</div>
+<p class="scroll-note">{{ n }} {{ what }} in the box above; scroll inside it, or past it.</p>
+{%- endmacro %}
+
+{# Chart.js helpers shared by every summary chart: one colour source. #}
+{% macro chart_prelude() -%}
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  const PRIO = { 1: cssVar("--status-persistent"), 2: cssVar("--status-isolated"), 3: cssVar("--status-developing") };
+  const CLASS_COLORS = {
+    "persistent gap": cssVar("--status-persistent"), "isolated gap": cssVar("--status-isolated"),
+    "developing": cssVar("--status-developing"), "proficient": cssVar("--status-proficient"),
+  };
+  const SERIES = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => cssVar(`--series-${i}`));
+{%- endmacro %}
+
 {% macro pct(value) -%}
   {%- if value is none %}&mdash;{% else %}{{ "%.1f"|format(value) }}%{% endif -%}
 {%- endmacro %}

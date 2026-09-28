@@ -417,6 +417,14 @@ def create_app(
             ],
             "unflagged_count": sum(1 for r in rows if r["priority"] is None),
             "preview_size": PRIORITY_PREVIEW_SIZE,
+            # Outlier chart: one point per flagged student.
+            "severity_scatter": json.dumps(
+                [
+                    {"id": r["student_id"], "x": round(r["average_total"], 1), "y": round(r["lowest_gap_pct"], 1), "p": r["priority"]}
+                    for r in rows if r["priority"] is not None
+                ]
+            ),
+            "severity_scatter_n": sum(1 for r in rows if r["priority"] is not None),
             "rules": rules,
             "gap_summary": {
                 "students": len(rows),
@@ -655,11 +663,22 @@ def create_app(
     for gap in gaps:
         gap_counts_by_label[gap.competency_label][gap.classification] += 1
 
+    score_sums: dict[tuple[str, str], list[float]] = defaultdict(lambda: [0.0, 0])
+    for r in dataset.results:
+        acc = score_sums[(r.subject_code, r.assessment_name)]
+        acc[0] += r.score
+        acc[1] += 1
+
+    def mean_score(subject_code: str, name: str) -> float | None:
+        total, n = score_sums.get((subject_code, name), (0.0, 0))
+        return round(total / n, 1) if n else None
+
     def assessment_rows(subject_code: str | None = None) -> list[dict]:
         return [
             {
                 "subject_code": a.subject_code,
                 "assessment_name": a.assessment_name,
+                "mean_score": mean_score(a.subject_code, a.assessment_name),
                 # The supplied workbook carries weights as percentages (40.0);
                 # the catalogue generator as fractions (0.15). Show both as %.
                 "weight": a.weight * 100 if 0 < a.weight <= 1 else a.weight,
@@ -693,6 +712,53 @@ def create_app(
     silo_listing_by_key = {d["key"]: d for d in silo_listings}
     issue_order = sorted(silo_rows, key=lambda r: (-len(r.issues), r.key))
 
+    # --- summary charts above the long lists ------------------------------
+    #
+    # Each list page gets one or two charts drawn from exactly the rows the
+    # table below it shows, so a point on the chart is a row in the table.
+
+    def subject_chart_data() -> str:
+        by_year: dict[int | None, list] = defaultdict(list)
+        for s in subject_rows:
+            by_year[s.year_level].append(s)
+        years = []
+        for year in sorted(by_year, key=lambda y: (y is None, y or 0)):
+            group = [s for s in by_year[year] if s.mean_attainment is not None]
+            weight = sum(s.n_students for s in group) or 1
+            years.append(
+                {
+                    "year": year,
+                    "n_subjects": len(by_year[year]),
+                    "mean_attainment": round(sum(s.mean_attainment * s.n_students for s in group) / weight, 1) if group else None,
+                    "gap_rate": round(sum((s.gap_rate or 0) * s.n_students for s in group) / weight, 1) if group else None,
+                }
+            )
+        return json.dumps(
+            {
+                "years": years,
+                "subjects": [
+                    {"code": s.subject_code, "year": s.year_level, "mean_attainment": s.mean_attainment,
+                     "gap_rate": s.gap_rate, "n_students": s.n_students, "health": s.health}
+                    for s in subject_rows
+                ],
+            }
+        )
+
+    def silo_chart_data(rows: list) -> str:
+        scored = [r for r in rows if r.mean_attainment is not None]
+        bins = histogram([r.mean_attainment for r in scored], bin_width=_GAP_MARK_BIN)
+        return json.dumps(
+            {
+                "hist": {"labels": [b.label for b in bins], "values": [b.count for b in bins]},
+                "points": [
+                    {"key": r.key, "subject": r.subject_code, "x": r.mean_attainment, "y": r.gap_rate or 0.0, "issues": len(r.issues)}
+                    for r in scored
+                ],
+            }
+        )
+
+    subject_charts = subject_chart_data()
+
     def listing_counts() -> list[dict]:
         return [
             {"key": d["key"], "short": d["short"], "count": sum(1 for r in silo_rows if d["predicate"](r))}
@@ -703,7 +769,8 @@ def create_app(
     def subjects_page(request: Request):
         return templates.TemplateResponse(
             request, "subjects.html",
-            {"subjects": subject_rows, "review_warning": review_warning, "student_ids": student_ids},
+            {"subjects": subject_rows, "subject_charts": subject_charts,
+             "review_warning": review_warning, "student_ids": student_ids},
         )
 
     @app.get("/subject/{code}")
@@ -728,11 +795,13 @@ def create_app(
         if listing is None:
             known = ", ".join(d["key"] for d in silo_listings)
             raise HTTPException(status_code=404, detail=f"No outcome list {listing_key!r} -- known lists: {known}")
+        listed = [r for r in issue_order if listing["predicate"](r)]
         return templates.TemplateResponse(
             request, "silo_list.html",
             {
                 "listing": listing,
-                "silo_rows": [r for r in issue_order if listing["predicate"](r)],
+                "silo_rows": listed,
+                "silo_charts": silo_chart_data(listed),
                 "total": len(silo_rows),
                 "others": [c for c in listing_counts() if c["key"] != listing_key],
                 "review_warning": review_warning,
@@ -759,17 +828,40 @@ def create_app(
                 }
             )
         rows.sort(key=lambda r: r["label"].lower())
+        # Chart order: gap-heaviest first, so the eye lands on the problem.
+        chart = []
+        for r in sorted(rows, key=lambda r: -((r["counts"]["persistent gap"] + r["counts"]["isolated gap"]) / (r["n_rows"] or 1))):
+            n = r["n_rows"] or 1
+            chart.append(
+                {
+                    "label": r["label"], "slug": r["slug"] if r["has_progression"] else None, "n": r["n_rows"],
+                    "share": {c: round(100 * r["counts"][c] / n, 1) for c in _CLASSIFICATION_ORDER},
+                }
+            )
         return templates.TemplateResponse(
             request, "competencies.html",
-            {"rows": rows, "total_gap_rows": len(gaps), "review_warning": review_warning, "student_ids": student_ids},
+            {"rows": rows, "competency_chart": json.dumps(chart), "total_gap_rows": len(gaps),
+             "review_warning": review_warning, "student_ids": student_ids},
         )
 
     @app.get("/assessments")
     def assessments_page(request: Request):
+        rows = assessment_rows()
+        scored = [a for a in rows if a["mean_score"] is not None]
+        bins = histogram([a["mean_score"] for a in scored], bin_width=_GAP_MARK_BIN)
+        charts = {
+            "hist": {"labels": [b.label for b in bins], "values": [b.count for b in bins]},
+            "points": [
+                {"subject": a["subject_code"], "name": a["assessment_name"], "x": a["weight"], "y": a["mean_score"],
+                 "n": a["n_results"], "hurdle": a["hurdle"]}
+                for a in scored
+            ],
+        }
         return templates.TemplateResponse(
             request, "assessments.html",
             {
-                "rows": assessment_rows(),
+                "rows": rows,
+                "assessment_charts": json.dumps(charts),
                 "total_results": len(dataset.results),
                 "unmapped_results": unmapped_results,
                 "review_warning": review_warning,
@@ -789,7 +881,9 @@ def create_app(
                 "vague": sum(1 for r in silo_rows if r.vague_terms),
             },
             "silo_rows": issue_order,
+            "silo_charts": silo_chart_data(issue_order),
             "subjects": subject_rows,
+            "subject_charts": subject_charts,
             "review_warning": review_warning,
             "student_ids": student_ids,
             "terms": terms,

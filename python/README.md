@@ -242,6 +242,24 @@ students tile links to the cohort. Each list page decides membership in
 `app.py`, never in a template, and the tests in `tests/test_dashboard_lists.py`
 check that a list holds exactly what its tile counted.
 
+**Charts before lists, and lists in a box.** Every long table is a data
+set, so each list page opens with one or two charts drawn from exactly the
+rows the table holds (a point on the chart is a row in the table, and
+clicking it opens that row's page), aimed at trends and outliers: the index
+and cohort pages plot every flagged student's average total against their
+lowest flagged mark, coloured by priority group (a point far below the
+diagonal is a strong student with one deep gap); `/subjects` and `/silos`
+show attainment and gap rate by year level and every subject as a bubble;
+the outcome lists show the spread of outcome attainment and every outcome
+against its gap rate, coloured by issue count; `/competencies` stacks each
+competency's classification shares, gap-heaviest first; `/assessments` shows
+the spread of assessment mean scores and weight against mean score with
+hurdles in red. Below the charts, any table that can exceed a screen sits
+in a bounded scroll box (`scrollbox` macro in `_macros.html`, 60% of the
+viewport, sticky header, row count stated underneath) so a page is never
+more than a couple of screens long and a reader scrolls inside the box or
+straight past it.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in

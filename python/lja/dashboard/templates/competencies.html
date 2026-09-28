@@ -9,6 +9,33 @@
   ({{ total_gap_rows }} rows in all). A competency taught in two or more subjects links to its progression page.
   The rationale is the clustering model&rsquo;s own words.
 </p>
+{% from "_macros.html" import scrollbox, chart_prelude %}
+<div class="chart-card">
+  <h3>How each competency's students are classified</h3>
+  <p class="chart-note">One bar per competency, the share of its student rows in each classification, gap-heaviest first. A competency whose red and amber dominate is where the cohort struggles; one that is all green may be taught below the students' level. Click a bar to open the competency.</p>
+  <canvas id="competency-chart" height="{{ [120, rows|length * 16 + 40]|max }}"></canvas>
+</div>
+<script>
+(function () {
+  const C = {{ competency_chart|safe }};
+  {{ chart_prelude() }}
+  const order = ["persistent gap", "isolated gap", "developing", "proficient"];
+  new Chart(document.getElementById("competency-chart"), {
+    type: "bar",
+    data: {
+      labels: C.map((c) => c.label),
+      datasets: order.map((k) => ({ label: k, data: C.map((c) => c.share[k]), backgroundColor: CLASS_COLORS[k], stack: "s" })),
+    },
+    options: {
+      indexAxis: "y", animation: false, maintainAspectRatio: false,
+      scales: { x: { stacked: true, max: 100, title: { display: true, text: "Share of student rows (%)" } }, y: { stacked: true, ticks: { autoSkip: false, font: { size: 10 } } } },
+      plugins: { legend: { position: "top" }, tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw}% of ${C[item.dataIndex].n} rows` } } },
+      onClick: (evt, els) => { if (els.length && C[els[0].index].slug) location.href = `/competency/${C[els[0].index].slug}`; },
+    },
+  });
+})();
+</script>
+{% call scrollbox(rows|length, "competencies") %}
 <table class="sortable">
   <thead><tr>
     <th data-sort-type="text" aria-sort="ascending">Competency</th>
@@ -39,4 +66,5 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% endblock %}

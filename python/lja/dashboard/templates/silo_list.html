@@ -10,5 +10,6 @@
   {% for other in others %}<a href="/silos/list/{{ other.key }}">{{ other.short }} ({{ other.count }})</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}
 </p>
 {% endif %}
+{% include "_silo_charts.html" %}
 {% include "_silo_table.html" %}
 {% endblock %}

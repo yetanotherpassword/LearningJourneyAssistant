@@ -32,6 +32,7 @@
     <th data-sort-type="text" aria-sort="ascending">Assessment</th><th data-sort-type="number">Weight</th>
     <th data-sort-type="text">Contribution</th><th data-sort-type="text">Flags</th>
     <th data-sort-type="text">SILOs</th><th data-sort-type="number">Result rows</th>
+    <th data-sort-type="number">Mean score</th>
   </tr></thead>
   <tbody>
   {% for a in assessments %}
@@ -46,6 +47,7 @@
       </td>
       <td data-sort-value="{{ a.silo_ids|join(' ') }}">{{ a.silo_ids|join(", ") or "—" }}</td>
       <td data-sort-value="{{ a.n_results }}">{{ a.n_results }}</td>
+      <td data-sort-value="{{ a.mean_score if a.mean_score is not none else -1 }}">{% if a.mean_score is none %}&mdash;{% else %}{{ "%.1f"|format(a.mean_score) }}%{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>
