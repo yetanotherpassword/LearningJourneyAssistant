@@ -129,7 +129,9 @@
     One point per student: average total across subjects against their lowest competency mark, coloured by priority
     group for the {{ severity_scatter_n }} flagged students. The {{ severity_scatter_unflagged }} students with no flag
     are the grey points, placed at their lowest mark of all, which the rules did not count as a gap.
-    Points far below the diagonal are students who do well overall but have one deep gap. Hover for the student; click to open them.
+    The dashed diagonal is a perfectly flat profile, where a student's lowest mark equals their average; nobody can sit above it.
+    Distance below the line is how far the student's weakest competency dips beneath their own level, which is what the relative rule measures,
+    so points far below it are students who do well overall but have one deep gap. Hover for the student; click to open them.
   </p>
   <canvas id="severity-chart" height="130"></canvas>
 </div>
@@ -201,7 +203,7 @@
     })));
     const lo = Math.min(...severity.map((p) => Math.min(p.x, p.y)));
     groups.push({
-      label: "lowest gap = average", type: "line", data: [{ x: lo, y: lo }, { x: 100, y: 100 }],
+      label: "flat profile (lowest mark = average)", type: "line", data: [{ x: lo, y: lo }, { x: 100, y: 100 }],
       borderColor: cssVar("--muted"), borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false,
     });
     new Chart(document.getElementById("severity-chart"), {
