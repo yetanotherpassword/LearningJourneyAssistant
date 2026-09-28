@@ -33,6 +33,38 @@
 <p class="empty-state">No competency is classified proficient for this student yet.</p>
 {% endif %}
 
+<h2>Progress across subjects</h2>
+<p class="dek">
+  Progress here means order across year levels (first-year subject, then second, then third).
+  The data carries no dates, so this is not a time series.
+</p>
+{% if progress_rows %}
+<div class="chart-card">
+  <canvas id="progress-chart" height="110" aria-label="Attainment per competency across subjects in year order" role="img"></canvas>
+  <p id="progress-chart-note" class="chart-note" hidden></p>
+</div>
+<table class="evidence-table progress-table">
+  <thead>
+    <tr>
+      <th>Competency</th>
+      {% for c in progress_subjects %}<th>{{ c }}</th>{% endfor %}
+      <th>Trend</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in progress_rows %}
+    <tr>
+      <td>{{ r.competency_label }} <span class="badge {{ r.classification|replace(' ', '-') }}">{{ r.classification }}</span></td>
+      {% for v in r["values"] %}<td>{% if v is not none %}{{ "%.1f"|format(v) }}%{% else %}&mdash;{% endif %}</td>{% endfor %}
+      <td><span class="trend-badge {{ r.trend|replace(' ', '-') }}">{{ r.trend }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No subject evidence for this student.</p>
+{% endif %}
+
 <h2>Competency gaps</h2>
 {% if gap_details %}
 <div class="gap-list">
@@ -138,5 +170,52 @@
       plugins: { legend: { display: false } },
     },
   });
+
+  // Progress across subjects: one 2px line per competency, in year order.
+  // Colours come from the --series-N tokens in style.css, assigned in a fixed
+  // order so a competency keeps its colour whatever else is drawn; the legend
+  // and the table carry identity, never colour alone.
+  const progress = {{ progress_chart|safe }};
+  const progressCanvas = document.getElementById("progress-chart");
+  if (progressCanvas && progress.rows.length) {
+    const series = (i) => styles.getPropertyValue(`--series-${(i % 8) + 1}`).trim();
+    new Chart(progressCanvas, {
+      type: "line",
+      data: {
+        labels: progress.labels,
+        datasets: progress.rows.map((r, i) => ({
+          label: r.competency_label,
+          data: r.values,
+          spanGaps: true,
+          borderColor: series(i),
+          backgroundColor: series(i),
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBorderColor: styles.getPropertyValue("--surface").trim(),
+          pointBorderWidth: 2,
+          tension: 0,
+        })),
+      },
+      options: {
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          y: { min: 0, max: 100, title: { display: true, text: "Attainment %" }, grid: { color: styles.getPropertyValue("--line").trim() } },
+          x: { grid: { display: false } },
+        },
+        plugins: {
+          legend: { display: progress.rows.length > 1, position: "bottom" },
+          tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } },
+        },
+      },
+    });
+  } else if (progressCanvas) {
+    progressCanvas.closest(".chart-card").hidden = true;
+  }
+  if (progress.omitted > 0) {
+    const note = document.getElementById("progress-chart-note");
+    note.textContent = `Chart shows the first ${progress.rows.length} competencies; ${progress.omitted} more are in the table below.`;
+    note.hidden = false;
+  }
 </script>
 {% endblock %}
