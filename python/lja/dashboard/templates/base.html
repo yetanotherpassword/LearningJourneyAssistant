@@ -12,11 +12,16 @@
      progressive enhancement -- if this fails to load, rows still render in
      the server's default order. -->
 <script src="/static/sort.js" defer></script>
+{% block head %}{% endblock %}
 </head>
 <body>
 <header class="site-header">
   <a href="/">LJA Dashboard</a>
   <span class="tag">gap report &middot; read-only &middot; dev mode, no sign-in</span>
+  <nav class="site-nav">
+    <a href="/">Students</a>
+    <a href="/silos">Outcome quality</a>
+  </nav>
   <label class="picker">Student
     <select onchange="if (this.value) location.href = '/student/' + this.value">
       <option value="">choose&hellip;</option>

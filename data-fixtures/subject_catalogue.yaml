@@ -1,0 +1,495 @@
+# LJA subject catalogue (IOLG-113).
+#
+# The single source that both test-data paths are generated from:
+#   python -m lja.data.catalogue_generator ../data-fixtures/subject_catalogue.yaml --students 500 --out ...
+# writes the Excel workbook (Assessment Map / Results / Student Summary) for
+# python/lja, and with --moodle-out also the competency-framework CSVs, the
+# criterion-to-SILO map and the rubric marking fixture for devenv Moodle.
+#
+# Three subjects are `source: supplied` -- CSE1OOF, CSE2ALG, CSE3CAP -- and
+# their SILO texts, assessment names, weights, contributions and SILO orders
+# are copied VERBATIM from data-fixtures/CSE_results_150_students_3_Subjects.xlsx.
+# python/tests/test_catalogue.py checks that equality against the workbook,
+# so editing them here fails a test rather than silently diverging.
+#
+# Every other subject is `source: synthetic`: the codes reuse the shortnames
+# devenv/seed.sh already generates, but the titles, SILOs and assessments are
+# invented for testing and are NOT La Trobe handbook entries. Add more by hand
+# or with python -m lja.data.catalogue_draft.
+#
+# `competency` on each SILO is the catalogue's ground truth for which
+# cross-subject competency that SILO evidences. It drives the generator's
+# per-student ability model and is what catalogue_verify.py scores the LLM's
+# clustering against. It is an authoring judgement, not a fact about the
+# degree -- disagree with a tag by changing it.
+version: 1
+title: LJA synthetic subject catalogue
+
+rubric_levels:
+  0: Not demonstrated
+  1: Developing
+  2: Proficient
+  3: Exemplary
+
+competencies:
+  - id: oo-modelling
+    label: Object-oriented analysis and modelling
+    description: Analysing a problem and modelling it as objects that combine data and behaviour, expressed in OO design notation.
+  - id: abstraction-encapsulation
+    label: Abstraction and encapsulation
+    description: Using abstract data types, interfaces and encapsulation to localise and minimise change.
+  - id: code-reuse
+    label: Code quality, reuse and modular design
+    description: Organising code for readability, reuse and maintainability.
+  - id: software-construction
+    label: Building working software for real problems
+    description: Designing, implementing and evaluating complete software solutions to realistic problems.
+  - id: data-structures-algorithms
+    label: Data structures and algorithms
+    description: Identifying, implementing and comparing data structures and searching and sorting algorithms.
+  - id: project-management
+    label: Project management
+    description: Planning, tracking and managing software project work.
+  - id: communication
+    label: Communicating to technical and non-technical audiences
+    description: Presenting and reporting outcomes to mixed audiences and responding to feedback.
+  - id: technical-documentation
+    label: Technical documentation and reporting
+    description: Producing professional system documentation and technical reports to industry standards.
+  - id: programming-fundamentals
+    label: Programming fundamentals
+    description: Decomposing problems and writing, tracing and debugging programs in a procedural style.
+  - id: testing-quality
+    label: Testing and software quality
+    description: Verifying software through unit, integration and acceptance testing and defensive practice.
+  - id: data-modelling
+    label: Data modelling and databases
+    description: Modelling data requirements, designing relational schemas and querying them.
+  - id: web-systems
+    label: Web, cloud and distributed systems
+    description: Building, deploying and operating web-based and distributed applications.
+  - id: security
+    label: Security
+    description: Identifying threats and applying countermeasures in software and networks.
+  - id: systems-networks
+    label: Operating systems, environments and networks
+    description: Working with command-line environments, operating system concepts and network architecture.
+  - id: professional-practice
+    label: Teamwork, ethics and professional practice
+    description: Working effectively and ethically in a team using industry practices.
+  - id: requirements-analysis
+    label: Requirements elicitation and analysis
+    description: Eliciting, analysing and specifying what a system must do.
+
+subjects:
+  # ---------------------------------------------------------------- supplied
+  - code: CSE1OOF
+    title: Object-Oriented Programming Fundamentals
+    year_level: 1
+    source: supplied
+    silos:
+      - id: SILO1
+        text: analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour
+        competency: oo-modelling
+      - id: SILO2
+        text: abstract data types and encapsulation to localise and minimise change
+        competency: abstraction-encapsulation
+      - id: SILO3
+        text: code sharing and reuse through object-oriented techniques to reduce development time
+        competency: code-reuse
+      - id: SILO4
+        text: object-oriented design and implementation of computer programs for real-life problems
+        competency: software-construction
+    assessments:
+      - name: Test
+        weight: 0.15
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO2]
+      - name: Practical demonstration
+        weight: 0.2
+        contribution: Individual
+        silos: [SILO2, SILO3, SILO4]
+      - name: Assignment
+        weight: 0.25
+        contribution: Individual
+        silos: [SILO2, SILO3, SILO4]
+      - name: Central examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO2, SILO4, SILO3, SILO1]
+
+  - code: CSE2ALG
+    title: Algorithms and Data Structures
+    year_level: 2
+    source: supplied
+    silos:
+      - id: SILO1
+        text: overall objectives of Algorithms and Data Structures
+        competency: data-structures-algorithms
+      - id: SILO2
+        text: identifying data structures and searching and sorting algorithms in computing contexts
+        competency: data-structures-algorithms
+      - id: SILO3
+        text: implementing data structures and searching and sorting algorithms in Java
+        competency: data-structures-algorithms
+      - id: SILO4
+        text: comparing algorithms and data structures and applying suitable choices to problems
+        competency: data-structures-algorithms
+      - id: SILO5
+        text: designing, implementing, and evaluating Java solutions using appropriate performance measures
+        competency: software-construction
+    assessments:
+      - name: Test
+        weight: 0.2
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO2, SILO3]
+      - name: Assignment
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO2, SILO3, SILO4, SILO5]
+      - name: Central examination
+        weight: 0.5
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO3, SILO5]
+
+  - code: CSE3CAP
+    title: Capstone Project
+    year_level: 3
+    source: supplied
+    silos:
+      - id: SILO1
+        text: advanced project management during substantive development implementation
+        competency: project-management
+      - id: SILO2
+        text: industry standard technical solutions in software or cybersecurity practice
+        competency: software-construction
+      - id: SILO3
+        text: reporting project outcomes to technical and non-technical audiences and reflecting on feedback
+        competency: communication
+      - id: SILO4
+        text: professional system documentation and advanced technical reporting to industry standards
+        competency: technical-documentation
+    assessments:
+      - name: "Oral presentation: Project Milestone Presentation"
+        weight: 0.1
+        contribution: Group
+        early_assessment: true
+        silos: [SILO3]
+      - name: "Oral presentation: Final Project Presentation"
+        weight: 0.2
+        contribution: Group
+        silos: [SILO3]
+      - name: "Assignment: Final written Project Report"
+        weight: 0.35
+        contribution: Combined
+        silos: [SILO2, SILO4]
+      - name: "Assignment: Sprint Project management reports"
+        weight: 0.35
+        contribution: Individual
+        silos: [SILO1, SILO2]
+
+  # --------------------------------------------------------------- synthetic
+  - code: CSE1IOI
+    title: Introduction to Programming
+    year_level: 1
+    silos:
+      - id: SILO1
+        text: decomposing a computational problem into steps and designing an algorithm to solve it
+        competency: programming-fundamentals
+      - id: SILO2
+        text: implementing and testing small programs in a procedural language against a specification
+        competency: testing-quality
+      - id: SILO3
+        text: writing readable, well-documented code that follows a style guide
+        competency: code-reuse
+      - id: SILO4
+        text: using variables, control structures, functions and collections to build programs
+        competency: programming-fundamentals
+    assessments:
+      - name: Assignment 1
+        weight: 0.2
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO3]
+        # Identical to the IOLG-56 hand-built rubric on CSE1IOI "Assignment 1",
+        # so data-fixtures/criterion_silo_map_CSE1IOI.csv is a subset of the
+        # emitted criterion_silo_map.csv.
+        rubric:
+          criteria:
+            - text: Problem decomposition and algorithm design
+              silo: SILO1
+            - text: Correct implementation and testing
+              silo: SILO2
+            - text: Code quality and documentation
+              silo: SILO3
+      - name: Assignment 2
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO2, SILO3, SILO4]
+      - name: Weekly quizzes
+        weight: 0.1
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO4]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO4]
+
+  - code: CSE1PES
+    title: Programming Environments and Systems
+    year_level: 1
+    silos:
+      - id: SILO1
+        text: using a command-line environment, shell scripting and version control to manage software
+        competency: systems-networks
+      - id: SILO2
+        text: explaining how an operating system manages processes, memory and files
+        competency: systems-networks
+      - id: SILO3
+        text: building and debugging programs using compilers, build tools and debuggers
+        competency: programming-fundamentals
+      - id: SILO4
+        text: writing clear technical notes describing an environment configuration for another developer
+        competency: technical-documentation
+    assessments:
+      - name: Lab portfolio
+        weight: 0.3
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO3]
+      - name: Assignment
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO1, SILO3, SILO4]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO2, SILO3]
+
+  - code: CSE1SDF
+    title: Software Development Foundations
+    year_level: 1
+    silos:
+      - id: SILO1
+        text: applying unit testing and debugging techniques to verify small programs
+        competency: testing-quality
+      - id: SILO2
+        text: working effectively in a small team using agile practices and shared version control
+        competency: professional-practice
+      - id: SILO3
+        text: eliciting and documenting simple functional requirements from a client brief
+        competency: requirements-analysis
+      - id: SILO4
+        text: applying modular design and code reuse to organise a small codebase
+        competency: code-reuse
+    assessments:
+      - name: Team project stage 1
+        weight: 0.25
+        contribution: Group
+        early_assessment: true
+        silos: [SILO2, SILO3]
+      - name: Team project stage 2
+        weight: 0.35
+        contribution: Combined
+        silos: [SILO1, SILO2, SILO4]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO3, SILO4]
+
+  - code: CSE2CWA
+    title: Cloud and Web Applications
+    year_level: 2
+    silos:
+      - id: SILO1
+        text: designing and implementing server-side web applications using an industry framework
+        competency: web-systems
+      - id: SILO2
+        text: deploying and operating an application on a cloud platform
+        competency: web-systems
+      - id: SILO3
+        text: designing a relational schema and accessing it safely from an application
+        competency: data-modelling
+      - id: SILO4
+        text: applying secure coding practices to protect a web application from common attacks
+        competency: security
+      - id: SILO5
+        text: documenting an application's architecture and deployment for other developers
+        competency: technical-documentation
+    assessments:
+      - name: Practical portfolio
+        weight: 0.2
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO3]
+      - name: Assignment
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO4, SILO5]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO3, SILO4]
+
+  - code: CSE2DBF
+    title: Database Fundamentals
+    year_level: 2
+    silos:
+      - id: SILO1
+        text: modelling data requirements as entity-relationship diagrams and normalised relational schemas
+        competency: data-modelling
+      - id: SILO2
+        text: writing SQL to retrieve, aggregate and modify data correctly
+        competency: data-modelling
+      - id: SILO3
+        text: applying data abstraction to separate logical schema design from physical storage concerns
+        competency: abstraction-encapsulation
+      - id: SILO4
+        text: analysing a client's information requirements to derive a database specification
+        competency: requirements-analysis
+    assessments:
+      - name: Test
+        weight: 0.15
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO2]
+      - name: Assignment
+        weight: 0.35
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO4]
+      - name: Examination
+        weight: 0.5
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO3]
+
+  - code: CSE2SEP
+    title: Software Engineering Practice
+    year_level: 2
+    silos:
+      - id: SILO1
+        text: eliciting, analysing and specifying requirements using use cases and user stories
+        competency: requirements-analysis
+      - id: SILO2
+        text: designing software using object-oriented models expressed in UML
+        competency: oo-modelling
+      - id: SILO3
+        text: planning and tracking a team software project using an agile process
+        competency: project-management
+      - id: SILO4
+        text: designing and executing test plans covering unit, integration and acceptance testing
+        competency: testing-quality
+      - id: SILO5
+        text: presenting project progress and outcomes to stakeholders
+        competency: communication
+    assessments:
+      - name: Sprint reports
+        weight: 0.3
+        contribution: Group
+        early_assessment: true
+        silos: [SILO3, SILO5]
+      - name: Team project
+        weight: 0.4
+        contribution: Combined
+        silos: [SILO1, SILO2, SILO4]
+      - name: Examination
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO4]
+
+  - code: CSE2NSF
+    title: Networks and Security Fundamentals
+    year_level: 2
+    silos:
+      - id: SILO1
+        text: explaining the layered architecture of computer networks and the protocols at each layer
+        competency: systems-networks
+      - id: SILO2
+        text: configuring and troubleshooting a small network
+        competency: systems-networks
+      - id: SILO3
+        text: identifying common security threats and applying basic countermeasures
+        competency: security
+      - id: SILO4
+        text: applying cryptographic primitives to protect data in transit and at rest
+        competency: security
+    assessments:
+      - name: Lab portfolio
+        weight: 0.3
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO2, SILO3]
+      - name: Assignment
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO3, SILO4]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO3, SILO4]
+
+  - code: CSE3WDX
+    title: Web and Distributed Systems
+    year_level: 3
+    silos:
+      - id: SILO1
+        text: designing distributed systems that meet scalability and availability requirements
+        competency: web-systems
+      - id: SILO2
+        text: selecting and justifying data structures and algorithms for high-throughput services
+        competency: data-structures-algorithms
+      - id: SILO3
+        text: encapsulating services behind well-defined interfaces to isolate change
+        competency: abstraction-encapsulation
+      - id: SILO4
+        text: evaluating the security posture of a distributed system
+        competency: security
+      - id: SILO5
+        text: communicating architectural decisions to technical and non-technical audiences
+        competency: communication
+    assessments:
+      - name: Design review
+        weight: 0.2
+        contribution: Group
+        early_assessment: true
+        silos: [SILO1, SILO3, SILO5]
+      - name: Implementation project
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO3, SILO4]
+      - name: Examination
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO4]
+
+  - code: CSE3SEC
+    title: Secure Software Engineering
+    year_level: 3
+    silos:
+      - id: SILO1
+        text: applying threat modelling to identify and prioritise risks in a software design
+        competency: security
+      - id: SILO2
+        text: implementing and testing defensive coding techniques against known vulnerability classes
+        competency: testing-quality
+      - id: SILO3
+        text: evaluating a system's security against industry standards and reporting the findings
+        competency: technical-documentation
+      - id: SILO4
+        text: applying professional and ethical standards when handling vulnerabilities and disclosures
+        competency: professional-practice
+    assessments:
+      - name: Threat model report
+        weight: 0.3
+        contribution: Individual
+        early_assessment: true
+        silos: [SILO1, SILO3]
+      - name: Secure implementation
+        weight: 0.4
+        contribution: Individual
+        silos: [SILO1, SILO2]
+      - name: Examination
+        weight: 0.3
+        contribution: Individual
+        silos: [SILO1, SILO2, SILO4]

@@ -16,6 +16,7 @@ dependencies:
   - jupyter
   - python-dotenv
   - pydantic
+  - pyyaml
   - pytest
   - fastapi
   - uvicorn
