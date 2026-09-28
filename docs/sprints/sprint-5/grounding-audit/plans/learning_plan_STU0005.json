@@ -1,0 +1,81 @@
+{
+  "student_id": "STU0005",
+  "summary": "You're a consistently proficient student sitting in the low-to-mid 70s across every competency, with no gaps and stable performance in Data Structures and Algorithms. The recurring message from markers is the same across subjects: your grasp of the material is competent and reliable, but you can lift results by giving clearer reasoning, tighter technical precision, and more complete testing or reflection. This plan targets your lowest areas first while building on genuine strengths.",
+  "priorities": [
+    {
+      "competency_label": "Technical Communication and Documentation",
+      "silo_keys": [
+        "CSE3CAP:SILO3",
+        "CSE3CAP:SILO4"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Oral presentation: Final Project Presentation",
+        "CSE3CAP:Oral presentation: Project Milestone Presentation",
+        "CSE3CAP:Assignment: Final written Project Report"
+      ],
+      "evidence": "This is your lowest competency at 73.1% in CSE3CAP. Both oral presentations (CSE3CAP:Oral presentation: Final Project Presentation and CSE3CAP:Oral presentation: Project Milestone Presentation) scored 72.0%, and your written report (CSE3CAP:Assignment: Final written Project Report) reached 74.0%, with markers noting a competent but not yet strong grasp and asking for clearer reasoning and more complete reflection.",
+      "actions": "Revisit the feedback on both CSE3CAP:Oral presentation entries and rework the reflection element that CSE3CAP:SILO3 asks for, explicitly stating what feedback you received and how you acted on it. For CSE3CAP:SILO4, re-draft a section of CSE3CAP:Assignment: Final written Project Report to industry documentation standards, adding clearer reasoning and testing evidence the marker flagged as missing."
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "subject_codes": [
+        "CSE1OOF"
+      ],
+      "assessment_keys": [
+        "CSE1OOF:Assignment",
+        "CSE1OOF:Practical demonstration",
+        "CSE1OOF:Central examination"
+      ],
+      "evidence": "At 73.5% (CSE1OOF 73.2%), your practical work is your softest spot here: CSE1OOF:Assignment and CSE1OOF:Practical demonstration both scored 70.0%, while CSE1OOF:Central examination reached 76.0%. Markers on the lower two asked for clearer reasoning, better technical precision and more complete testing or reflection.",
+      "actions": "Re-attempt an object-oriented design task tied to CSE1OOF:SILO4, focusing on real-life problem modelling, and add the complete testing the CSE1OOF:Practical demonstration feedback said was missing. Compare your CSE1OOF:Assignment approach against the stronger exam-level reasoning noted in CSE1OOF:Central examination, and practise justifying reuse decisions for CSE1OOF:SILO3 and modelling choices for CSE1OOF:SILO1."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE1OOF",
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Test",
+        "CSE2ALG:Central examination",
+        "CSE2ALG:Assignment"
+      ],
+      "evidence": "This competency is stable at 73.8% (CSE1OOF 73.2%, CSE2ALG 73.9%). Your weakest ALG assessment is CSE2ALG:Test at 72.0%, then CSE2ALG:Central examination at 74.0%, both with feedback asking for clearer reasoning and more complete testing or reflection, while CSE2ALG:Assignment was stronger at 75.0%.",
+      "actions": "Rework the exam-style questions from CSE2ALG:Central examination and CSE2ALG:Test that cover CSE2ALG:SILO4, writing out explicit comparisons of algorithm and data-structure choices with performance measures for CSE2ALG:SILO5. Re-attempt Java implementation exercises for CSE2ALG:SILO3 and add fuller test cases, echoing the strengths that earned you 75.0% in CSE2ALG:Assignment."
+    },
+    {
+      "competency_label": "Industry Standards Application",
+      "silo_keys": [
+        "CSE3CAP:SILO2"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Final written Project Report",
+        "CSE3CAP:Assignment: Sprint Project management reports"
+      ],
+      "evidence": "At 74.5% in CSE3CAP, this rests on CSE3CAP:Assignment: Sprint Project management reports (75.0%, strong) and CSE3CAP:Assignment: Final written Project Report (74.0%, sound), where the marker asked for greater technical precision and more complete testing.",
+      "actions": "Revisit the CSE3CAP:Assignment: Final written Project Report feedback and revise a technical solution section against CSE3CAP:SILO2's industry-standard expectations, adding the precise justification and testing evidence the marker flagged, using the stronger CSE3CAP:Assignment: Sprint Project management reports as a model."
+    }
+  ],
+  "strengths_to_build_on": [
+    "Project Management"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "audit": "IOLG-121 grounding audit",
+  "generated_at": "2026-09-28T02:40:40+00:00",
+  "git_commit": "fdaeed9",
+  "dataset": "../data-fixtures/CSE_results_150_students_3_Subjects.xlsx",
+  "clustering_cache": "../data-fixtures/reference-run/silo_clustering.json",
+  "review_file": "../data-fixtures/reference-run/silo_clustering.review.json",
+  "model": "provider=anthropic model=claude-opus-4-8 effort=default(high) thinking=False temperature=n/a (rejected by this model family)",
+  "max_attempts": 3,
+  "students": [
+    "STU0003",
+    "STU0004",
+    "STU0022",
+    "STU0054",
+    "STU0055",
+    "STU0067",
+    "STU0075",
+    "STU0001",
+    "STU0005",
+    "STU0007"
+  ]
+}

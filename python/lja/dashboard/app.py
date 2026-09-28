@@ -41,7 +41,28 @@ from ..data.excel_loader import LjaDataset, StudentSummary
 from ..model.gap_detection import CompetencyGap
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
 from ..model.silo_clustering import SiloClusteringResult
+from ..model.silo_quality import (
+    assess_silos,
+    competency_progressions,
+    discipline_links,
+    discipline_of,
+    slugify,
+    subject_competency_matrix,
+    subject_links,
+    summarise_subjects,
+    term_weights,
+)
 from .stats import histogram, summarise
+
+# The progress chart on the student page draws at most this many competency
+# lines; beyond that a line chart is unreadable and the table carries the rest.
+PROGRESS_CHART_MAX = 8
+
+# Below this many subjects the chord draws one arc per subject; above it,
+# one arc per discipline (subject-code prefix), because a subject-level chord
+# is a hairball well before a hundred arcs. The subject explorer below the
+# chord carries the per-subject detail at any size.
+_MAX_SUBJECT_CHORD = 16
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -115,7 +136,59 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="LJA Dashboard")
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+    templates.env.filters["slug"] = slugify
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+    # Outcome quality and progression: computed once at start-up from the
+    # same three inputs as everything else. Pure functions in
+    # model/silo_quality.py; the page only formats what they return.
+    silo_rows = assess_silos(dataset, clustering, gaps)
+    silo_by_key = {row.key: row for row in silo_rows}
+    subject_rows = summarise_subjects(silo_rows, dataset, gaps)
+    terms = term_weights(silo_rows)
+    progressions = competency_progressions(dataset, clustering, gaps)
+    progression_by_slug = {p.slug: p for p in progressions}
+    matrix = subject_competency_matrix(dataset, clustering)
+    links = subject_links(clustering)
+    disc_links = discipline_links(clustering)
+
+    # Chord input, computed once: subject level for a small catalogue, the
+    # discipline roll-up otherwise (or when every subject is one discipline,
+    # where a one-arc chord would say nothing).
+    if len(links.subjects) <= _MAX_SUBJECT_CHORD or len(disc_links.disciplines) < 2:
+        chord_level = "subject"
+        chord_payload = {
+            "level": chord_level,
+            "names": list(links.subjects),
+            "sizes": [1] * len(links.subjects),
+            "matrix": [list(r) for r in links.matrix],
+            "shared": {f"{a}|{b}": list(v) for (a, b), v in links.shared.items()},
+        }
+    else:
+        chord_level = "discipline"
+        chord_payload = {
+            "level": chord_level,
+            "names": list(disc_links.disciplines),
+            "sizes": list(disc_links.subject_counts),
+            # The diagonal (links inside a discipline) is reported in the
+            # tooltip but not drawn: a self-ribbon reads as noise.
+            "matrix": [[0 if i == j else v for j, v in enumerate(r)] for i, r in enumerate(disc_links.matrix)],
+            "internal": [disc_links.matrix[i][i] for i in range(len(disc_links.disciplines))],
+            "shared": {f"{a}|{b}": list(v) for (a, b), v in disc_links.shared.items()},
+        }
+
+    # Subject explorer: every subject's partners, most shared first.
+    partners: dict[str, list[dict]] = {s: [] for s in links.subjects}
+    for (a, b), labels in links.shared.items():
+        partners[a].append({"code": b, "labels": list(labels)})
+        partners[b].append({"code": a, "labels": list(labels)})
+    for rows in partners.values():
+        rows.sort(key=lambda r: (-len(r["labels"]), r["code"]))
+    explorer_subjects = sorted(links.subjects, key=lambda s: (-len(partners[s]), s))
+    explorer_payload = {
+        "subjects": [{"code": s, "discipline": discipline_of(s), "n": len(partners[s])} for s in explorer_subjects],
+        "partners": partners,
+    }
 
     gaps_by_student: dict[str, list[CompetencyGap]] = defaultdict(list)
     for gap in gaps:
@@ -247,6 +320,37 @@ def create_app(
                 }
             )
 
+        # Progress across subjects (IOLG-107): the same per-subject evidence,
+        # pivoted so each competency is a row and each subject a column, in
+        # year-level order. Order, not time: the data carries no dates, so
+        # this is "first-year subject, then second, then third" and nothing
+        # more. The trend word is the one the gap card already shows.
+        year_of = {e.subject_code: e.year_level for d in gap_details for e in d["evidence"]}
+        progress_subjects = sorted(year_of, key=lambda c: (year_of[c] is None, year_of[c] or 0, c))
+        progress_rows = []
+        for d in gap_details:
+            by_subject = {e.subject_code: e.attainment_pct for e in d["evidence"]}
+            progress_rows.append(
+                {
+                    "competency_label": d["gap"].competency_label,
+                    "classification": d["gap"].classification,
+                    "values": [by_subject.get(c) for c in progress_subjects],
+                    "trend": d["trend"],
+                }
+            )
+        # The chart draws only competencies seen in two or more subjects (a
+        # single point is not a progression) and at most PROGRESS_CHART_MAX
+        # of them, gaps first because gap_details is already in severity
+        # order; the table underneath always carries every row.
+        chartable = [r for r in progress_rows if sum(v is not None for v in r["values"]) >= 2]
+        progress_chart = json.dumps(
+            {
+                "labels": progress_subjects,
+                "rows": chartable[:PROGRESS_CHART_MAX],
+                "omitted": max(0, len(chartable) - PROGRESS_CHART_MAX),
+            }
+        )
+
         return templates.TemplateResponse(
             request,
             "student.html",
@@ -254,10 +358,61 @@ def create_app(
                 "summary": summary,
                 "strengths": strengths,
                 "gap_details": gap_details,
+                "progress_subjects": progress_subjects,
+                "progress_rows": progress_rows,
+                "progress_chart": progress_chart,
                 "chart_data": chart_data,
                 "review_warning": review_warning,
                 "student_ids": student_ids,
             },
+        )
+
+    @app.get("/silos")
+    def outcome_quality(request: Request):
+        context = {
+            "totals": {
+                "subjects": len(subject_rows),
+                "silos": len(silo_rows),
+                "flagged": sum(1 for r in silo_rows if r.flagged),
+                "orphan": sum(1 for r in silo_rows if r.orphan),
+                "unassessed": sum(1 for r in silo_rows if r.n_assessments == 0),
+                "vague": sum(1 for r in silo_rows if r.vague_terms),
+            },
+            "silo_rows": sorted(silo_rows, key=lambda r: (-len(r.issues), r.key)),
+            "subjects": subject_rows,
+            "terms": terms,
+            "terms_json": json.dumps(
+                [
+                    {"term": t.term, "kind": t.kind, "count": t.count, "n_subjects": t.n_subjects, "mean_attainment": t.mean_attainment}
+                    for t in terms
+                ]
+            ),
+            "progressions": progressions,
+            "matrix": matrix,
+            "links": {"level": chord_level, "n_subjects": len(links.subjects), "n_disciplines": len(disc_links.disciplines),
+                      "max_subject_chord": _MAX_SUBJECT_CHORD},
+            "chord_json": json.dumps(chord_payload),
+            "explorer_json": json.dumps(explorer_payload),
+        }
+        return templates.TemplateResponse(request, "silos.html", context)
+
+    @app.get("/competency/{slug}")
+    def competency_detail(request: Request, slug: str):
+        progression = progression_by_slug.get(slug)
+        if progression is None:
+            raise HTTPException(status_code=404, detail=f"No cross-subject competency {slug!r}")
+        chart_json = json.dumps(
+            {
+                "labels": [p.subject_code for p in progression.points],
+                "attainment": [p.mean_attainment for p in progression.points],
+                "gap_rate": [p.gap_rate for p in progression.points],
+                "flagged": [p.flagged for p in progression.points],
+            }
+        )
+        return templates.TemplateResponse(
+            request,
+            "competency.html",
+            {"progression": progression, "silo_by_key": silo_by_key, "chart_json": chart_json},
         )
 
     return app

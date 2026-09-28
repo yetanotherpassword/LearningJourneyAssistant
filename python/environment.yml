@@ -10,8 +10,13 @@ dependencies:
   - pandas
   - openpyxl
   - psycopg2
+  # For the export layer's sample notebook (docs/export-sample.ipynb, tender
+  # req 7): matplotlib renders its bar chart, jupyter opens and runs it.
+  - matplotlib
+  - jupyter
   - python-dotenv
   - pydantic
+  - pyyaml
   - pytest
   - fastapi
   - uvicorn

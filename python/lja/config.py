@@ -107,6 +107,11 @@ OPENAI_MAX_TOKENS = int(os.environ.get("LJA_OPENAI_MAX_TOKENS", "16000"))
 # more consistent coverage in testing. Not a "creativity" knob to turn up.
 OPENAI_TEMPERATURE = float(os.environ.get("LJA_OPENAI_TEMPERATURE", "0.2"))
 
+# Embeddings (lja/llm/embeddings.py) -- always via the OpenAI-compatible
+# endpoint above; Anthropic has no embeddings API. Ollama: `ollama pull
+# nomic-embed-text`. Used only by the catalogue's competency tagger.
+EMBED_MODEL = os.environ.get("LJA_EMBED_MODEL", "nomic-embed-text")
+
 # Gap detection (lja/model/gap_detection.py) -- RELATIVE classification.
 #
 # The lodged tender, requirement 4, promises gap detection based on the
@@ -186,3 +191,16 @@ DASHBOARD_EXCEL_PATH = os.environ.get(
     "LJA_DASHBOARD_EXCEL_PATH", "../data-fixtures/CSE_results_150_students_3_Subjects.xlsx"
 )
 DASHBOARD_CLUSTERING_CACHE = os.environ.get("LJA_DASHBOARD_CLUSTERING_CACHE", "output/silo_clustering.json")
+
+# Export (lja/export.py) -- structured extract for the department's
+# longitudinal and A/B evaluation (tender requirement 7).
+#
+# The salt for --anonymise. Student ids are pseudonymised with an HMAC keyed
+# on this value, so the same student maps to the same pseudonym across every
+# export taken with the same salt (that is what lets two runs be diffed) while
+# the mapping cannot be reversed without the key. There is deliberately no
+# default: an empty salt disables anonymised runs rather than silently keying
+# on "", which would produce stable-but-guessable ids. Keep the salt out of
+# the repo (it lives in .env, which is gitignored) -- committing it would make
+# every "anonymised" export trivially de-anonymisable.
+EXPORT_SALT = os.environ.get("LJA_EXPORT_SALT", "")

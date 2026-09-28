@@ -1,0 +1,136 @@
+# Sprint 5 Grounding Audit — IOLG-121
+
+## Purpose
+
+This audit evaluates whether AI-generated student learning plans remain grounded in the evidence supplied to the Learning Journey Assistant.
+
+The audit addresses Tender Requirement 6 and the Sprint 5 requirement to inspect a fixed set of ten learning plans using both automated grounding validation and independent human review.
+
+## Audit setup
+
+| Item | Value |
+|---|---|
+| Work item | IOLG-121 |
+| Dataset | `data-fixtures/CSE_results_150_students_3_Subjects.xlsx` |
+| Clustering | `data-fixtures/reference-run/silo_clustering.json` |
+| Staff review file | `data-fixtures/reference-run/silo_clustering.review.json` |
+| LLM provider | Anthropic |
+| Model | `claude-opus-4-8` |
+| Maximum generation attempts | 3 |
+| Students audited | 10 |
+
+The fixed audit set was selected to cover different competency profiles rather than ten identical cases. It includes persistent gaps detected through both relative-position and absolute-floor rules, as well as students with isolated gaps, developing profiles, and fully proficient profiles.
+
+## Fixed student set
+
+| Student | Profile included in the audit |
+|---|---|
+| STU0003 | Persistent gap — relative position |
+| STU0004 | Persistent gap — absolute floor |
+| STU0022 | Persistent gap — relative position |
+| STU0054 | Persistent gap — absolute floor |
+| STU0055 | Persistent gap — relative position |
+| STU0067 | Persistent gap — absolute floor |
+| STU0075 | Persistent gap — relative position |
+| STU0001 | No persistent gap; multiple isolated gaps |
+| STU0005 | All competencies proficient |
+| STU0007 | All competencies developing |
+
+## Automated grounding checks
+
+Each generated plan is checked against the exact evidence supplied for that student.
+
+The validator checks that the plan does not introduce unknown:
+
+- student identifiers;
+- competency labels;
+- SILO keys;
+- subject codes;
+- assessment references.
+
+Competency priorities are also checked for duplicate references.
+
+Free-text plan fields are scanned for subject codes and SILO references so that unsupported references embedded in prose are also detected.
+
+If a grounding check fails, the plan-generation process may retry up to three times with the validation error supplied back to the model. A plan that remains ungrounded is not returned as a successful result.
+
+## Machine audit results
+
+| Student | Attempts | Failed attempts | Failed grounding checks | Final result |
+|---|---:|---:|---|---|
+| STU0003 | 1 | 0 | None | PASS |
+| STU0004 | 1 | 0 | None | PASS |
+| STU0022 | 1 | 0 | None | PASS |
+| STU0054 | 1 | 0 | None | PASS |
+| STU0055 | 1 | 0 | None | PASS |
+| STU0067 | 1 | 0 | None | PASS |
+| STU0075 | 1 | 0 | None | PASS |
+| STU0001 | 1 | 0 | None | PASS |
+| STU0005 | 1 | 0 | None | PASS |
+| STU0007 | 1 | 0 | None | PASS |
+
+### Machine-audit summary
+
+- Plans audited: **10**
+- Plans passing final grounding validation: **10/10 (100%)**
+- Plans requiring a retry: **0**
+- Failed grounding attempts: **0**
+- Plans rejected after all attempts: **0**
+
+The audit therefore found no unsupported structured references or detectable unsupported SILO/subject references in the ten generated plans.
+
+This result demonstrates that the automated grounding controls operated successfully on this fixed audit set. It does not establish that every natural-language statement in every plan is factually correct; that broader question is checked separately through human review.
+
+## Generation evidence
+
+The audit generated a separate evidence context and final plan for every student.
+
+Files are stored under:
+
+`docs/sprints/sprint-5/grounding-audit/`
+
+Important artefacts:
+
+- `machine-audit.csv` — machine grounding results;
+- `metadata.json` — audit configuration and model metadata;
+- `plans/` — the ten generated learning plans;
+- `evidence/` — the evidence context supplied for each corresponding student.
+
+These plan/evidence pairs are provided to Anup for the independent human review.
+
+## LLM usage
+
+Across the ten audited plans:
+
+- Anthropic calls: **10**
+- Input tokens: **45,513**
+- Output tokens: **15,798**
+- Total model time: **190.5 seconds**
+- Estimated total API cost: **$0.6225**
+
+All ten plans passed on the first attempt.
+
+## Independent human review
+
+The human review checks a broader question than the automated validator: whether the recommendations and factual claims made in each plan are actually supported by the supplied student evidence.
+
+Anup should compare each plan in `plans/` against the corresponding file in `evidence/` and complete the table below.
+
+| Student | Claims supported by evidence? | Scores/evidence represented correctly? | Unsupported or invented claim? | Human result | Reviewer notes |
+|---|---|---|---|---|---|
+| STU0003 | Pending | Pending | Pending | Pending | |
+| STU0004 | Pending | Pending | Pending | Pending | |
+| STU0022 | Pending | Pending | Pending | Pending | |
+| STU0054 | Pending | Pending | Pending | Pending | |
+| STU0055 | Pending | Pending | Pending | Pending | |
+| STU0067 | Pending | Pending | Pending | Pending | |
+| STU0075 | Pending | Pending | Pending | Pending | |
+| STU0001 | Pending | Pending | Pending | Pending | |
+| STU0005 | Pending | Pending | Pending | Pending | |
+| STU0007 | Pending | Pending | Pending | Pending | |
+
+## Current conclusion
+
+The automated portion of IOLG-121 passed for all ten fixed students with no retries or grounding failures.
+
+Final completion of the audit requires the independent human review above to confirm that the generated recommendations are substantively supported by the underlying student evidence.

@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% block title %}Outcome quality &mdash; LJA Dashboard{% endblock %}
+{% block head %}
+<!-- d3 and d3-cloud drive the two figures Chart.js cannot draw (the word
+     cloud and the chord diagram). Same CDN as Chart.js, same offline caveat:
+     if either fails to load, the SVG stays empty and the tables below still
+     carry every number. -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1/build/d3.layout.cloud.js"></script>
+{% endblock %}
+{% block content %}
+<a class="back-link" href="/">&larr; all students</a>
+<h1>Outcome quality</h1>
+<p class="dek">
+  How well the subjects' intended learning outcomes (SILOs) are written and linked, and how students
+  fare on each. Flags and clusters come from the cached SILO clustering; attainment and gap rates from
+  the same gap rows the student pages show. Nothing here calls the LLM.
+</p>
+
+<div class="stat-strip">
+  <div class="stat"><div class="num">{{ totals.subjects }}</div><div class="label">subjects</div></div>
+  <div class="stat"><div class="num">{{ totals.silos }}</div><div class="label">SILOs</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.flagged }}">{{ totals.flagged }}</div><div class="label">flagged by the clustering</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.orphan }}">{{ totals.orphan }}</div><div class="label">link to no other subject</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.unassessed }}">{{ totals.unassessed }}</div><div class="label">never assessed</div></div>
+  <div class="stat"><div class="num {{ 'warn' if totals.vague }}">{{ totals.vague }}</div><div class="label">vaguely worded</div></div>
+</div>
+
+<h2>The vocabulary of the outcomes</h2>
+<p class="dek">
+  Every content word across all {{ totals.silos }} SILO texts, sized by how many outcomes use it.
+  <span class="term-key measurable">Green</span> words name something a student does that can be observed and
+  marked (analyse, implement, evaluate). <span class="term-key vague">Red</span> words cannot be
+  assessed as written (understand, appreciate, be aware of), the oldest test of an outcome's
+  assessability there is. Hover a word for how many subjects use it and mean attainment on the
+  outcomes that do.
+</p>
+<div class="chart-card">
+  <svg id="term-cloud" class="cloud" viewBox="0 0 900 420" role="img"
+       aria-label="Word cloud of SILO vocabulary; larger words appear in more outcomes; red words are vague, green words are measurable"></svg>
+  <p class="chart-note" id="cloud-fallback" hidden>The cloud could not be drawn (no internet for d3). The same terms are listed in the table below.</p>
+</div>
+<details class="fold">
+  <summary>Term table ({{ terms|length }} terms)</summary>
+  <table class="sortable compact">
+    <thead><tr>
+      <th data-sort-type="text">Term</th><th data-sort-type="text">Kind</th>
+      <th data-sort-type="number" aria-sort="descending">Outcomes</th><th data-sort-type="number">Subjects</th>
+      <th data-sort-type="number">Mean attainment</th>
+    </tr></thead>
+    <tbody>
+    {% for t in terms %}
+      <tr>
+        <td data-sort-value="{{ t.term }}"><span class="term-key {{ t.kind }}">{{ t.term }}</span></td>
+        <td data-sort-value="{{ t.kind }}">{{ t.kind }}</td>
+        <td data-sort-value="{{ t.count }}">{{ t.count }}</td>
+        <td data-sort-value="{{ t.n_subjects }}">{{ t.n_subjects }}</td>
+        <td data-sort-value="{{ t.mean_attainment if t.mean_attainment is not none else -1 }}">
+          {% if t.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(t.mean_attainment) }}%{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</details>
+
+<h2>Subjects</h2>
+<p class="dek">
+  Health is the share of a subject's SILOs with none of the four issues. It is a count, not a weighted
+  score; the four counts sit beside it so the reader can weigh them. Gap rate is the share of
+  (student, competency) pairs this subject evidences that are classified as a gap.
+</p>
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text">Subject</th><th data-sort-type="number">Year</th>
+    <th data-sort-type="number" aria-sort="ascending">Health</th>
+    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Flagged</th>
+    <th data-sort-type="number">Unlinked</th><th data-sort-type="number">Unassessed</th>
+    <th data-sort-type="number">Vague</th><th data-sort-type="number">Students</th>
+    <th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for s in subjects %}
+    <tr>
+      <td data-sort-value="{{ s.subject_code }}"><strong>{{ s.subject_code }}</strong></td>
+      <td data-sort-value="{{ s.year_level if s.year_level is not none else 99 }}">{{ s.year_level if s.year_level is not none else "?" }}</td>
+      <td data-sort-value="{{ s.health }}">
+        <span class="health-bar" title="{{ s.n_clean }} of {{ s.n_silos }} SILOs have no issue"><i style="width: {{ s.health }}%"></i></span>
+        <span class="health-num">{{ "%.0f"|format(s.health) }}%</span>
+      </td>
+      <td data-sort-value="{{ s.n_silos }}">{{ s.n_silos }}</td>
+      <td data-sort-value="{{ s.n_flagged }}">{% if s.n_flagged %}<span class="badge persistent-gap">{{ s.n_flagged }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_orphan }}">{% if s.n_orphan %}<span class="badge isolated-gap">{{ s.n_orphan }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_unassessed }}">{% if s.n_unassessed %}<span class="badge isolated-gap">{{ s.n_unassessed }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_vague }}">{% if s.n_vague %}<span class="badge developing">{{ s.n_vague }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ s.n_students }}">{{ s.n_students }}</td>
+      <td data-sort-value="{{ s.mean_attainment if s.mean_attainment is not none else -1 }}">{% if s.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(s.mean_attainment) }}%{% endif %}</td>
+      <td data-sort-value="{{ s.gap_rate if s.gap_rate is not none else -1 }}">{% if s.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(s.gap_rate) }}%{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Progression by competency</h2>
+<p class="dek">
+  A competency several subjects claim to teach, followed subject by subject in year order. The trend
+  compares mean attainment in the last subject with the first, using the same five-point band the
+  student pages use. Click a row for the chart and the outcomes behind it.
+</p>
+{% if progressions %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Competency</th><th data-sort-type="number">Subjects</th>
+    <th data-sort-type="text">Path</th><th data-sort-type="number">Change</th><th data-sort-type="text">Trend</th>
+    <th data-sort-type="number">Flagged outcomes</th>
+  </tr></thead>
+  <tbody>
+  {% for p in progressions %}
+    <tr>
+      <td data-sort-value="{{ p.label }}"><a href="/competency/{{ p.slug }}">{{ p.label }}</a></td>
+      <td data-sort-value="{{ p.n_subjects }}">{{ p.n_subjects }}</td>
+      <td data-sort-value="{{ p.points[0].subject_code }}" class="path">
+        {% for pt in p.points %}<span class="path-step {{ 'flagged' if pt.flagged }}" title="{{ pt.subject_code }}: {{ '%.1f'|format(pt.mean_attainment) if pt.mean_attainment is not none else 'no results' }}{{ '%' if pt.mean_attainment is not none }}">{{ pt.subject_code }}</span>{% if not loop.last %}<span class="path-arrow">&rarr;</span>{% endif %}{% endfor %}
+      </td>
+      <td data-sort-value="{{ p.delta if p.delta is not none else -999 }}">{% if p.delta is none %}&mdash;{% else %}{{ "%+.1f"|format(p.delta) }} pts{% endif %}</td>
+      <td data-sort-value="{{ p.trend }}"><span class="trend-badge {{ p.trend|replace(' ', '-') }}">{{ p.trend }}</span></td>
+      <td data-sort-value="{{ p.points|selectattr('flagged')|list|length }}">{{ p.points|selectattr('flagged')|list|length or "&mdash;"|safe }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No competency spans more than one subject in this clustering, so there is no progression to draw.</p>
+{% endif %}
+
+<h2 id="share">Which subjects share competencies</h2>
+<p class="dek">
+  Two subjects are linked when some of their outcomes were clustered into the same competency: a
+  student's work in one is evidence about the other.
+  {% if links.level == "discipline" %}
+  With {{ links.n_subjects }} subjects a subject-by-subject diagram is unreadable, so the circle groups
+  them into {{ links.n_disciplines }} disciplines by subject-code prefix. A ribbon's width is the number of
+  distinct competencies the two disciplines both teach. The slider hides weak links; click a discipline to isolate its own. Use the explorer below for individual subjects.
+  {% else %}
+  Each arc is a subject and a ribbon's width is the number of competencies the two subjects both teach.
+  An arc's length is the subject's total links, so a subject linked to nothing has almost no arc.
+  {% endif %}
+</p>
+<div class="chart-card">
+  <div class="explorer-controls">
+    <label>Show links sharing at least <input type="range" id="chord-min" min="1" max="1" value="1"> <output id="chord-min-out">1</output> competencies</label>
+  </div>
+  <svg id="chord" class="chord" viewBox="0 0 760 760" role="img" aria-label="Chord diagram of {{ 'disciplines' if links.level == 'discipline' else 'subjects' }} linked by shared competencies"></svg>
+  <p class="chart-note" id="chord-status" aria-live="polite"></p>
+</div>
+
+<div class="chart-card explorer">
+  <h3>Explore one subject</h3>
+  <p class="chart-note">Every subject it shares a competency with, most shared first, and which competencies they are.</p>
+  <div class="explorer-controls">
+    <label>Subject <select id="explorer-subject"></select></label>
+    <label class="check"><input type="checkbox" id="explorer-other"> other disciplines only</label>
+  </div>
+  <p class="explorer-summary" id="explorer-summary"></p>
+  <ol class="partner-list" id="partner-list"></ol>
+  <button type="button" class="linkish" id="partner-more" hidden></button>
+</div>
+
+<h2>Attainment by subject and competency</h2>
+<p class="dek">
+  Mean attainment on every subject&rsquo;s outcomes, grouped by the competency they were clustered into.
+  An empty cell means the subject has no outcome in that competency, which is different from a low score.
+</p>
+<div class="heat-wrap">
+  <table class="heat">
+    <thead><tr><th>Subject</th>{% for c in matrix.competencies %}<th><span>{{ c }}</span></th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for subject in matrix.subjects %}
+      <tr><th>{{ subject }}</th>
+      {% for v in matrix.cells[loop.index0] %}
+        {% if v is none %}<td class="h-none"></td>{% else %}<td class="h{{ (v // 10)|int if v < 100 else 9 }}" title="{{ subject }}: {{ '%.1f'|format(v) }}%">{{ "%.0f"|format(v) }}</td>{% endif %}
+      {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Every outcome</h2>
+<p class="dek">Sorted so the outcomes with the most issues come first. The flag reason is the clustering model&rsquo;s own words.</p>
+<table class="sortable compact">
+  <thead><tr>
+    <th data-sort-type="text">SILO</th><th data-sort-type="text">Wording</th><th data-sort-type="text">Competency</th>
+    <th data-sort-type="number" aria-sort="descending">Issues</th><th data-sort-type="number">Assessments</th>
+    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for r in silo_rows %}
+    <tr class="{{ 'has-issue' if r.issues }}">
+      <td data-sort-value="{{ r.key }}"><strong>{{ r.subject_code }}</strong> {{ r.silo_local_id }}</td>
+      <td data-sort-value="{{ r.text }}" class="wording">
+        {{ r.text }}
+        {% if r.flagged %}<div class="flag-reason">Flagged: {{ r.flag_reason }}</div>{% endif %}
+        {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.competency_label or '' }}">
+        {% if r.competency_label and not r.orphan %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>
+        {% elif r.competency_label %}{{ r.competency_label }} <span class="muted">(this subject only)</span>
+        {% else %}<span class="muted">not clustered</span>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.issues|length }}">
+        {% for issue in r.issues %}<span class="issue">{{ issue }}</span>{% else %}&mdash;{% endfor %}
+      </td>
+      <td data-sort-value="{{ r.n_assessments }}">{{ r.n_assessments }}</td>
+      <td data-sort-value="{{ r.n_students }}">{{ r.n_students }}</td>
+      <td data-sort-value="{{ r.mean_attainment if r.mean_attainment is not none else -1 }}">{% if r.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(r.mean_attainment) }}%{% endif %}</td>
+      <td data-sort-value="{{ r.gap_rate if r.gap_rate is not none else -1 }}">{% if r.gap_rate is none %}&mdash;{% else %}{{ "%.1f"|format(r.gap_rate) }}%{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+(function () {
+  const terms = {{ terms_json|safe }};
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  const kindColor = {
+    measurable: cssVar("--status-proficient"),
+    vague: cssVar("--status-persistent"),
+    other: cssVar("--muted"),
+  };
+
+  if (typeof d3 === "undefined" || typeof d3.layout === "undefined" || typeof d3.layout.cloud !== "function") {
+    const note = document.getElementById("cloud-fallback");
+    if (note) note.hidden = false;
+    return;
+  }
+
+  // ---- word cloud -------------------------------------------------------
+  const W = 900, H = 420;
+  const shown = terms.slice(0, 160);
+  const maxCount = Math.max(1, ...shown.map((t) => t.count));
+  const size = d3.scaleSqrt().domain([1, maxCount]).range([11, 64]);
+  const svg = d3.select("#term-cloud");
+  const g = svg.append("g").attr("transform", `translate(${W / 2},${H / 2})`);
+
+  d3.layout.cloud()
+    .size([W, H])
+    .words(shown.map((t) => ({ text: t.term, size: size(t.count), kind: t.kind, count: t.count, subjects: t.n_subjects, mean: t.mean_attainment })))
+    .padding(2)
+    .rotate(() => 0)
+    .font("-apple-system, Segoe UI, Helvetica Neue, Arial, sans-serif")
+    .fontSize((d) => d.size)
+    .on("end", (words) => {
+      const node = g.selectAll("text").data(words).enter().append("text")
+        .style("font-size", (d) => `${d.size}px`)
+        .style("font-weight", (d) => (d.kind === "other" ? 500 : 700))
+        .style("fill", (d) => kindColor[d.kind])
+        .style("opacity", (d) => (d.kind === "other" ? 0.75 : 1))
+        .attr("text-anchor", "middle")
+        .attr("transform", (d) => `translate(${d.x},${d.y})`)
+        .text((d) => d.text);
+      node.append("title").text((d) =>
+        `${d.text}: in ${d.count} outcome${d.count === 1 ? "" : "s"} across ${d.subjects} subject${d.subjects === 1 ? "" : "s"}` +
+        (d.mean == null ? "" : `; mean attainment ${d.mean.toFixed(1)}%`) +
+        (d.kind === "vague" ? "\nVague: cannot be observed in a student's work as written." : "") +
+        (d.kind === "measurable" ? "\nMeasurable: names something a student does." : ""));
+    })
+    .start();
+
+})();
+</script>
+<script>
+function drawChord(data, cssVar) {
+  const names = data.names;
+  if (typeof d3 === "undefined" || names.length < 2) return;
+  const status = document.getElementById("chord-status");
+  const slider = document.getElementById("chord-min");
+  const sliderOut = document.getElementById("chord-min-out");
+  const isDisc = data.level === "discipline";
+  const S = 760, outer = S / 2 - 110, inner = outer - 14;
+  const arc = d3.arc().innerRadius(inner).outerRadius(outer);
+  const ribbon = d3.ribbon().radius(inner - 2);
+  const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+  const accent = cssVar("--accent"), muted = cssVar("--muted"), ink = cssVar("--ink"), surface = cssVar("--surface");
+  const svg = d3.select("#chord");
+  svg.append("rect").attr("width", S).attr("height", S).attr("fill", "transparent").on("click", () => focus(null));
+  const root = svg.append("g").attr("transform", `translate(${S / 2},${S / 2})`);
+  const unit = isDisc ? "discipline" : "subject";
+
+  // Dense catalogues link almost every pair through a few generic
+  // competencies, which turns any chord into a solid disc. The slider hides
+  // weak links; its default is the smallest threshold that leaves about 30.
+  const values = [];
+  data.matrix.forEach((r, i) => r.forEach((v, j) => { if (j > i && v > 0) values.push(v); }));
+  // A chord with one or two ribbons is a solid disc that says nothing (the
+  // supplied 3-subject workbook has exactly one link). Say it in words.
+  if (values.length < 3) {
+    document.getElementById("chord").style.display = "none";
+    slider.closest(".explorer-controls").hidden = true;
+    const pairs = Object.entries(data.shared).filter(([k]) => { const [a, b] = k.split("|"); return a !== b; });
+    const linked = new Set(pairs.flatMap(([k]) => k.split("|")));
+    const alone = names.filter((n) => !linked.has(n));
+    status.textContent = (pairs.length
+      ? pairs.map(([k, labels]) => `${k.replace("|", " and ")} share ${labels.length} competenc${labels.length === 1 ? "y" : "ies"}: ${labels.join(", ")}.`).join(" ")
+      : `No two ${unit}s share a competency.`) +
+      (alone.length ? ` ${alone.join(", ")} share${alone.length === 1 ? "s" : ""} none with any other ${unit}.` : "") +
+      " Too few links for a diagram.";
+    status.style.fontSize = "1rem";
+    return;
+  }
+  const maxV = Math.max(1, ...values);
+  let minShared = 1;
+  while (minShared < maxV && values.filter((v) => v >= minShared).length > 30) minShared++;
+  slider.max = maxV;
+  slider.value = minShared;
+  slider.disabled = maxV <= 1;
+
+  let groups, ribbons, focused = null;
+  function draw() {
+    sliderOut.textContent = minShared;
+    const m = data.matrix.map((r) => r.map((v) => (v >= minShared ? v : 0)));
+    const shown = values.filter((v) => v >= minShared).length;
+    // A discipline left with no link keeps a sliver so it stays on the circle.
+    const sized = m.map((r, i) => (r.some((v) => v > 0) ? r : r.map((v, j) => (j === i ? 0.001 : v))));
+    const chord = d3.chord().padAngle(0.04).sortSubgroups(d3.descending)(sized);
+    root.selectAll("*").remove();
+    groups = root.append("g").selectAll("g").data(chord.groups).enter().append("g").style("cursor", "pointer")
+      .on("click", (event, d) => { event.stopPropagation(); focus(focused === d.index ? null : d.index); });
+    groups.append("path").attr("d", arc).attr("fill", accent).attr("stroke", surface);
+    groups.append("title").text((d) => {
+      const i = d.index;
+      const all = data.matrix[i].filter((v) => v > 0).length;
+      let t = isDisc ? `${names[i]}: ${data.sizes[i]} subjects` : names[i];
+      t += `\nshares competencies with ${all} other ${unit}${all === 1 ? "" : "s"}`;
+      if (isDisc) t += `\n${data.internal[i]} competenc${data.internal[i] === 1 ? "y is" : "ies are"} shared between its own subjects`;
+      return t + "\nClick to show only its links.";
+    });
+    const label = groups.append("text")
+      .each((d) => { d.angle = (d.startAngle + d.endAngle) / 2 - Math.PI / 2; })
+      .attr("x", (d) => Math.cos(d.angle) * (outer + 10))
+      .attr("y", (d) => Math.sin(d.angle) * (outer + 10))
+      .attr("dy", "0.35em")
+      .attr("text-anchor", (d) => (Math.abs(Math.cos(d.angle)) < 0.2 ? "middle" : Math.cos(d.angle) > 0 ? "start" : "end"))
+      .style("font-size", "13px").style("fill", ink);
+    label.append("tspan").style("font-weight", 700).text((d) => names[d.index]);
+    if (isDisc) label.append("tspan").style("fill", muted).style("font-size", "11px").text((d) => ` ${data.sizes[d.index]}`);
+
+    ribbons = root.append("g").selectAll("path").data(chord.filter((c) => c.source.value >= 1)).enter().append("path")
+      .attr("d", ribbon).attr("stroke", "none");
+    ribbons.append("title").text((d) => {
+      const a = names[d.source.index], b = names[d.target.index];
+      const shared = data.shared[pairKey(a, b)] || [];
+      return `${a} and ${b} share ${shared.length} competenc${shared.length === 1 ? "y" : "ies"}:\n${shared.join("\n")}`;
+    });
+    focus(focused);
+    status.textContent = `${shown} of ${values.length} links drawn` +
+      (focused === null ? ". Click a " + unit + " to isolate it." : `; showing ${names[focused]}'s. Click the background to reset.`);
+  }
+
+  function focus(i) {
+    focused = i;
+    const touches = (d) => d.source.index === i || d.target.index === i;
+    ribbons.attr("fill", (d) => (i !== null && touches(d) ? accent : muted))
+      .attr("fill-opacity", (d) => (i === null ? 0.45 : touches(d) ? 0.85 : 0.05));
+    groups.select("path").attr("fill-opacity", (d) => (i === null || d.index === i || data.matrix[i][d.index] >= minShared ? 1 : 0.25));
+    if (status.textContent) status.textContent = status.textContent.replace(/\. Click a .*|; showing .*/,
+      i === null ? ". Click a " + unit + " to isolate it." : `; showing ${names[i]}'s. Click the background to reset.`);
+  }
+
+  slider.addEventListener("input", () => { minShared = +slider.value; draw(); });
+  draw();
+}
+
+(function () {
+  const styles = getComputedStyle(document.documentElement);
+  drawChord({{ chord_json|safe }}, (name) => styles.getPropertyValue(name).trim());
+})();
+
+(function () {
+  const data = {{ explorer_json|safe }};
+  const select = document.getElementById("explorer-subject");
+  const other = document.getElementById("explorer-other");
+  const list = document.getElementById("partner-list");
+  const summary = document.getElementById("explorer-summary");
+  const more = document.getElementById("partner-more");
+  const PAGE = 15;
+  let showAll = false;
+  if (!data.subjects.length) { summary.textContent = "No subject shares a competency with another."; return; }
+  const discOf = Object.fromEntries(data.subjects.map((s) => [s.code, s.discipline]));
+  const byDisc = d3group(data.subjects);
+  for (const [disc, subjects] of byDisc) {
+    const g = document.createElement("optgroup");
+    g.label = disc;
+    for (const s of subjects) {
+      const o = document.createElement("option");
+      o.value = s.code;
+      o.textContent = `${s.code} (linked to ${s.n})`;
+      g.appendChild(o);
+    }
+    select.appendChild(g);
+  }
+  select.value = data.subjects[0].code;  // the most linked subject
+  function d3group(rows) {
+    const out = new Map();
+    for (const r of [...rows].sort((a, b) => a.code.localeCompare(b.code))) {
+      if (!out.has(r.discipline)) out.set(r.discipline, []);
+      out.get(r.discipline).push(r);
+    }
+    return out;
+  }
+  function render() {
+    const code = select.value;
+    let rows = data.partners[code] || [];
+    if (other.checked) rows = rows.filter((r) => discOf[r.code] !== discOf[code]);
+    const max = Math.max(1, ...rows.map((r) => r.labels.length));
+    summary.textContent = rows.length
+      ? `${code} shares at least one competency with ${rows.length} subject${rows.length === 1 ? "" : "s"}.`
+      : `${code} shares no competency with ${other.checked ? "any subject outside " + discOf[code] : "any other subject"}.`;
+    list.replaceChildren();
+    for (const r of showAll ? rows : rows.slice(0, PAGE)) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "partner-code linkish"; btn.textContent = r.code;
+      btn.title = `Explore ${r.code}`;
+      btn.addEventListener("click", () => { select.value = r.code; showAll = false; render(); });
+      const bar = document.createElement("span");
+      bar.className = "partner-bar";
+      const fill = document.createElement("i");
+      fill.style.width = `${(100 * r.labels.length) / max}%`;
+      bar.appendChild(fill);
+      const n = document.createElement("span");
+      n.className = "partner-n"; n.textContent = r.labels.length;
+      const labels = document.createElement("span");
+      labels.className = "partner-labels"; labels.textContent = r.labels.join(" · ");
+      li.append(btn, bar, n, labels);
+      list.appendChild(li);
+    }
+    more.hidden = rows.length <= PAGE;
+    more.textContent = showAll ? "Show fewer" : `Show all ${rows.length}`;
+  }
+  select.addEventListener("change", () => { showAll = false; render(); });
+  other.addEventListener("change", render);
+  more.addEventListener("click", () => { showAll = !showAll; render(); });
+  render();
+})();
+</script>
+{% endblock %}

@@ -57,6 +57,7 @@ setup.
 | `lja/model/learning_plan.py` | LLM-generated learning plan for one student, grounded in the gap output and validated by `lja/llm/grounding.py` — see "Learning plans" below |
 | `lja/plan.py` | `python -m lja.plan <xlsx path> <student id>` or `--source moodle <student id>` — generates and writes one student's plan; needs `lja.cli`'s clustering cache from the same source |
 | `lja/dashboard/` | `python -m lja.dashboard` — read-only web view over an already-computed pipeline run. Never calls the LLM. See "Dashboard" below |
+| `lja/export.py` | `python -m lja.export <xlsx path>` or `--source moodle` — structured CSV + manifest extract for longitudinal / A/B evaluation, with optional `--anonymise`. See "Export" below |
 | `tests/` | pytest — all offline (no live LLM call needed). The count is whatever CI reports; it is no longer quoted here because it went stale four times in a fortnight. |
 | `moodle_probe.py` | Web Services spike — kept for the production Moodle path |
 | `environment.yml` | Conda environment: `pandas`, `openpyxl`, `psycopg2`, `anthropic`, `openai`, `pydantic`, `pytest`, `fastapi`, `uvicorn`, `jinja2` |
@@ -164,6 +165,19 @@ also says **dev mode, no sign-in**: the dashboard has no authentication and
 lists every student ID to anyone who can reach the port, so bind it to
 `127.0.0.1` (the default) outside a demo.
 
+**Progress across subjects.** Between Strengths and the gap cards, each student
+page has a Progress section: a table with one row per competency and one column
+per subject in year-level order (`CSE1…`, then `CSE2…`, then `CSE3…`), showing
+the student's attainment in that competency in each subject, plus the same trend
+word the gap card uses (`improving`, `stable`, `declining`, or `insufficient
+evidence` when fewer than two subjects with a known year level carry it). A line
+chart above the table draws the competencies seen in two or more subjects, gaps
+first, up to eight lines; the table always has every row. This is order, not
+time: the workbook carries no dates, so the section says so and never claims a
+time series. The year level is read from the subject code, as
+`gap_evidence.py` documents, and a code that does not follow that pattern sorts
+last with no trend. The 5-point stable band is unratified (action A-01).
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
@@ -215,6 +229,69 @@ list — still works if that request fails; only the chart itself won't
 render. Vendor `chart.js` into `lja/dashboard/static/` if this needs to run
 fully offline, matching the rest of the project's local-first stance (the
 whole point of the Ollama path).
+
+### Outcome quality and progression pages
+
+`/silos` ("Outcome quality" in the header) is the first place the dashboard
+shows anything about the *outcomes themselves* rather than the students. It
+is computed by `lja/model/silo_quality.py`, pure functions over the same
+three inputs as every other page (dataset, clustering, gap rows), so it
+adds no pipeline stage and never calls the LLM. It shows:
+
+- **Tiles**: subjects, SILOs, and how many SILOs are flagged by the
+  clustering model, link to no other subject (a one-member cluster), are
+  never assessed, or are vaguely worded.
+- **The vocabulary of the outcomes** as a word cloud (d3-cloud): every
+  content word across all SILO texts, sized by how many outcomes use it,
+  green where it names an observable act (analyse, implement, evaluate) and
+  red where it names a mental state that cannot be marked (understand,
+  appreciate, be aware of). That is Bloom's old test of an assessable
+  outcome, applied to the whole catalogue at once. The stem lists are
+  `MEASURABLE_STEMS` and `VAGUE_STEMS` in `silo_quality.py`; qualifiers
+  like "basic" are deliberately not vague.
+- **Subjects**: health (share of SILOs with no issue), the four issue
+  counts, students, mean attainment and gap rate. Sortable.
+- **Progression by competency**: every competency taught in two or more
+  subjects, the subjects in year order, the change in mean attainment from
+  first to last and a trend using the same five-point band as the student
+  page. Each row links to `/competency/{slug}`: a line chart of mean
+  attainment and gap rate subject by subject, hollow points where the
+  subject's outcome was flagged, and the outcome texts underneath.
+- **Which subjects share competencies**: a chord diagram (d3), one arc per
+  subject coloured by year level, ribbons weighted by shared competencies.
+  Above 40 subjects it keeps the most connected and says so.
+- **Attainment by subject and competency**: a heat-mapped table, empty
+  where a subject has no outcome in that competency.
+- **Every outcome**, worst first, with the flag reason in the model's own
+  words and the vague terms found.
+
+Run it on a large cohort the same way as any other run; only the paths change:
+
+```bash
+D=../data-fixtures/CSE_results_catalogue_handbook_3000
+python -m lja.data.catalogue_generator ../data-fixtures/handbook/catalogue_tagged.yaml \
+    --students 3000 --enrolment-fraction 0.05 --no-llm-feedback --seed 7 --out $D.xlsx
+python -m lja.cli $D.xlsx --clustering-cache $D.clustering.json --review-file $D.clustering.review.json
+python -m lja.dashboard --excel-path $D.xlsx --clustering-cache $D.clustering.json
+```
+
+Measured on that run (314 handbook subjects, 1,436 SILOs, 3,000 students,
+181k result rows): generation 17 s, pipeline 13 s, dashboard start 14 s,
+`/silos` renders in about 0.1 s and is about 3 MB because the outcome
+table and the 314 x 48 heat map are complete rather than paged.
+
+Two honest limits of that run. The catalogue's own competency tags stand in
+for the LLM clustering (single-call clustering fails its coverage check at
+52 SILOs, let alone 1,436), so **flagged is zero** there: flags only come
+from a real clustering run, as on the supplied workbook where CSE2ALG SILO1
+is flagged. And every progression is **stable**, because the generator's
+ability model has no year-level drift to find; the page is doing its job
+by not inventing a trend. What the run does show is the vocabulary: 366 of
+the 1,436 real handbook outcomes lean on an unobservable verb.
+
+d3 and d3-cloud load from the same CDN as Chart.js and carry the same
+offline caveat; if they fail, the cloud and chord stay empty and the
+tables still carry every number.
 
 ### Staff confirmation gate
 
@@ -347,6 +424,106 @@ Not yet done: the plan does not consult the staff-confirmation states from
 IOLG-82 (PR #8) — once that merges, a plan built on a `rejected` cluster
 should be refused the same way the gap report is. And there is no
 dashboard rendering; the Markdown file is the deliverable for now.
+
+## Study strategies — how to study each gap (IOLG-123)
+
+A learning plan says *what* to work on. `python -m lja.strategy <xlsx> <student id>`
+says *how* to study it: one entry per gap, with evidence-based techniques applied to the
+student's own SILOs and assessments, a schedule, and a way to tell it is working. It
+mirrors `lja.plan` exactly: same context (`build_plan_context()`), same `--source`,
+`--clustering-cache`, `--review-file`, `--max-attempts` and `--extra-instructions`
+options, same staff-review gate (a rejected cluster exits 2, a pending one warns), and
+the same fail-closed loop (never grounds, exit 1, nothing written).
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx       # once: caches the clustering
+python -m lja.strategy ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+# writes output/strategies/study_strategy_STU0003.json and .md
+
+# offline, from the committed reference run
+R=../data-fixtures/reference-run
+python -m lja.strategy ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003 \
+    --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json
+```
+
+A student with no isolated or persistent gap gets a one-line message and exit 0, with no
+LLM call: a strategy for nothing would be invention.
+
+**Techniques are a closed list** (`STUDY_TECHNIQUES` in `lja/model/study_strategy.py`), so
+the model cannot recommend something plausible-sounding with no evidence behind it. It is
+the six strategies in Weinstein, Madan and Sumeracki (2018), *Teaching the science of
+learning* (spaced practice, retrieval practice, interleaving, elaboration, concrete
+examples, dual coding), plus worked examples and feedback review, which fit how this data
+records assessments. The schema rejects any other name.
+
+**Persistent and isolated gaps get structurally different strategies, checked in code.**
+
+| Gap | What it means | The strategy must |
+| --- | --- | --- |
+| Persistent | Shows in two or more subjects: a foundation, not one bad assessment | Name at least two of the subjects that evidence it, and use interleaving or spaced practice so practice connects them over time |
+| Isolated | Shows in one subject only | Include feedback review: rework the named assessment against the marker's comment |
+
+**Grounding is per competency, stricter than plans.** A plan checks that every name exists
+somewhere in the student's context. A strategy also checks it is filed under the right
+competency: an entry's subjects must be ones that evidence that competency, its
+assessments must be the student's assessments covering that competency's SILOs, its SILOs
+must be that competency's, and `prepare_for` may only name subjects the student has not
+taken yet that assess it. Plus: exactly one entry per gap and none for a strength,
+`gap_kind` must match the gap engine's classification, every entry cites at least one
+assessment and one SILO, and prose is scanned for inline codes.
+`tests/test_study_strategy.py` has one test per rule; `tests/test_strategy_cli.py` covers
+the gate, the no-gap exit and the fail-closed exit.
+
+**First live run** (2026-09-27, `qwen3-vl:30b` via Ollama, reference run): three students
+with both gap kinds, every one grounded on the first attempt, one call each.
+
+| Student | Gaps | Time | Tokens in / out |
+| --- | --- | --- | --- |
+| STU0003 | 1 persistent, 1 isolated | 28 s | 4.2k / 0.9k |
+| STU0022 | 1 persistent, 1 isolated | 20 s | 3.9k / 0.8k |
+| STU0054 | 1 persistent, 4 isolated | 97 s | 9.0k / 1.6k |
+
+Every persistent entry named CSE1OOF and CSE2ALG and used interleaving plus spaced
+practice; every isolated entry stayed in its one subject and led with feedback review.
+Two quality issues the validator is not meant to catch, the same two the first plan run
+showed: STU0003's entries list every assessment covering the competency (7 for one entry)
+rather than the weakest, and its "why" quotes marker feedback but not the student's
+percentages. The other two quote their figures. Both are prompt work, not grounding
+failures.
+
+## Export — structured extract for longitudinal / A/B evaluation
+
+`python -m lja.export` (tender requirement 7) writes the pipeline run out as
+three CSVs plus a manifest, so the department can compare cohorts that used the
+assistant against cohorts that did not, and one semester against the next. Like
+`lja.plan` it never calls the LLM and never regenerates the clustering — it
+reads the cache `lja.cli` wrote for the same `--source`, so an export is always
+drawn from the same clustering as the dashboard and the plans.
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx   # once: caches the clustering
+python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --out output/export
+# from Moodle, with pseudonymised student ids:
+python -m lja.export --source moodle --out output/export --anonymise
+```
+
+It writes **`students.csv`** (one row per student, a column per subject),
+**`competencies.csv`** (one row per `(student, competency)` verdict, with the
+classification basis, a `trend`, and an `in_plan` flag), **`cohort.csv`** (per
+competency, aggregated — `gap_rate`, `proficient_rate`, no student ids) and
+**`manifest.json`** (source, git commit, clustering cache and the seven gap
+thresholds, so two exports can be diffed knowing they came from the same
+pipeline). Every column is documented in
+[`docs/export-schema.md`](../docs/export-schema.md), and
+[`docs/export-sample.ipynb`](../docs/export-sample.ipynb) loads
+`competencies.csv` and charts the classification counts.
+
+**`--anonymise`** replaces every `student_id` with an HMAC-SHA256 pseudonym
+keyed on `LJA_EXPORT_SALT` (set it in `.env`; see `.env.example`). The same
+student maps to the same pseudonym across every export taken with the same
+salt — which is what lets the two cohorts be lined up without either file
+carrying a real id — while the mapping cannot be reversed without the key. An
+empty salt is refused (exit 2) rather than silently keying on `""`.
 
 ## The LLM layer — provider-agnostic, actually built now
 
@@ -660,6 +837,189 @@ Override with `--planted-gap-silos` / `--planted-gap-fraction` for a
 different ground truth, or `--no-llm-feedback` to skip the LLM call
 entirely (uses a small built-in template per band instead — useful for a
 fast, fully offline test run).
+
+## Generating a whole cohort from the subject catalogue (IOLG-113)
+
+`synth_generator.py` above can only add students: it copies the supplied
+workbook's three subjects and 13 SILOs verbatim. Scott was explicit that the
+product's value arrives "across all of our, what, 30-plus subjects", and the
+relative gap detector cannot be exercised properly on data where every
+student is one baseline plus noise (see the `GAP_MIN_SPREAD` note in
+`config.py` and `docs/adr/0001`). The catalogue path addresses both.
+
+`data-fixtures/subject_catalogue.yaml` is the single source: subjects, their
+SILOs, their assessments, and -- the thing the workbook cannot carry -- a
+`competency` tag on every SILO saying which cross-subject competency it
+evidences. The three supplied subjects are in it verbatim (a test checks
+that against the workbook); nine more are synthetic, using the shortnames
+`devenv/seed.sh` already generates. 12 subjects, 52 SILOs, 16 competencies,
+every competency spanning two or more subjects.
+
+```bash
+python -m lja.data.catalogue_generator ../data-fixtures/subject_catalogue.yaml \
+    --students 500 --seed 42 \
+    --out ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx \
+    --moodle-out ../data-fixtures/moodle-generated
+```
+
+What it writes, all regenerable and gitignored:
+
+| File | Purpose |
+| --- | --- |
+| `<out>.xlsx` | Same three sheets and columns as the supplied workbook; loads through `load_dataset()` unchanged. |
+| `<out>.truth.json` | Ground truth: which students were given a planted gap and in which competency, plus every student's hidden ability vector. |
+| `<out>.clustering.json` | The catalogue's competency tags in the LLM clustering cache's own JSON shape. |
+| `<out>.clustering.review.json` | A staff-review file with every ground-truth cluster confirmed, so the pipeline passes the confirmation gate without `--allow-unconfirmed`. |
+| `moodle-generated/` (with `--moodle-out`) | Competency-framework CSV per subject, `criterion_silo_map.csv`, `rubric_fixture.json` and `seed_subjects.txt` for the devenv Moodle -- see `devenv/README.md`. |
+
+How the cohort differs from the supplied data: each student has a baseline
+**and** a per-competency ability (`--competency-sd`, default 7 points), so a
+student weak at abstraction is weak at it in every subject that assesses
+it. A fraction (`--planted-gap-fraction`, default 8%) additionally gets a
+deep planted gap (18-30 points) in one cross-subject competency. Feedback
+text uses the same LLM template-bank mechanism as `synth_generator.py`;
+`--no-llm-feedback` uses the built-in templates. `--competency-sd 0`
+reproduces the supplied data's flat profiles, which is useful for showing
+why they are flat.
+
+Then run the pipeline against the **ground-truth** clustering and score it:
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx \
+    --clustering-cache ../data-fixtures/CSE_results_catalogue_500_synthetic.clustering.json
+python -m lja.data.catalogue_verify ../data-fixtures/CSE_results_catalogue_500_synthetic.truth.json \
+    --gaps output/gap_report.csv
+```
+
+This isolates gap detection from clustering quality. To score the LLM's
+clustering too, refresh it and pass it to the verifier:
+
+```bash
+python -m lja.cli ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx --refresh-clustering --allow-unconfirmed
+python -m lja.data.catalogue_verify ../data-fixtures/CSE_results_catalogue_500_synthetic.truth.json \
+    --gaps output/gap_report.csv --clustering output/silo_clustering.json
+```
+
+The verifier reports planted-gap recall, how many unplanted students were
+flagged and whether the flagged competency really is in that student's
+weakest third by true ability, and (with `--clustering`) pairwise
+precision/recall of the LLM's clusters against the catalogue's tags.
+`--min-recall 0.9` makes it exit non-zero, for CI.
+
+Measured on the 500-student, seed-42 run through the ground-truth
+clustering, default thresholds:
+
+| Measure | Result |
+| --- | --- |
+| Planted gaps recovered as a persistent gap | 32 of 33 |
+| Students with any persistent gap | 448 of 500 |
+| Unplanted flags where the competency is in the student's weakest third | 411 of 416 |
+
+The second line is a finding, not a bug: once students have genuine
+per-competency variance, the relative detector at the default `-1.0` MAD
+cutoff flags almost everyone's weakest competency. The flags are
+*accurate* (third line) but there are a lot of them, which is exactly the
+threshold-calibration question action A-01 leaves open. Sensitivity-test
+with the `--relative-gap-cutoff` and `--competency-sd` knobs together.
+
+**Scale finding (2026-09-20).** The first thing the 52-SILO workbook exposed
+was not in the gap detector. `cluster_silos()` with the default local model
+(`qwen3-vl:30b`) failed its own coverage validation on all three attempts
+-- each attempt dropped three SILOs and listed three others twice -- and
+`lja.cli --refresh-clustering` aborted after 7m43s. The same call succeeds
+on the supplied 13 SILOs. So the single-call "cluster everything at once"
+design does not hold at the scale Scott described, at least on this model;
+options are a stronger model (the Anthropic provider), chunking the SILOs
+per year level or per subject pair with a merge pass, or a repair step that
+asks only about the missed/duplicated SILOs. That is a clustering work
+package, not this one. Until it lands, score gap detection through the
+ground-truth clustering, which is what the sidecar is for.
+
+**Hundreds of real subjects: the La Trobe handbook.** For a cohort that
+looks like a university -- engineering, biology, chemistry, computing
+students sharing first-year maths and chemistry and then diverging -- the
+subjects come from the handbook, not from the LLM's imagination.
+handbook.latrobe.edu.au allows crawling, lists every subject page in its
+sitemap, and embeds each subject as JSON with its SILOs; CSE1OOF's SILOs
+there are the originals Scott abbreviated. Three commands:
+
+```bash
+# 1. crawl (one request/second, cached on disk; 314 pages took ~5 min)
+python -m lja.data.handbook --year 2026 --prefix CSE PHY CHE MAT STA BIO BCH MIC GEN ENG ELE CIV EEE ENV AGR SCI \
+    --out ../data-fixtures/handbook/catalogue_raw.yaml
+# 2. group the SILOs into competencies with embeddings, label them with the LLM
+python -m lja.data.competency_tagger ../data-fixtures/handbook/catalogue_raw.yaml \
+    --out ../data-fixtures/handbook/catalogue_tagged.yaml --k 48 --traits 5
+# 3. add programs (see below), then generate as usual
+python -m lja.data.catalogue_generator ../data-fixtures/handbook/catalogue.yaml --students 3000 \
+    --out ../data-fixtures/handbook/CSE_results_catalogue_handbook_3000_synthetic.xlsx \
+    --moodle-out ../data-fixtures/handbook/moodle-generated
+```
+
+What each step does and does not do:
+
+- `handbook.py` gets real SILOs, titles, year levels and credit points. The
+  handbook loads assessment maps per teaching period with client-side
+  JavaScript and that endpoint is not in the page bundles, so assessments
+  are **synthetic**, drawn from a small library of realistic patterns per
+  discipline and seeded by subject code (`assessments_synthetic: true` on
+  every subject). Swap them for real ones if Scott can export them.
+- `competency_tagger.py` embeds every SILO (`nomic-embed-text` through the
+  OpenAI-compatible endpoint; `LJA_EMBED_MODEL`), runs spherical k-means,
+  and asks the chat model only to *label* each cluster, in batches of 20.
+  1,436 SILOs took 64 seconds end to end. This is the scaling answer to the
+  finding above: `cluster_silos()` cannot partition 52 SILOs in one call,
+  but grouping sentences by meaning is what embeddings are for. It also
+  writes `traits` on each competency: loadings onto a few latent aptitude
+  axes from a PCA of the cluster centroids, so competencies that mean
+  similar things co-vary across students.
+- **Programs** live in the catalogue's `programs:` list. Each has an intake
+  share and ordered rules: "take N subjects matching these globs in this
+  year", core (first N in catalogue order) or elective (sampled). The
+  science set in `data-fixtures/handbook/catalogue.yaml` defines seven, from
+  Computer Science to Agricultural Science and a Master of IT, and every
+  student is assigned to one. The generator then draws each student's
+  traits around their program's mean (`--program-selection`: engineering
+  students lean towards what engineering rewards), derives competency
+  abilities from traits plus independent noise (`--latent-share`), and
+  enrols by the rules. Planted gaps land only in a competency the student's
+  own subjects evidence at least twice.
+
+Measured on the 3,000-student, seed-7 handbook cohort (314 subjects, 1,436
+SILOs, 48 competencies, 7 programs, 193,988 result rows; generation 20 s,
+workbook 24 MB, pipeline 13 s) through the ground-truth clustering:
+
+| Relative gap cutoff (MAD) | Planted gaps found as persistent (of 245) | Unplanted students with a persistent gap | ...of which genuinely in the student's weakest third |
+| --- | --- | --- | --- |
+| -1.0 (default) | 227 (93%) | 2,240 of 3,000 | 2,066 |
+| -1.5 | 220 (90%) | 1,833 | 1,700 |
+| -2.0 | 207 (84%) | 1,420 | 1,329 |
+
+Same shape as the 500-student finding above, now with a sensitivity curve:
+the detector is accurate about *which* competency is weak, and the cutoff
+trades a little planted-gap recall for a lot fewer flagged students. That
+table is the input action A-01 has been missing.
+
+The handbook directory is gitignored: the content is La Trobe's, and the
+whole thing regenerates from the sitemap in minutes. Ask Scott before
+committing any of it.
+
+**Drafting more subjects with the LLM.** Hand-writing 30 subjects of
+plausible SILOs is the tedious part; the model drafts them in the
+catalogue's structure, shown the existing competencies and the real
+subjects as style examples, and the draft is validated by the same Pydantic
+model before it lands:
+
+```bash
+python -m lja.data.catalogue_draft ../data-fixtures/subject_catalogue.yaml \
+    --subject CSE2OSA "Operating Systems and Architecture" 2 \
+    --subject CSE3MLA "Machine Learning Applications" 3 \
+    --out ../data-fixtures/subject_catalogue.yaml
+```
+
+New competencies the model proposes are appended and printed loudly --
+each one changes the ground truth, so look at them. Drafted subjects are
+`source: synthetic`; the supplied three are never rewritten.
 
 ## Enabling the Web Services API on the Moodle instance (production path)
 

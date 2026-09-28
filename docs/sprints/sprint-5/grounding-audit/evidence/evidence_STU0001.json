@@ -1,0 +1,253 @@
+{
+  "student_id": "STU0001",
+  "competencies": [
+    {
+      "competency_label": "Project Management",
+      "classification": "isolated gap",
+      "attainment_pct": 46.0,
+      "silo_keys": [
+        "CSE3CAP:SILO1"
+      ],
+      "per_subject": [
+        [
+          "CSE3CAP",
+          46.0
+        ]
+      ],
+      "trend": "insufficient evidence",
+      "future_subjects": []
+    },
+    {
+      "competency_label": "Industry Standards Application",
+      "classification": "isolated gap",
+      "attainment_pct": 48.0,
+      "silo_keys": [
+        "CSE3CAP:SILO2"
+      ],
+      "per_subject": [
+        [
+          "CSE3CAP",
+          48.0
+        ]
+      ],
+      "trend": "insufficient evidence",
+      "future_subjects": []
+    },
+    {
+      "competency_label": "Technical Communication and Documentation",
+      "classification": "isolated gap",
+      "attainment_pct": 49.7,
+      "silo_keys": [
+        "CSE3CAP:SILO3",
+        "CSE3CAP:SILO4"
+      ],
+      "per_subject": [
+        [
+          "CSE3CAP",
+          49.7
+        ]
+      ],
+      "trend": "insufficient evidence",
+      "future_subjects": []
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "classification": "developing",
+      "attainment_pct": 50.3,
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "per_subject": [
+        [
+          "CSE1OOF",
+          50.6
+        ]
+      ],
+      "trend": "insufficient evidence",
+      "future_subjects": []
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "classification": "developing",
+      "attainment_pct": 50.7,
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "per_subject": [
+        [
+          "CSE1OOF",
+          50.6
+        ],
+        [
+          "CSE2ALG",
+          50.8
+        ]
+      ],
+      "trend": "stable",
+      "future_subjects": []
+    }
+  ],
+  "silo_text": {
+    "CSE3CAP:SILO1": "advanced project management during substantive development implementation",
+    "CSE3CAP:SILO2": "industry standard technical solutions in software or cybersecurity practice",
+    "CSE3CAP:SILO3": "reporting project outcomes to technical and non-technical audiences and reflecting on feedback",
+    "CSE3CAP:SILO4": "professional system documentation and advanced technical reporting to industry standards",
+    "CSE1OOF:SILO1": "analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour",
+    "CSE1OOF:SILO3": "code sharing and reuse through object-oriented techniques to reduce development time",
+    "CSE1OOF:SILO4": "object-oriented design and implementation of computer programs for real-life problems",
+    "CSE1OOF:SILO2": "abstract data types and encapsulation to localise and minimise change",
+    "CSE2ALG:SILO1": "overall objectives of Algorithms and Data Structures",
+    "CSE2ALG:SILO2": "identifying data structures and searching and sorting algorithms in computing contexts",
+    "CSE2ALG:SILO3": "implementing data structures and searching and sorting algorithms in Java",
+    "CSE2ALG:SILO4": "comparing algorithms and data structures and applying suitable choices to problems",
+    "CSE2ALG:SILO5": "designing, implementing, and evaluating Java solutions using appropriate performance measures"
+  },
+  "assessments": [
+    {
+      "key": "CSE1OOF:Assignment",
+      "subject_code": "CSE1OOF",
+      "assessment_name": "Assignment",
+      "score": 51.0,
+      "weight": 0.25,
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly abstract data types and encapsulation to localise and minimise change, code sharing and reuse through object-oriented techniques to reduce development time, and object-oriented design and implementation of computer programs for real-life problems. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE1OOF:Central examination",
+      "subject_code": "CSE1OOF",
+      "assessment_name": "Central examination",
+      "score": 50.0,
+      "weight": 0.4,
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE1OOF:SILO4",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO1"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly abstract data types and encapsulation to localise and minimise change, object-oriented design and implementation of computer programs for real-life problems, code sharing and reuse through object-oriented techniques to reduce development time, and analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE1OOF:Practical demonstration",
+      "subject_code": "CSE1OOF",
+      "assessment_name": "Practical demonstration",
+      "score": 49.0,
+      "weight": 0.2,
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "feedback_comment": "This limited result shows gaps that require targeted revision of the relevant learning themes, particularly abstract data types and encapsulation to localise and minimise change, code sharing and reuse through object-oriented techniques to reduce development time, and object-oriented design and implementation of computer programs for real-life problems. The student should revisit the core concepts, seek feedback early and practise applying the techniques in smaller, well-tested examples before attempting the full assessment task."
+    },
+    {
+      "key": "CSE1OOF:Test",
+      "subject_code": "CSE1OOF",
+      "assessment_name": "Test",
+      "score": 54.0,
+      "weight": 0.15,
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO2"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour and abstract data types and encapsulation to localise and minimise change. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE2ALG:Assignment",
+      "subject_code": "CSE2ALG",
+      "assessment_name": "Assignment",
+      "score": 54.0,
+      "weight": 0.3,
+      "silo_keys": [
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly identifying data structures and searching and sorting algorithms in computing contexts, implementing data structures and searching and sorting algorithms in Java, comparing algorithms and data structures and applying suitable choices to problems, and designing, implementing, and evaluating Java solutions using appropriate performance measures. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE2ALG:Central examination",
+      "subject_code": "CSE2ALG",
+      "assessment_name": "Central examination",
+      "score": 48.0,
+      "weight": 0.5,
+      "silo_keys": [
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO5"
+      ],
+      "feedback_comment": "This limited result shows gaps that require targeted revision of the relevant learning themes, particularly overall objectives of Algorithms and Data Structures, identifying data structures and searching and sorting algorithms in computing contexts, implementing data structures and searching and sorting algorithms in Java, and designing, implementing, and evaluating Java solutions using appropriate performance measures. The student should revisit the core concepts, seek feedback early and practise applying the techniques in smaller, well-tested examples before attempting the full assessment task."
+    },
+    {
+      "key": "CSE2ALG:Test",
+      "subject_code": "CSE2ALG",
+      "assessment_name": "Test",
+      "score": 53.0,
+      "weight": 0.2,
+      "silo_keys": [
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly overall objectives of Algorithms and Data Structures, identifying data structures and searching and sorting algorithms in computing contexts, and implementing data structures and searching and sorting algorithms in Java. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE3CAP:Assignment: Final written Project Report",
+      "subject_code": "CSE3CAP",
+      "assessment_name": "Assignment: Final written Project Report",
+      "score": 50.0,
+      "weight": 0.35,
+      "silo_keys": [
+        "CSE3CAP:SILO2",
+        "CSE3CAP:SILO4"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly industry standard technical solutions in software or cybersecurity practice and professional system documentation and advanced technical reporting to industry standards. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    },
+    {
+      "key": "CSE3CAP:Assignment: Sprint Project management reports",
+      "subject_code": "CSE3CAP",
+      "assessment_name": "Assignment: Sprint Project management reports",
+      "score": 46.0,
+      "weight": 0.35,
+      "silo_keys": [
+        "CSE3CAP:SILO1",
+        "CSE3CAP:SILO2"
+      ],
+      "feedback_comment": "This limited result shows gaps that require targeted revision of the relevant learning themes, particularly advanced project management during substantive development implementation and industry standard technical solutions in software or cybersecurity practice. The student should revisit the core concepts, seek feedback early and practise applying the techniques in smaller, well-tested examples before attempting the full assessment task."
+    },
+    {
+      "key": "CSE3CAP:Oral presentation: Final Project Presentation",
+      "subject_code": "CSE3CAP",
+      "assessment_name": "Oral presentation: Final Project Presentation",
+      "score": 49.0,
+      "weight": 0.2,
+      "silo_keys": [
+        "CSE3CAP:SILO3"
+      ],
+      "feedback_comment": "This limited result shows gaps that require targeted revision of the relevant learning themes, particularly reporting project outcomes to technical and non-technical audiences and reflecting on feedback. The student should revisit the core concepts, seek feedback early and practise applying the techniques in smaller, well-tested examples before attempting the full assessment task."
+    },
+    {
+      "key": "CSE3CAP:Oral presentation: Project Milestone Presentation",
+      "subject_code": "CSE3CAP",
+      "assessment_name": "Oral presentation: Project Milestone Presentation",
+      "score": 50.0,
+      "weight": 0.1,
+      "silo_keys": [
+        "CSE3CAP:SILO3"
+      ],
+      "feedback_comment": "This developing result meets the core requirements but needs greater consistency of the relevant learning themes, particularly reporting project outcomes to technical and non-technical audiences and reflecting on feedback. Future work should focus on consolidating the underlying concepts, applying them more consistently and explaining design or implementation decisions with stronger evidence."
+    }
+  ]
+}
