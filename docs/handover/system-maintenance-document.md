@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.2 — for team review. Sections marked ⚠ *TO FILL* depend on Sprint 5/6 evidence that does not exist yet. |
+| **Status** | DRAFT 0.3 — for team review. Sections marked ⚠ *TO FILL* depend on Sprint 5/6 evidence that does not exist yet. |
 | **Date** | 27 September 2026 |
 | **Describes** | `main` at `ac75a8e` (23 Sep 2026) plus the four open pull requests #22–#25, which are labelled where they matter |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
 | **Project owner** | Dr Scott Mann |
 | **Team** | Allan Campton (architecture, data model, gap engine), Ayesha Mosaddeque (CI, security scanning, Moodle extraction), Istiaque Bhuiyan (LLM layer, grounding, generation), Anup Tumbalam Gooty (QA, acceptance verification), Sui Lung Tang (risk, dashboard views) |
 | **Repository** | https://github.com/yetanotherpassword/LearningJourneyAssistant |
-| **Companion documents** | Repository `README.md` (quick start), the User Document (end-user walkthrough of the dashboard and CLI), the two ADRs under `docs/adr/`, the tender (`Tender Document.docx`) |
+| **Companion documents** | Repository `README.md` (quick start), the User Document (`docs/handover/user-document.md`: how the numbers are made, with worked examples, and the dashboard walkthrough), the two ADRs under `docs/adr/`, the tender (`Tender Document.docx`) |
 
 ---
 
@@ -785,6 +785,8 @@ This appendix defines every figure the system calculates or displays: its formul
 - **PR #24** (IOLG-113, subject catalogue generator): the evaluation metrics for generated cohorts in B.6.
 - **Branch `feature/silo-quality-views`** (not yet in a pull request): the outcome-quality metrics in B.5.
 
+**For the reasoning behind these rules,** with flowcharts and one worked student per priority group, see the User Document, Chapters 2 to 4. This appendix is the formal definition; that document is the explanation.
+
 **Conventions.** Scores and attainments are percentages from 0 to 100. Weights are fractions. "Gap" means a classification of either *persistent gap* or *isolated gap*.
 
 **Thresholds are proposals.** Every threshold in B.3 is a proposed default, not a ratified value. The project owner confirmed there is no institutional figure to match, so ratifying them is a team decision (action A-01 in `docs/meetings/actions.md`). The reasoning behind each value is in `docs/adr/0001-relative-gap-detection.md` and in the comments in `python/lja/config.py`.
@@ -1014,3 +1016,4 @@ Unplanted flags are not automatically false positives: every generated student h
 |---|---|---|---|
 | 0.1 | 26 Sep 2026 | Allan Campton (drafted with Claude Code) | First draft from the codebase and documentation at `main` `ac75a8e` plus open PRs #22–#25 |
 | 0.2 | 27 Sep 2026 | Allan Campton (drafted with Claude Code) | Added Appendix B, Metrics reference; former Appendices B and C are now C and D. Added Figure 5b and the pointer to the learning-plan traceability document. |
+| 0.3 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | Companion-document row and Appendix B now point at the User Document, which holds the explanation and worked examples behind the classification rules. |
