@@ -95,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         gaps,
         clustering,
         review_warning=review_warning,
+        plans_dir=Path(config.DASHBOARD_PLANS_DIR),
     )
     uvicorn.run(app, host=args.host, port=args.port)
     return 0
