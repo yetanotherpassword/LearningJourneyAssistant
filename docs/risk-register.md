@@ -74,7 +74,7 @@ enforcement observed on the dev instance: an <code>UPDATE m_user</code>
 as the reader returns &quot;permission denied&quot;, and a
 <code>--data-only</code> dump is byte-identical before and after
 <code>lja.cli --source moodle</code> (IOLG-111, evidence in
-docs/security-evidence.md, PR #44 under review). Not yet applied on a
+docs/security-evidence.md, PR #44 merged). Not yet applied on a
 shared or production instance.</td>
 <td>sql/moodle_attainment_extraction.sql Query 2;
 lja/data/moodle_loader.py; sql/README.md role DDL</td>
