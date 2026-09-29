@@ -1,0 +1,19 @@
+flowchart TB
+    classDef data fill:#eef6ff,stroke:#3b6fb6,color:#10233f
+    classDef check fill:#fff4e5,stroke:#c07520,color:#3a2305
+    classDef out fill:#eaf7ee,stroke:#2f8a4c,color:#0f2a17
+
+    R1["<b>Workbook, Results sheet</b> · 7 of STU0003's 11 assessments<br/>cover a Data Structures SILO<br/>CSE1OOF: Test 60 · Practical 63 · Assignment 65 · Exam 62<br/>CSE2ALG: Test 66 · Assignment 63 · Exam 64"]:::data
+    S["<b>Assessment Map</b> · SILOs in this competency<br/>CSE1OOF:SILO2 abstract data types and encapsulation<br/>CSE2ALG:SILO1–5 identifying, implementing, comparing,<br/>evaluating data structures and algorithms"]:::data
+    C["<b>silo_clustering.json</b> · cluster 'Data Structures and Algorithms'<br/>rationale: spans CSE1OOF SILO2 and CSE2ALG SILO2–5<br/>review state: confirmed (in bulk for the reference run)"]:::data
+    A["<b>Attainment</b> · 15 SILO observations, weighted by assessment weight<br/>= 63.7% · CSE1OOF 62.7% · CSE2ALG 64.1%"]:::data
+    PR{{"<b>Relative position</b> against STU0003's own profile<br/>5 competencies: 62.7 · 63.7 · 65.0 · 65.1 · 66.0<br/>median 65.0, MAD 1.0 → (63.7 − 65.0) / 1.0 ≈ −1.3<br/>(−1.28 from the unrounded figures)<br/>below the −1.0 cutoff → gap"}}:::check
+    GP["<b>gap_report.csv</b> · Data Structures and Algorithms<br/>63.7% · 2 subjects · persistent gap<br/>basis: relative position · −1.28"]:::data
+    PL["<b>learning_plan_STU0003.json</b> · priority 2<br/>evidence: 'CSE2ALG:Assignment (63.0%) and Central examination<br/>(64.0%) both cite consolidating underlying concepts…'<br/>SILOs CSE2ALG:SILO2–5 · assessments CSE2ALG:Assignment, Central examination"]:::out
+    GC{{"<b>Grounding</b> · every name above found in the context<br/>passed on the first attempt"}}:::check
+
+    R1 --> A
+    S --> C --> A
+    A --> PR --> GP --> PL
+    R1 -->|"scores and feedback quoted"| PL
+    PL --- GC

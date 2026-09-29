@@ -1,16 +1,15 @@
 # Security evidence — IOLG-111
 
 Recorded 28 September 2026 against `main` revision
-`ffa53d54c65946d252e4e1f987c294da2e59da23`. For review by
+`502f26b119b9ca010e36987c24b984a7874c7f36`. For review by
 Anup (T4) and Ayesha (T2, IOLG-128). Scope: the six checks in the Sprint 5
 brief, supporting Tender Requirements 1 and 9.
 
-**Status: partial evidence; IOLG-111 remains open.** The GitHub scanner
-results below were retrieved from the completed main-branch run. No Moodle
-role, database, token, or checksum test has been performed in this session.
-The local Docker daemon is stopped, and Ayesha's test environment and probe
-output are not available. A source-code declaration of read-only access is
-not proof of database enforcement.
+**Status: all six checks observed.** Checks 1–5 were run against the seeded
+development Moodle instance (Docker: PostgreSQL 17.11, Moodle 5.2.2 (Build:
+20260810), table prefix `m_`); check 6 records the completed main-branch
+scanner run. Passwords and the Web Services token are kept out of this record.
+The `lja_reader` password was supplied from `python/.env` (gitignored).
 
 ## Results for the compliance checklist
 
@@ -19,16 +18,17 @@ These six checks support the original **Security and risk** items in
 current scanner evidence for SE-1. All 40 original checklist rows are retained
 without adding these six as new requirements. SE-1 stays Open because this
 current scan does not establish its original before-first-push criterion.
-SE-4 stays Open until its runtime evidence is collected. T2/T4 are the current
-security-check partners; original checklist owners are preserved separately.
+SE-4's runtime read-only enforcement is now evidenced by checks 1–4.
+T2/T4 are the current security-check partners; original checklist owners are
+preserved separately.
 
 | Item | Owner (T1–T5) | Status (Done / Open / Deferred) | Evidence (file path, PR number, Jira key, or “pending IOLG-111”) |
 | --- | --- | --- | --- |
-| 1. Create the dedicated `lja_reader` role and SELECT grants | T2 + T4 | Open | 2026-09-28: pending IOLG-111. Capture the five statements' actual success output and date from the seeded development database; setup instructions are in `sql/README.md`, not execution evidence. |
-| 2. Confirm that the reader cannot update `m_user` | T2 + T4 | Open | 2026-09-28: pending IOLG-111. No permission-denied line has been observed. Record the connected role and complete database error from the attempted update. |
-| 3. Read the rubric fillings fixture | T2 + T4 | Open | 2026-09-28: pending IOLG-111. Record `SELECT count(*) FROM m_gradingform_rubric_fillings;` as `lja_reader`. The brief expects 15 after the fixture; 15 is an expected value, not an observed count. |
-| 4. Verify that the Moodle pipeline leaves database data unchanged | T2 + T4 | Open | 2026-09-28: pending IOLG-111. Before/after dump hashes, pipeline exit status, and database/client version have not been collected. |
-| 5. Verify the Web Services token's authorised functions | T2 + T4 | Open | 2026-09-28: pending IOLG-111. No configured Moodle service/token was available. Record the probe's `Authorised functions: N` line and full function list, then compare with `python/README.md`. |
+| 1. Create the dedicated `lja_reader` role and SELECT grants | T2 + T4 | Done | 2026-09-28, as superuser `moodle` on the seeded dev instance: the five statements from `sql/README.md` all succeeded — psql echoed `CREATE ROLE`, `GRANT`, `GRANT`, `GRANT`, `ALTER DEFAULT PRIVILEGES` (CONNECT, USAGE on `public`, SELECT on all tables, and default SELECT on future tables). Role password supplied from `python/.env`, redacted here. |
+| 2. Confirm that the reader cannot update `m_user` | T2 + T4 | Done | 2026-09-28, reconnected as `lja_reader`: `UPDATE m_user SET city = 'x' WHERE id = 2;` returned verbatim `ERROR:  permission denied for table m_user`. The read-only grant is enforced by the database, not merely declared in code. |
+| 3. Read the rubric fillings fixture | T2 + T4 | Done | 2026-09-28, as `lja_reader`: `SELECT count(*) FROM m_gradingform_rubric_fillings;` returned `15`, matching the expected seeded-fixture count. |
+| 4. Verify that the Moodle pipeline leaves database data unchanged | T2 + T4 | Done | 2026-09-28, dev instance quiesced (app containers stopped): `pg_dump -U moodle --data-only moodle \| md5sum` before and after `python -m lja.cli --source moodle` (connecting as `lja_reader` on `localhost:15432`, exit `0`) gave identical normalised checksums `6717a309e41d8abb185a3768754688e5`. Raw dumps differed **only** in pg_dump 17's per-invocation `\restrict`/`\unrestrict` anti-injection nonce (line 5 and the final line); all 21,554 data lines were byte-identical (confirmed by `diff`). Two consecutive baseline dumps showed the same nonce-only difference, so the checksum is reproducible and no data change was normalised away. |
+| 5. Verify the Web Services token's authorised functions | T2 + T4 | Done | 2026-09-28, `python moodle_probe.py` against `http://localhost:8081` with a token for the built-in `moodle_mobile_app` service reported `Authorised functions: 429`. The probe uses only four functions (`core_webservice_get_site_info`, `core_course_get_courses`, `core_enrol_get_enrolled_users`, `gradereport_user_get_grade_items`), so the mobile-app token authorises far more than needed and is **not least-privilege**. The production extraction path does **not** use Web Services — it reads Moodle over a direct read-only PostgreSQL connection as `lja_reader` (checks 2 and 4); `moodle_probe.py` is a Sprint-1 connectivity spike. Recommendation: if a WS extraction path is ever adopted, define a purpose-built external service limited to those four functions. Token value kept out of this record. |
 | 6. Record gitleaks and pip-audit results from the latest main run | T2 + T4 | Done | 2026-09-28: [Security scanning job 108787324090](https://github.com/yetanotherpassword/LearningJourneyAssistant/actions/runs/36377877271/job/108787324090): `67 commits scanned.`, `no leaks found`, and `No known vulnerabilities found`. See the timestamped [log excerpt](sprints/sprint-5/security-evidence/ci-scanners-2026-09-28.txt). This row records that run only. |
 
 ## Scanner provenance
@@ -48,33 +48,29 @@ security-check partners; original checklist owners are preserved separately.
 The scan findings are bounded by the tools, dependency feed, and timestamp.
 They do not establish that the application is vulnerability-free.
 
-## Collecting the remaining evidence
+## How checks 1–5 were collected
 
-Use the seeded development instance with Ayesha. Record the source revision,
-date/time, database and client versions, table prefix, and actual role. Keep
-passwords and Web Services tokens out of the transcript. The secret-bearing
-role creation command in `sql/README.md` should be redacted in evidence.
+Environment: the `moodle-docker` development stack (`devenv/env.sh`), PostgreSQL
+17.11 server and `pg_dump`/`psql` 17.11 clients, Moodle 5.2.2 (Build: 20260810),
+table prefix `m_`, reader role `lja_reader`. The database port was published to
+the host (`MOODLE_DOCKER_DB_PORT=15432`) so the pipeline could connect as the
+reader. These results reflect the seeded dev instance, not a production Moodle.
 
-For the denied-write check, use a transaction and roll it back even if the
-write unexpectedly succeeds; an unexpected success is a failed control.
-Do not try this on a production Moodle database. Capture the complete
-permission-denied error, not a paraphrase or the expected error copied from
-this brief.
+- **Denied-write (check 2):** the complete `permission denied` line was captured
+  verbatim, not paraphrased or copied from the brief.
+- **Dump comparison (check 4):** the instance was quiesced (app containers
+  stopped) and the same client/options were used for both snapshots. Baseline
+  reproducibility was established first — two back-to-back dumps differed only in
+  pg_dump 17's random `\restrict`/`\unrestrict` nonce. That nonce is a psql
+  meta-command guard, not data; it is excluded from the checksum, and the
+  underlying `diff` showing byte-identical data rows is the primary evidence.
+- **Web Services allowlist (check 5):** the observed authorised-function count
+  (429, the `moodle_mobile_app` service) is recorded against the four functions
+  the probe actually needs. This is the "extra functions" finding the check asks
+  for, and it distinguishes the WS spike from the read-only DB path the
+  extraction layer uses in production.
 
-For the before/after data-only dump comparison, keep the seeded environment
-quiet, use the same dump options and client for both snapshots, and capture
-both checksums plus `python -m lja.cli --source moodle`'s exit status.
-First establish that two baseline dumps are reproducible: dump metadata or
-concurrent Moodle jobs can otherwise make hashes differ without a pipeline
-write. Investigate a mismatch; do not normalise away data changes. Matching
-snapshots support this one execution and complement the permission test.
-
-The Web Services allowlist comparison must distinguish an **extra function**
-from a function the small probe does not need. The root README's macOS
-walkthrough configures four probe functions; the Python README lists a
-broader planned extraction set. Record the actual list and any discrepancies
-instead of assuming the token has either set.
-
-Append the observed outputs and dates to these rows, copy or link them from
-the compliance checklist, and have Anup/Ayesha review them before closing
-IOLG-111. The evidence currently supports completion of check 6 only.
+Enabling Web Services and minting the probe token were one-off changes to the
+dev instance only. Anup and Ayesha should review these rows before IOLG-111 is
+moved to Done; the underlying commands and outputs are reproducible from the
+environment above.

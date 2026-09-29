@@ -1,0 +1,129 @@
+classDiagram
+    direction LR
+
+    class LjaDataset {
+        +dict~str,Silo~ silos
+        +list~Assessment~ assessments
+        +list~ResultRow~ results
+        +list~StudentSummary~ student_summaries
+    }
+    class Silo {
+        +subject_code
+        +silo_local_id
+        +text
+        +key() "SUBJ:SILOn"
+    }
+    class Assessment {
+        +subject_code
+        +assessment_name
+        +weight
+        +silo_ids
+    }
+    class ResultRow {
+        +student_id
+        +subject_code
+        +assessment_name
+        +score
+        +feedback_comment
+        +silo_ids
+    }
+    class StudentSummary {
+        +student_id
+        +subject_totals
+        +average_total
+        +performance_band
+    }
+    LjaDataset *-- Silo
+    LjaDataset *-- Assessment
+    LjaDataset *-- ResultRow
+    LjaDataset *-- StudentSummary
+
+    class LLMClient {
+        <<Protocol>>
+        +complete_structured(system, user, schema) T
+        +describe() str
+        +usage_summary() str
+    }
+    class AnthropicClient
+    class OpenAICompatibleClient
+    LLMClient <|.. AnthropicClient
+    LLMClient <|.. OpenAICompatibleClient
+
+    class SiloClusteringResult {
+        +list~CompetencyCluster~ clusters
+        +list~FlaggedSilo~ flagged_silos
+    }
+    class CompetencyCluster {
+        +competency_label
+        +rationale
+        +list~SiloRef~ members
+    }
+    SiloClusteringResult *-- CompetencyCluster
+
+    class GapThresholds {
+        +absolute_floor 50
+        +absolute_ceiling 75
+        +relative_gap_cutoff -1.0
+        +relative_strong_cutoff 1.0
+        +min_competencies 4
+        +min_spread 1.0
+        +fallback_proficient 65
+    }
+    class CompetencyGap {
+        +student_id
+        +competency_label
+        +attainment_pct
+        +subjects_evidencing
+        +classification
+        +classification_basis
+        +relative_position
+    }
+
+    class ReviewStore {
+        +version
+        +dict~str,ClusterReview~ reviews
+    }
+    class ClusterReview {
+        +cluster_id sha256[:12]
+        +competency_label
+        +members
+        +state pending|confirmed|rejected
+        +note
+    }
+    ReviewStore *-- ClusterReview
+
+    class LearningPlan {
+        +student_id
+        +summary
+        +list~PlanPriority~ priorities
+        +strengths_to_build_on
+    }
+    class PlanContext {
+        +competencies
+        +silo_text
+        +assessments
+        +known_*()
+    }
+    class GroundingReport {
+        +artefact
+        +problems
+        +ok
+        +raise_if_failed()
+    }
+    class ReferenceCheck {
+        +kind
+        +referenced
+        +known
+        +require_complete
+        +require_unique
+    }
+
+    LjaDataset --> SiloClusteringResult : cluster_silos(client, dataset)
+    SiloClusteringResult --> ReviewStore : load_or_create_reviews()
+    LjaDataset --> CompetencyGap : compute_gaps(dataset, clustering, thresholds)
+    GapThresholds --> CompetencyGap
+    CompetencyGap --> PlanContext : build_plan_context()
+    PlanContext --> LearningPlan : generate_learning_plan(client)
+    LearningPlan ..> GroundingReport : validate_plan()
+    SiloClusteringResult ..> GroundingReport : _validate_coverage()
+    ReferenceCheck --> GroundingReport
