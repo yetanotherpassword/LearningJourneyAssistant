@@ -197,7 +197,7 @@ def test_student_page_shows_progress_across_subjects_in_year_order() -> None:
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
     progress = _progress_section(body)
-    assert progress.index("<th>CSE1OOF</th>") < progress.index("<th>CSE2ALG</th>")
+    assert progress.index('<th data-sort-type="number">CSE1OOF</th>') < progress.index('<th data-sort-type="number">CSE2ALG</th>')
     assert "40.0%" in progress and "70.0%" in progress
     assert "improving" in progress
     # The chart gets the same rows as JSON, in the same order.
@@ -222,7 +222,7 @@ def test_student_page_progress_marks_single_subject_competency_as_insufficient()
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
     progress = _progress_section(body)
-    assert "<th>CSE1OOF</th>" in progress
+    assert '<th data-sort-type="number">CSE1OOF</th>' in progress
     assert "insufficient evidence" in progress
     # One point is not a progression: nothing is sent to the chart.
     assert '"rows": []' in body
@@ -719,3 +719,39 @@ def test_student_detail_without_plans_directory_is_safe() -> None:
 
     assert response.status_code == 200
     assert "No learning plan has been generated for this student yet" in response.text
+
+
+# --- per-group student list page (IOLG-134 follow-up) ---
+
+
+def test_cohort_title_prints_the_floor_in_force_not_a_placeholder() -> None:
+    dataset, gaps = _two_students_one_with_a_persistent_gap()
+    body = _client(dataset, gaps).get("/cohort/priority-1").text
+    assert "{floor}" not in body
+    assert "below the 50% floor" in body
+
+
+def test_cohort_students_page_lists_every_member_and_only_members() -> None:
+    """STU0002 has the persistent gap; STU0001 is proficient. The list page for
+    the persistent-gap cohort is the cohort and nothing else."""
+    dataset, gaps = _two_students_one_with_a_persistent_gap()
+    response = _client(dataset, gaps).get("/cohort/persistent-gap/students")
+    assert response.status_code == 200
+    assert 'href="/student/STU0002"' in response.text
+    assert 'href="/student/STU0001"' not in response.text
+    # The filter box and the sortable table are what the page is for.
+    assert 'class="scroll-search"' in response.text
+    assert '<table class="sortable">' in response.text
+    assert "all 1 student" in response.text
+
+
+def test_cohort_page_links_to_its_students_page_and_back() -> None:
+    dataset, gaps = _two_students_one_with_a_persistent_gap()
+    client = _client(dataset, gaps)
+    assert 'href="/cohort/persistent-gap/students"' in client.get("/cohort/persistent-gap").text
+    assert 'href="/cohort/persistent-gap"' in client.get("/cohort/persistent-gap/students").text
+
+
+def test_unknown_cohort_students_page_is_404() -> None:
+    dataset, gaps = _two_students_one_with_a_persistent_gap()
+    assert _client(dataset, gaps).get("/cohort/not-a-cohort/students").status_code == 404

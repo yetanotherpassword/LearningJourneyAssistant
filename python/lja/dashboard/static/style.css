@@ -581,3 +581,10 @@ a.term-help {
   color: var(--muted); background: var(--surface); border: 1px solid var(--line); vertical-align: middle;
 }
 a.term-help:hover { color: var(--accent); border-color: var(--accent); }
+
+/* /cohort/<key>/students: the whole group is the page, so the box is not
+   height-capped and the page itself scrolls; the sticky header then pins
+   to the viewport. Expand (full screen) restores the scrolling box. */
+.full-list .scroll-box { max-height: none; overflow: visible; }
+.full-list .scroll-panel.is-full .scroll-box { overflow: auto; }
+.full-list .scroll-note { display: none; }

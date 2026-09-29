@@ -70,9 +70,9 @@
   Every parameter can be set with its environment variable (read from <code>python/.env</code> or the shell);
   the CLI flag column is for <code>python -m lja.cli</code>, and the two marked &#9679; are also flags on <code>python -m lja.dashboard</code>.
 </p>
-<table class="compact params">
+<table class="compact params sortable">
   <thead>
-    <tr><th>Parameter</th><th>This run</th><th>Default</th><th>Environment variable</th><th>CLI flag</th><th>Meaning</th></tr>
+    <tr><th data-sort-type="text">Parameter</th><th data-sort-type="number">This run</th><th data-sort-type="number">Default</th><th data-sort-type="text">Environment variable</th><th data-sort-type="text">CLI flag</th><th data-sort-type="text">Meaning</th></tr>
   </thead>
   <tbody>
     {% for r in threshold_rows %}
@@ -113,8 +113,8 @@
   <div><dt>Catalogue</dt><dd><code>{{ run_info.generator.catalogue }}</code></dd></div>
   <div><dt>Seed</dt><dd>{{ run_info.generator.seed }}</dd></div>
 </dl>
-<table class="compact">
-  <thead><tr><th>Generator parameter</th><th>Value</th></tr></thead>
+<table class="compact sortable">
+  <thead><tr><th data-sort-type="text">Generator parameter</th><th data-sort-type="text">Value</th></tr></thead>
   <tbody>
     {% for k, v in run_info.generator.params.items() %}
     <tr><td><code>{{ k }}</code></td><td class="val">{{ v }}</td></tr>

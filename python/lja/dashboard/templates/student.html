@@ -50,8 +50,8 @@
 <h2>Strengths</h2>
 {% if strengths %}
 {% call scrollbox(strengths|length, "strengths") %}
-<table class="evidence-table">
-  <thead><tr><th>Competency</th><th>Attainment</th><th>Basis</th></tr></thead>
+<table class="evidence-table sortable">
+  <thead><tr><th data-sort-type="text">Competency</th><th data-sort-type="number" aria-sort="descending">Attainment</th><th data-sort-type="text">Basis</th></tr></thead>
   <tbody>
     {% for s in strengths %}
     <tr>
@@ -81,12 +81,12 @@
   <p id="progress-chart-note" class="chart-note" hidden></p>
 </div>
 {% call scrollbox(progress_rows|length, "competencies") %}
-<table class="evidence-table progress-table">
+<table class="evidence-table progress-table sortable">
   <thead>
     <tr>
-      <th>Competency</th>
-      {% for c in progress_subjects %}<th>{{ c }}</th>{% endfor %}
-      <th>Trend</th>
+      <th data-sort-type="text">Competency</th>
+      {% for c in progress_subjects %}<th data-sort-type="number">{{ c }}</th>{% endfor %}
+      <th data-sort-type="text">Trend</th>
     </tr>
   </thead>
   <tbody>
@@ -116,13 +116,13 @@
       <span class="badge {{ gap.classification|replace(' ', '-') }}">{{ gap.classification }}</span>
     </summary>
     <div class="gap-card-body">
-      <table class="evidence-table">
+      <table class="evidence-table sortable">
         <thead>
           <tr>
-            <th>Subject</th>
-            <th>Year</th>
-            <th>Attainment</th>
-            <th>Observations</th>
+            <th data-sort-type="text">Subject</th>
+            <th data-sort-type="number">Year</th>
+            <th data-sort-type="number">Attainment</th>
+            <th data-sort-type="number">Observations</th>
           </tr>
         </thead>
         <tbody>

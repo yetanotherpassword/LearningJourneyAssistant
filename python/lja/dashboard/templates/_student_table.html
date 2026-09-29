@@ -1,0 +1,71 @@
+{# The student table used by the index, every cohort page and the
+   per-group list page. One definition so the columns, glossary links and
+   data-sort-value attributes cannot drift between pages. #}
+
+{% macro student_rows(some_rows) -%}
+    {% for row in some_rows %}
+    <tr class="{{ 'priority-%d'|format(row.priority) if row.priority else '' }}">
+      <td data-sort-value="{{ row.priority if row.priority else 9 }}">
+        {% if row.priority %}<span class="prio prio-{{ row.priority }}">{{ row.priority }}</span>{% else %}&mdash;{% endif %}
+      </td>
+      <td data-sort-value="{{ row.student_id }}">
+        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
+          {{ row.student_id }}
+        </a>
+      </td>
+      <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
+      <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
+      <td data-sort-value="{{ row.floor_gap_count }}">
+        {% if row.floor_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.floor_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.lowest_gap_pct if row.lowest_gap_pct is not none else '' }}">
+        {% if row.lowest_gap_pct is not none %}
+        {{ "%.1f"|format(row.lowest_gap_pct) }}%
+        {% if row.deepest_position is not none %}<span class="muted">{{ "%+.1f"|format(row.deepest_position) }} MAD <a class="term-help" href="/glossary#mad" title="Definition in the glossary">?</a></span>{% endif %}
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.persistent_gap_count }}">
+        {% if row.persistent_gap_count > 0 %}
+        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.isolated_gap_count }}">
+        {% if row.isolated_gap_count > 0 %}
+        <span class="badge isolated-gap">{{ row.isolated_gap_count }}</span>
+        {% else %}
+        &mdash;
+        {% endif %}
+      </td>
+      <td data-sort-value="{{ row.strength_count }}">{{ row.strength_count }}</td>
+    </tr>
+    {% endfor %}
+{%- endmacro %}
+
+{% macro student_table(some_rows, default_sorted) -%}
+<table class="sortable">
+  <thead>
+    <tr>
+      <th data-sort-type="number" {% if default_sorted %}aria-sort="ascending"{% endif %} title="Priority group, 1 first (see the groups above)">Priority <a class="term-help" href="/glossary#priority" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="text">Student</th>
+      <th data-sort-type="number">Average</th>
+      <th data-sort-type="text">Band</th>
+      <th data-sort-type="number" title="Gaps below the absolute floor">Below floor <a class="term-help" href="/glossary#absolute-floor" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number" title="The student's lowest flagged competency, and how far below their own median it sits">Lowest gap <a class="term-help" href="/glossary#lowest-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Persistent gaps <a class="term-help" href="/glossary#persistent-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Isolated gaps <a class="term-help" href="/glossary#isolated-gap" title="Definition in the glossary">?</a></th>
+      <th data-sort-type="number">Strengths <a class="term-help" href="/glossary#proficient" title="Definition in the glossary">?</a></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ student_rows(some_rows) }}
+  </tbody>
+</table>
+{%- endmacro %}

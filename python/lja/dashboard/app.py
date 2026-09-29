@@ -408,6 +408,7 @@ def create_app(
 
         return {
             "cohort": cohort,
+            "cohort_title": format_text(cohort.title),
             "cohort_blurb": format_text(cohort.blurb),
             # One entry per priority group: definition, size, and a preview
             # of its worst rows. The cohort page for the group has them all.
@@ -509,6 +510,34 @@ def create_app(
             known = ", ".join(sorted(_COHORTS_BY_KEY))
             raise HTTPException(status_code=404, detail=f"No cohort {cohort_key!r} -- known cohorts: {known}")
         return templates.TemplateResponse(request, "cohort.html", view_model(cohort))
+
+    @app.get("/cohort/{cohort_key}/students")
+    def cohort_students(request: Request, cohort_key: str):
+        """The whole cohort as one searchable, sortable table.
+
+        The cohort page previews each priority group and scroll-boxes the
+        rest under its charts; this page is the group and nothing else, so
+        a coordinator working through 1,000 students has one long table
+        with a filter box rather than a 60vh window. Same rows, same order,
+        same row_for(): only the framing differs.
+        """
+        cohort = _COHORTS_BY_KEY.get(cohort_key)
+        if cohort is None:
+            known = ", ".join(sorted(_COHORTS_BY_KEY))
+            raise HTTPException(status_code=404, detail=f"No cohort {cohort_key!r} -- known cohorts: {known}")
+        rows = sorted((row_for(summary) for summary in members(cohort)), key=severity_key)
+        return templates.TemplateResponse(
+            request,
+            "cohort_students.html",
+            {
+                "cohort": cohort,
+                "cohort_title": format_text(cohort.title),
+                "cohort_blurb": format_text(cohort.blurb),
+                "rows": rows,
+                "review_warning": review_warning,
+                "student_ids": student_ids,
+            },
+        )
 
     @app.get("/student/{student_id}")
     def student_detail(request: Request, student_id: str):

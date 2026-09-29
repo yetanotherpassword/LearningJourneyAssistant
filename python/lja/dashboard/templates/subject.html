@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import tile, pct %}
+{% from "_macros.html" import tile, pct, scrollbox %}
 {% block title %}{{ subject.subject_code }} &mdash; LJA Dashboard{% endblock %}
 {% block content %}
 <a class="back-link" href="/subjects">&larr; all subjects</a>
@@ -27,6 +27,7 @@
   Every assessment in the subject's map, the SILOs it evidences, and how many result rows the dataset holds for it.
 </p>
 {% if assessments %}
+{% call scrollbox(assessments|length, "assessments") %}
 <table class="sortable compact">
   <thead><tr>
     <th data-sort-type="text" aria-sort="ascending">Assessment</th><th data-sort-type="number">Weight</th>
@@ -52,6 +53,7 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No assessment map for this subject.</p>
 {% endif %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ trace.label }} &mdash; LJA Dashboard{% endblock %}
+{% from "_macros.html" import scrollbox %}
 {% block content %}
 <a class="back-link" href="/competencies">&larr; all competencies</a>
 <h1>{{ trace.label }}</h1>
@@ -29,8 +30,13 @@
   <canvas id="progression-chart" height="110"></canvas>
 </div>
 
-<table>
-  <thead><tr><th>Subject</th><th>Year</th><th>Students</th><th>Mean attainment</th><th>Gap rate</th><th>Outcomes</th></tr></thead>
+{% call scrollbox(progression.points|length, "subjects") %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Subject</th><th data-sort-type="number">Year</th>
+    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th>
+    <th data-sort-type="number">Gap rate</th><th data-sort-type="text">Outcomes</th>
+  </tr></thead>
   <tbody>
   {% for pt in progression.points %}
     <tr>
@@ -53,6 +59,7 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 
 {% endif %}
 
