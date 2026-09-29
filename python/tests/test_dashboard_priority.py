@@ -10,7 +10,7 @@ import json
 
 from fastapi.testclient import TestClient
 
-from lja.dashboard.app import PRIORITY_PREVIEW_SIZE, create_app
+from lja.dashboard.app import create_app
 from lja.dashboard.run_info import RunInfo, collect_run_info
 from lja.data.excel_loader import LjaDataset, StudentSummary
 from lja.model.gap_detection import BASIS_CEILING, BASIS_FLOOR, BASIS_RELATIVE, CompetencyGap, GapThresholds
@@ -86,8 +86,11 @@ def test_students_render_in_priority_order() -> None:
         assert table.count(f'class="priority-{rank}"') == 1
 
 
-def test_priority_group_previews_are_capped_and_link_to_the_whole_group() -> None:
-    n = PRIORITY_PREVIEW_SIZE + 3
+def test_priority_group_lists_every_member_in_its_own_filter_box() -> None:
+    """No preview cut: thirteen floor-breach students all appear in the
+    1st-priority section, inside a filter box with a sortable table, and
+    again in the full table underneath."""
+    n = 13
     dataset = _dataset(
         [StudentSummary(f"STU{i:04d}", {}, 40.0, "Fail") for i in range(1, n + 1)]
     )
@@ -101,8 +104,10 @@ def test_priority_group_previews_are_capped_and_link_to_the_whole_group() -> Non
         body.index('<section class="priority-group priority-group-2">')
     ]
 
-    assert group.count('href="/student/') == PRIORITY_PREVIEW_SIZE
-    assert f"All {n} in this group" in group
+    assert group.count('href="/student/') == n
+    assert 'class="scroll-search"' in group
+    assert '<table class="sortable">' in group
+    assert "in this group" not in group
     assert _full_table(body).count('href="/student/') == n
 
 

@@ -90,10 +90,6 @@ _AT_RISK_CLASSIFICATIONS = {"persistent gap", "isolated gap"}
 # classifier uses rather than a hand-typed copy of it.
 PERSISTENT_MIN_SUBJECTS = 2
 
-# Each priority group on the index shows this many of its students; the
-# group's cohort page and the full table underneath carry everyone.
-PRIORITY_PREVIEW_SIZE = 10
-
 # Priority groups. Three, because that is how many distinctions the
 # classifier's existing rules make between flagged students without a new
 # number: a floor breach is a gap whatever the profile (absolute rule), a
@@ -410,20 +406,20 @@ def create_app(
             "cohort": cohort,
             "cohort_title": format_text(cohort.title),
             "cohort_blurb": format_text(cohort.blurb),
-            # One entry per priority group: definition, size, and a preview
-            # of its worst rows. The cohort page for the group has them all.
+            # One entry per priority group: definition, size, and every row
+            # in it, worst first. The template puts each group in its own
+            # filter box, so a 3,000-student group is searched, not scrolled.
             "priority_groups": [
                 {
                     **d,
                     "label": format_text(d["label"]),
                     "blurb": format_text(d["blurb"]),
                     "count": sum(1 for r in rows if r["priority"] == d["rank"]),
-                    "rows": [r for r in rows if r["priority"] == d["rank"]][:PRIORITY_PREVIEW_SIZE],
+                    "rows": [r for r in rows if r["priority"] == d["rank"]],
                 }
                 for d in _PRIORITY_DEFINITIONS
             ],
             "unflagged_count": sum(1 for r in rows if r["priority"] is None),
-            "preview_size": PRIORITY_PREVIEW_SIZE,
             # Outlier chart: one point per student. Flagged students are
             # placed at their lowest flagged mark; unflagged ones (p = 0)
             # at their lowest competency mark, which by definition was not
@@ -510,34 +506,6 @@ def create_app(
             known = ", ".join(sorted(_COHORTS_BY_KEY))
             raise HTTPException(status_code=404, detail=f"No cohort {cohort_key!r} -- known cohorts: {known}")
         return templates.TemplateResponse(request, "cohort.html", view_model(cohort))
-
-    @app.get("/cohort/{cohort_key}/students")
-    def cohort_students(request: Request, cohort_key: str):
-        """The whole cohort as one searchable, sortable table.
-
-        The cohort page previews each priority group and scroll-boxes the
-        rest under its charts; this page is the group and nothing else, so
-        a coordinator working through 1,000 students has one long table
-        with a filter box rather than a 60vh window. Same rows, same order,
-        same row_for(): only the framing differs.
-        """
-        cohort = _COHORTS_BY_KEY.get(cohort_key)
-        if cohort is None:
-            known = ", ".join(sorted(_COHORTS_BY_KEY))
-            raise HTTPException(status_code=404, detail=f"No cohort {cohort_key!r} -- known cohorts: {known}")
-        rows = sorted((row_for(summary) for summary in members(cohort)), key=severity_key)
-        return templates.TemplateResponse(
-            request,
-            "cohort_students.html",
-            {
-                "cohort": cohort,
-                "cohort_title": format_text(cohort.title),
-                "cohort_blurb": format_text(cohort.blurb),
-                "rows": rows,
-                "review_warning": review_warning,
-                "student_ids": student_ids,
-            },
-        )
 
     @app.get("/student/{student_id}")
     def student_detail(request: Request, student_id: str):

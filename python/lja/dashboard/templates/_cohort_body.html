@@ -77,8 +77,8 @@
   {{ gap_summary.flagged_students }} of {{ gap_summary.students }} students have at least one flagged competency;
   {{ unflagged_count }} have none. Flagged students fall into three groups from the classification rules already applied
   (<a href="/run#rules">how these are decided</a>, <a href="/glossary">what the words mean</a>).
-  Each group shows its {{ preview_size }} most severe; the link under each group opens the whole group on its own page, and the
-  <a href="#everyone">full table</a> below lists everyone in the same order.
+  Each group lists every student in it, worst first: type in its filter box to narrow the list, click a column
+  heading to sort, Expand for full screen. The <a href="#everyone">full table</a> below lists everyone in the same order.
 </p>
 
 {% for group in priority_groups %}
@@ -90,9 +90,6 @@
   <p class="group-blurb">{{ group.blurb }}</p>
   {% if group.rows %}
   {% call scrollbox(group.rows|length, "students") %}{{ student_table(group.rows, false) }}{% endcall %}
-  {% if group.count > group.rows|length %}
-  <p class="group-more"><a href="/cohort/{{ group.key }}/students">All {{ group.count }} in this group, searchable and sortable &rarr;</a></p>
-  {% endif %}
   {% else %}
   <p class="empty-state">No students in this group.</p>
   {% endif %}
