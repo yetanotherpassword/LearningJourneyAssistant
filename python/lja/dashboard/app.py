@@ -47,6 +47,7 @@ from ..model.gap_detection import (
     GapThresholds,
 )
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
+from ..model.learning_plan import LearningPlan
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
     assess_silos,
@@ -241,6 +242,7 @@ def create_app(
     review_warning: str | None = None,
     thresholds: GapThresholds | None = None,
     run_info: RunInfo | None = None,
+    plans_dir: Path | None = None,
 ) -> FastAPI:
     """`thresholds` must be the object compute_gaps() was given for `gaps`.
 
@@ -571,6 +573,7 @@ def create_app(
                     "trend": d["trend"],
                 }
             )
+
         # The chart draws only competencies seen in two or more subjects (a
         # single point is not a progression) and at most PROGRESS_CHART_MAX
         # of them, gaps first because gap_details is already in severity
@@ -584,11 +587,20 @@ def create_app(
             }
         )
 
+        plan = None
+        if plans_dir is not None:
+            plan_path = plans_dir / f"learning_plan_{student_id}.json"
+            if plan_path.exists():
+                plan = LearningPlan.model_validate_json(
+                    plan_path.read_text(encoding="utf-8")
+                )
+
         return templates.TemplateResponse(
             request,
             "student.html",
             {
                 "summary": summary,
+                "plan": plan,
                 "strengths": strengths,
                 "gap_details": gap_details,
                 "progress_subjects": progress_subjects,

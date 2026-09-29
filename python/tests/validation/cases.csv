@@ -1,0 +1,29 @@
+case_id,description,competency,attainment,subjects_evidencing,expected_classification,expected_basis
+uniform_weak,Every attainment is below the absolute floor,A,40,1,isolated gap,absolute floor
+uniform_weak,Every attainment is below the absolute floor,B,45,1,isolated gap,absolute floor
+uniform_weak,Every attainment is below the absolute floor,C,42,1,isolated gap,absolute floor
+uniform_weak,Every attainment is below the absolute floor,D,48,1,isolated gap,absolute floor
+uniform_strong,Every attainment is at or above the absolute ceiling,A,80,1,proficient,absolute ceiling
+uniform_strong,Every attainment is at or above the absolute ceiling,B,78,1,proficient,absolute ceiling
+uniform_strong,Every attainment is at or above the absolute ceiling,C,85,1,proficient,absolute ceiling
+uniform_strong,Every attainment is at or above the absolute ceiling,D,90,1,proficient,absolute ceiling
+flat_profile,MAD below 1.0 requires the insufficient-data fallback,A,62.0,1,developing,insufficient data
+flat_profile,MAD below 1.0 requires the insufficient-data fallback,B,62.5,1,developing,insufficient data
+flat_profile,MAD below 1.0 requires the insufficient-data fallback,C,63.0,1,developing,insufficient data
+flat_profile,MAD below 1.0 requires the insufficient-data fallback,D,62.8,1,developing,insufficient data
+relative_clear,Four competencies with a clear relative weakness,A,70,1,developing,relative position
+relative_clear,Four competencies with a clear relative weakness,B,68,1,developing,relative position
+relative_clear,Four competencies with a clear relative weakness,C,72,1,proficient,relative position
+relative_clear,Four competencies with a clear relative weakness,D,55,1,isolated gap,relative position
+three_competencies,Fewer than four competencies requires the fallback,A,55,1,developing,insufficient data
+three_competencies,Fewer than four competencies requires the fallback,B,70,1,proficient,insufficient data
+three_competencies,Fewer than four competencies requires the fallback,C,72,1,proficient,insufficient data
+boundary_exact,Relative cutoffs include exactly minus one and plus one MAD,A,60,1,isolated gap,relative position
+boundary_exact,Relative cutoffs include exactly minus one and plus one MAD,B,62,1,isolated gap,relative position
+boundary_exact,Relative cutoffs include exactly minus one and plus one MAD,C,64,1,developing,relative position
+boundary_exact,Relative cutoffs include exactly minus one and plus one MAD,D,66,1,proficient,relative position
+boundary_exact,Relative cutoffs include exactly minus one and plus one MAD,E,68,1,proficient,relative position
+persistent,The relative weakness is evidenced by two distinct subjects,A,70,1,developing,relative position
+persistent,The relative weakness is evidenced by two distinct subjects,B,68,1,developing,relative position
+persistent,The relative weakness is evidenced by two distinct subjects,C,72,1,proficient,relative position
+persistent,The relative weakness is evidenced by two distinct subjects,D,55,2,persistent gap,relative position

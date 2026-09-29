@@ -547,6 +547,7 @@ def test_index_strength_count_matches_proficient_competencies() -> None:
 # --- outcome quality and competency progression ------------------------------
 
 from lja.data.excel_loader import Assessment, Silo  # noqa: E402
+from lja.model.learning_plan import LearningPlan, PlanPriority  # noqa: E402
 from lja.model.silo_clustering import FlaggedSilo  # noqa: E402
 
 
@@ -619,3 +620,102 @@ def test_competency_page_renders_points_in_year_order_and_404s_unknown() -> None
     assert "Taught in one subject only" in single.text
     assert "progression-chart" not in single.text
     assert client.get("/competency/nope").status_code == 404
+
+# --- recommended next actions on student page (IOLG-122) ---------------------
+
+
+def test_student_detail_renders_generated_learning_plan(tmp_path) -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={"CSE1OOF": 70.0},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    plan = LearningPlan(
+        student_id="STU0001",
+        summary="Focus next on strengthening your data-structure skills.",
+        priorities=[
+            PlanPriority(
+                competency_label="Data Structures",
+                silo_keys=[],
+                subject_codes=["CSE1OOF"],
+                assessment_keys=["CSE1OOF:Test"],
+                evidence="Your test result shows this is the next area to strengthen.",
+                actions="Practise linked lists",
+            )
+        ],
+        strengths_to_build_on=["Testing"],
+    )
+    (tmp_path / "learning_plan_STU0001.json").write_text(
+        plan.model_dump_json(),
+        encoding="utf-8",
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=tmp_path,
+    )
+    body = TestClient(app).get("/student/STU0001").text
+
+    assert "Recommended next actions" in body
+    next_actions = body.split("<h2>Recommended next actions</h2>", 1)[1].split(
+        "<h2>Strengths</h2>", 1
+    )[0]
+    assert "Practise linked lists" in next_actions
+    assert "Data Structures" in next_actions
+    assert "CSE1OOF:Test" in next_actions
+
+
+def test_student_detail_shows_plan_empty_state_when_file_is_missing(tmp_path) -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=tmp_path,
+    )
+    body = TestClient(app).get("/student/STU0001").text
+
+    assert "No learning plan has been generated for this student yet" in body
+    assert "python -m lja.plan" in body
+
+
+def test_student_detail_without_plans_directory_is_safe() -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=None,
+    )
+    response = TestClient(app).get("/student/STU0001")
+
+    assert response.status_code == 200
+    assert "No learning plan has been generated for this student yet" in response.text

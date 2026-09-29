@@ -103,6 +103,7 @@ def main(argv: list[str] | None = None) -> int:
             review_file=str(review_path) if review_path.exists() else None,
             environ=dict(os.environ),
         ),
+        plans_dir=Path(config.DASHBOARD_PLANS_DIR),
     )
     uvicorn.run(app, host=args.host, port=args.port)
     return 0
