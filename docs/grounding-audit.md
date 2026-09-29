@@ -114,6 +114,13 @@ All ten plans passed on the first attempt.
 
 The human review checks a broader question than the automated validator: whether the recommendations and factual claims made in each plan are actually supported by the supplied student evidence.
 
+An [AI-assisted pre-review dated 28 September](sprints/sprint-5/grounding-audit/assisted-review.md)
+compares all ten saved plans with their evidence and provides the six columns
+requested in Anup's Sprint 5 brief. It identifies specific prose concerns in
+eight plans, including an incorrect persistent-gap count and feedback
+attributed to the wrong assessment. These are proposed review findings, not
+Anup's independent human sign-off. The human result cells below remain Pending.
+
 Anup should compare each plan in `plans/` against the corresponding file in `evidence/` and complete the table below.
 
 | Student | Claims supported by evidence? | Scores/evidence represented correctly? | Unsupported or invented claim? | Human result | Reviewer notes |
@@ -134,3 +141,7 @@ Anup should compare each plan in `plans/` against the corresponding file in `evi
 The automated portion of IOLG-121 passed for all ten fixed students with no retries or grounding failures.
 
 Final completion of the audit requires the independent human review above to confirm that the generated recommendations are substantively supported by the underlying student evidence.
+
+The assisted pre-review demonstrates why the 10/10 structured-reference pass
+must not be read as a 10/10 factual-prose pass. Resolve or explicitly adjudicate
+the recorded concerns, then have Anup record the human verdict and review date.

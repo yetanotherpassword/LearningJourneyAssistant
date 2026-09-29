@@ -143,8 +143,12 @@ whatever clustering `python -m lja.cli` already cached.
 cd python
 conda activate lja
 python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --refresh-clustering   # once, if you haven't already
-python -m lja.dashboard
+LJA_DASHBOARD_PLANS_DIR=../data-fixtures/reference-run/plans python -m lja.dashboard
 ```
+
+`LJA_DASHBOARD_PLANS_DIR` tells the dashboard where to find generated
+`learning_plan_<student_id>.json` files. If it is not set, the default is
+`output/plans`.
 
 Then open http://127.0.0.1:8000/ — a student list (with persistent- and
 isolated-gap counts per row) linking to a per-student page: an attainment
@@ -383,6 +387,11 @@ calls, and it never regenerates the clustering — it requires the cache
 python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx    # once: caches the clustering
 python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
 # writes output/plans/learning_plan_STU0003.json and .md
+
+# Generate plans for every student in the gap report:
+for s in $(cut -d, -f1 output/gap_report.csv | tail -n +2 | sort -u); do
+  python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx "$s"
+done
 ```
 
 `lja.plan` takes the same `--source {excel,moodle}` and `--mapping` options as
