@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor U as Team member
+    participant CLI as lja.cli
+    participant LD as data.loading
+    participant C as output/silo_clustering.json
+    participant SC as silo_clustering
+    participant LLM as LLMClient
+    participant GR as grounding
+    participant RV as review
+    participant GD as gap_detection
+
+    U->>CLI: python -m lja.cli dataset.xlsx
+    CLI->>LD: load_dataset_for_source(excel)
+    LD-->>CLI: LjaDataset (13 SILOs, 1650 results, 150 students)
+    CLI->>C: exists and covers every SILO and not --refresh-clustering?
+    alt cache hit
+        C-->>CLI: cached SiloClusteringResult
+    else cache miss
+        CLI->>SC: cluster_silos(client, dataset)
+        loop up to 3 attempts
+            SC->>LLM: complete_structured(system, user, SiloClusteringResult)
+            LLM-->>SC: schema-valid result
+            SC->>GR: validate_grounding(require_complete, require_unique)
+            GR-->>SC: ok, or GroundingError quoted back into the next prompt
+        end
+        SC-->>CLI: validated result
+        CLI->>C: write model_dump_json()
+    end
+    CLI->>RV: load_or_create_reviews(cache) then gate_status()
+    alt any cluster rejected, or pending without --allow-unconfirmed
+        RV-->>CLI: blocked
+        CLI-->>U: exit 2 with the rework instructions
+    else gate open
+        CLI->>GD: compute_gaps(dataset, clustering, GapThresholds)
+        GD-->>CLI: list of CompetencyGap
+        CLI-->>U: clusters.csv, gap_report.csv, "N gap rows, M persistent-gap students"
+    end

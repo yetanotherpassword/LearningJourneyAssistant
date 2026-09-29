@@ -1,0 +1,37 @@
+flowchart TB
+    classDef data fill:#eef6ff,stroke:#3b6fb6,color:#10233f
+    classDef check fill:#fff4e5,stroke:#c07520,color:#3a2305
+    classDef out fill:#eaf7ee,stroke:#2f8a4c,color:#0f2a17
+
+    subgraph S1["1 · What was assessed"]
+        direction LR
+        W["<b>Workbook</b><br/>Results: score, weight, feedback,<br/>SILOs covered per assessment<br/>Assessment Map: SILO wording"]:::data
+    end
+    subgraph S2["2 · What it is evidence of"]
+        direction LR
+        C["<b>silo_clustering.json</b><br/>each SILO → one competency,<br/>with the model's rationale"]:::data
+        CV{{"Coverage check<br/>every SILO in exactly<br/>one competency"}}:::check
+        RV{{"Staff review gate<br/>review.json<br/>rejected → stop"}}:::check
+        C --> CV --> RV
+    end
+    subgraph S3["3 · Where the student stands"]
+        direction LR
+        G["<b>gap_report.csv</b><br/>attainment, subjects evidencing,<br/>classification and its <b>basis</b>,<br/>relative position"]:::data
+    end
+    subgraph S4["4 · What the model is shown"]
+        direction LR
+        X["<b>Plan context</b><br/>this student only: gaps, per-subject<br/>evidence, SILO wording,<br/>own scores and feedback"]:::data
+    end
+    subgraph S5["5 · What the student reads"]
+        direction LR
+        GR{{"Grounding check<br/>every name must be<br/>in the context"}}:::check
+        P["<b>learning_plan_&lt;id&gt;.json / .md</b><br/>priorities citing named SILOs<br/>and assessments + evidence table"]:::out
+        STOP(["fails 3 times:<br/>exit 1, nothing written"]):::check
+        GR -->|pass| P
+        GR -.->|fail| STOP
+    end
+
+    S1 -->|"SILO wording"| S2
+    S2 -->|"SILO → competency map, with weighted scores"| S3
+    S3 -->|"with this student's own rows"| S4
+    S4 -->|"LLM, up to 3 attempts; errors quoted back on retry"| S5

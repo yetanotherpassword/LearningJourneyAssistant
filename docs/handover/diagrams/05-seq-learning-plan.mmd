@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor U as Staff or student
+    participant P as lja.plan
+    participant RV as review
+    participant GE as gap_evidence
+    participant LP as learning_plan
+    participant LLM as LLMClient
+    participant GR as grounding
+
+    U->>P: python -m lja.plan dataset.xlsx STU0003
+    P->>P: require existing clustering cache (never clusters itself)
+    P->>RV: reviews for this student's competencies
+    alt any rejected
+        P-->>U: exit 2
+    else pending
+        P-->>U: warning, continue
+    end
+    P->>GE: subject_breakdown, describe_trend, future_subjects_sharing_competency
+    P->>LP: build_plan_context(student, gaps, dataset)
+    loop up to 3 attempts
+        LP->>LLM: complete_structured(system, user, LearningPlan)
+        LLM-->>LP: LearningPlan
+        LP->>GR: 8 ReferenceChecks incl. regex scan of prose for codes
+        alt grounded
+            GR-->>LP: ok
+        else problems
+            GR-->>LP: GroundingError listing every problem
+            LP->>LP: quote the errors into the next prompt
+        end
+    end
+    alt grounded within 3 attempts
+        LP-->>P: LearningPlan
+        P->>P: write output/plans/learning_plan_STU0003.json and .md
+        P-->>U: exit 0
+    else never grounded
+        P-->>U: exit 1, nothing written
+    end
