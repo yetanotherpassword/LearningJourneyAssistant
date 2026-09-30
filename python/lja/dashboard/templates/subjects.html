@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Subjects &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/silos">&larr; outcome quality</a>
+<h1>Subjects</h1>
+<p class="dek">
+  All {{ subjects|length }} subjects in the loaded dataset, one row each. Health is the share of a subject's
+  SILOs with none of the four issues (<a class="term" href="/glossary#silo-issues">what they are</a>); it is a
+  count, not a weighted score, and the four counts sit beside it so the reader can weigh them. Gap rate is
+  the share of (student, competency) pairs this subject evidences that are classified as a gap.
+  Click a subject for its outcomes and assessments.
+</p>
+{% from "_macros.html" import chart_prelude %}
+{% include "_subject_charts.html" %}
+{% include "_subjects_table.html" %}
+{% endblock %}
