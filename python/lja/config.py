@@ -191,6 +191,7 @@ DASHBOARD_EXCEL_PATH = os.environ.get(
     "LJA_DASHBOARD_EXCEL_PATH", "../data-fixtures/CSE_results_150_students_3_Subjects.xlsx"
 )
 DASHBOARD_CLUSTERING_CACHE = os.environ.get("LJA_DASHBOARD_CLUSTERING_CACHE", "output/silo_clustering.json")
+DASHBOARD_PLANS_DIR = os.environ.get("LJA_DASHBOARD_PLANS_DIR", "output/plans")
 
 # Export (lja/export.py) -- structured extract for the department's
 # longitudinal and A/B evaluation (tender requirement 7).

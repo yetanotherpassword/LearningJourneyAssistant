@@ -197,7 +197,7 @@ def test_student_page_shows_progress_across_subjects_in_year_order() -> None:
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
     progress = _progress_section(body)
-    assert progress.index("<th>CSE1OOF</th>") < progress.index("<th>CSE2ALG</th>")
+    assert progress.index('<th data-sort-type="number">CSE1OOF</th>') < progress.index('<th data-sort-type="number">CSE2ALG</th>')
     assert "40.0%" in progress and "70.0%" in progress
     assert "improving" in progress
     # The chart gets the same rows as JSON, in the same order.
@@ -222,7 +222,7 @@ def test_student_page_progress_marks_single_subject_competency_as_insufficient()
     ]
     body = _client(dataset, gaps, clustering).get("/student/STU0001").text
     progress = _progress_section(body)
-    assert "<th>CSE1OOF</th>" in progress
+    assert '<th data-sort-type="number">CSE1OOF</th>' in progress
     assert "insufficient evidence" in progress
     # One point is not a progression: nothing is sent to the chart.
     assert '"rows": []' in body
@@ -352,7 +352,10 @@ def test_index_tile_count_and_cohort_page_row_count_agree() -> None:
     assert match is not None
 
     cohort_body = client.get("/cohort/persistent-gap").text
-    assert int(match.group(1)) == cohort_body.count('href="/student/')
+    # Count the full table only: the priority-group previews above it
+    # repeat the most severe rows on purpose.
+    full_table = cohort_body[cohort_body.index('<h2 id="everyone">'):]
+    assert int(match.group(1)) == full_table.count('href="/student/')
 
 
 def test_unknown_cohort_is_404_and_names_the_ones_that_exist() -> None:
@@ -511,7 +514,7 @@ def test_student_page_lists_proficient_competencies_under_strengths() -> None:
     assert "Algorithms" not in strengths
     # Every strength states how it was reached, as the gap cards do.
     assert BASIS_RELATIVE in strengths and BASIS_CEILING in strengths
-    assert "+1.50 MAD above" in strengths
+    assert '+1.50 <a class="term" href="/glossary#mad">MAD</a> above' in strengths
 
 
 def test_strengths_are_ordered_strongest_relative_position_first() -> None:
@@ -544,6 +547,7 @@ def test_index_strength_count_matches_proficient_competencies() -> None:
 # --- outcome quality and competency progression ------------------------------
 
 from lja.data.excel_loader import Assessment, Silo  # noqa: E402
+from lja.model.learning_plan import LearningPlan, PlanPriority  # noqa: E402
 from lja.model.silo_clustering import FlaggedSilo  # noqa: E402
 
 
@@ -610,5 +614,120 @@ def test_competency_page_renders_points_in_year_order_and_404s_unknown() -> None
     assert response.text.index("CSE1OOF") < response.text.index("CSE2ALG")
     assert '"attainment": [60.0, 45.0]' in response.text
     assert "Design and evaluate data structures" in response.text
-    assert client.get("/competency/vague-outcome").status_code == 404  # single-subject: no progression
+    # A single-subject competency has a page too (its trace), just no progression chart.
+    single = client.get("/competency/vague-outcome")
+    assert single.status_code == 200
+    assert "Taught in one subject only" in single.text
+    assert "progression-chart" not in single.text
     assert client.get("/competency/nope").status_code == 404
+
+# --- recommended next actions on student page (IOLG-122) ---------------------
+
+
+def test_student_detail_renders_generated_learning_plan(tmp_path) -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={"CSE1OOF": 70.0},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    plan = LearningPlan(
+        student_id="STU0001",
+        summary="Focus next on strengthening your data-structure skills.",
+        priorities=[
+            PlanPriority(
+                competency_label="Data Structures",
+                silo_keys=[],
+                subject_codes=["CSE1OOF"],
+                assessment_keys=["CSE1OOF:Test"],
+                evidence="Your test result shows this is the next area to strengthen.",
+                actions="Practise linked lists",
+            )
+        ],
+        strengths_to_build_on=["Testing"],
+    )
+    (tmp_path / "learning_plan_STU0001.json").write_text(
+        plan.model_dump_json(),
+        encoding="utf-8",
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=tmp_path,
+    )
+    body = TestClient(app).get("/student/STU0001").text
+
+    assert "Recommended next actions" in body
+    next_actions = body.split("<h2>Recommended next actions</h2>", 1)[1].split(
+        "<h2>Strengths</h2>", 1
+    )[0]
+    assert "Practise linked lists" in next_actions
+    assert "Data Structures" in next_actions
+    assert "CSE1OOF:Test" in next_actions
+
+
+def test_student_detail_shows_plan_empty_state_when_file_is_missing(tmp_path) -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=tmp_path,
+    )
+    body = TestClient(app).get("/student/STU0001").text
+
+    assert "No learning plan has been generated for this student yet" in body
+    assert "python -m lja.plan" in body
+
+
+def test_student_detail_without_plans_directory_is_safe() -> None:
+    dataset = _dataset(
+        [
+            StudentSummary(
+                student_id="STU0001",
+                subject_totals={},
+                average_total=70.0,
+                performance_band="Credit",
+            )
+        ]
+    )
+
+    app = create_app(
+        dataset,
+        [],
+        SiloClusteringResult(clusters=[]),
+        plans_dir=None,
+    )
+    response = TestClient(app).get("/student/STU0001")
+
+    assert response.status_code == 200
+    assert "No learning plan has been generated for this student yet" in response.text
+
+
+
+# --- priority groups list every member (IOLG-134 follow-up) ---
+
+
+def test_cohort_title_prints_the_floor_in_force_not_a_placeholder() -> None:
+    dataset, gaps = _two_students_one_with_a_persistent_gap()
+    body = _client(dataset, gaps).get("/cohort/priority-1").text
+    assert "{floor}" not in body
+    assert "below the 50% floor" in body
+

@@ -1,0 +1,47 @@
+{# Two charts above any outcome table: the spread of outcome attainment
+   (outliers at the low end) and every outcome as a point. Expects
+   `silo_charts` JSON built from the same rows the table shows. #}
+{% from "_macros.html" import chart_prelude %}
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Spread of outcome attainment</h3>
+    <p class="chart-note">Mean attainment on each outcome in 5-point bins. Outcomes with no results are not drawn.</p>
+    <canvas id="silo-hist-chart" height="150"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Every outcome: attainment against gap rate</h3>
+    <p class="chart-note">One point per outcome, coloured by how many issues it carries. Top-left is the outlier corner. Hover for the outcome; click to open its subject.</p>
+    <canvas id="silo-scatter-chart" height="150"></canvas>
+  </div>
+</div>
+<script>
+(function () {
+  const S = {{ silo_charts|safe }};
+  {{ chart_prelude() }}
+  new Chart(document.getElementById("silo-hist-chart"), {
+    type: "bar",
+    data: { labels: S.hist.labels, datasets: [{ label: "Outcomes", data: S.hist.values, backgroundColor: cssVar("--accent") }] },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Outcomes" } }, x: { title: { display: true, text: "Mean attainment (%)" } } }, plugins: { legend: { display: false } } },
+  });
+  const issueColor = [cssVar("--status-proficient"), cssVar("--status-developing"), cssVar("--status-isolated"), cssVar("--status-persistent"), cssVar("--status-persistent")];
+  const byIssues = [0, 1, 2, 3].map((n) => ({
+    label: n === 0 ? "no issue" : n === 3 ? "3+ issues" : `${n} issue${n > 1 ? "s" : ""}`,
+    data: S.points.filter((p) => (n === 3 ? p.issues >= 3 : p.issues === n)),
+    backgroundColor: issueColor[n] + "99", borderColor: issueColor[n], pointRadius: 3, pointHoverRadius: 5,
+  })).filter((d) => d.data.length);
+  new Chart(document.getElementById("silo-scatter-chart"), {
+    type: "scatter",
+    data: { datasets: byIssues },
+    options: {
+      animation: false, parsing: false,
+      scales: { x: { title: { display: true, text: "Mean attainment (%)" } }, y: { title: { display: true, text: "Gap rate (%)" }, beginAtZero: true } },
+      plugins: { legend: { position: "right" }, tooltip: { callbacks: { label: (item) => `${item.raw.key}: attainment ${item.raw.x}%, gap rate ${item.raw.y}%` } } },
+      onClick: (evt, els, chart) => {
+        if (!els.length) return;
+        const p = chart.data.datasets[els[0].datasetIndex].data[els[0].index];
+        if (p && p.subject) location.href = `/subject/${p.subject}`;
+      },
+    },
+  });
+})();
+</script>

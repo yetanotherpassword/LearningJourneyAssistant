@@ -1,15 +1,25 @@
 {% extends "base.html" %}
-{% block title %}{{ progression.label }} &mdash; LJA Dashboard{% endblock %}
+{% block title %}{{ trace.label }} &mdash; LJA Dashboard{% endblock %}
+{% from "_macros.html" import scrollbox %}
 {% block content %}
-<a class="back-link" href="/silos">&larr; outcome quality</a>
-<h1>{{ progression.label }}</h1>
+<a class="back-link" href="/competencies">&larr; all competencies</a>
+<h1>{{ trace.label }}</h1>
 <p class="dek">
+  {% if progression %}
   Taught in {{ progression.n_subjects }} subjects. Mean attainment moves
   {% if progression.delta is none %}by an unknown amount{% else %}{{ "%+.1f"|format(progression.delta) }} points{% endif %}
   from the first subject in year order to the last:
   <span class="trend-badge {{ progression.trend|replace(' ', '-') }}">{{ progression.trend }}</span>
+  {% else %}
+  Taught in one subject only, so there is no progression across subjects to chart; a student's
+  work here is evidence about nothing else.
+  {% endif %}
 </p>
 
+{% include "_trace.html" %}
+
+{% if progression %}
+<h2>Progression across subjects</h2>
 <div class="chart-card">
   <h3>Attainment and gap rate, subject by subject</h3>
   <p class="chart-note">
@@ -20,12 +30,17 @@
   <canvas id="progression-chart" height="110"></canvas>
 </div>
 
-<table>
-  <thead><tr><th>Subject</th><th>Year</th><th>Students</th><th>Mean attainment</th><th>Gap rate</th><th>Outcomes</th></tr></thead>
+{% call scrollbox(progression.points|length, "subjects") %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Subject</th><th data-sort-type="number">Year</th>
+    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th>
+    <th data-sort-type="number">Gap rate</th><th data-sort-type="text">Outcomes</th>
+  </tr></thead>
   <tbody>
   {% for pt in progression.points %}
     <tr>
-      <td><strong>{{ pt.subject_code }}</strong></td>
+      <td><a href="/subject/{{ pt.subject_code }}"><strong>{{ pt.subject_code }}</strong></a></td>
       <td>{{ pt.year_level if pt.year_level is not none else "?" }}</td>
       <td>{{ pt.n_students }}</td>
       <td>{% if pt.mean_attainment is none %}&mdash;{% else %}{{ "%.1f"|format(pt.mean_attainment) }}%{% endif %}</td>
@@ -44,10 +59,14 @@
   {% endfor %}
   </tbody>
 </table>
+{% endcall %}
+
+{% endif %}
 
 <h2>Why these outcomes were grouped</h2>
-<p class="dek rationale">{{ progression.rationale }}</p>
+<p class="dek rationale">{{ trace.rationale }}</p>
 
+{% if progression %}
 <script>
   const series = {{ chart_json|safe }};
   const styles = getComputedStyle(document.documentElement);
@@ -101,4 +120,5 @@
     },
   });
 </script>
+{% endif %}
 {% endblock %}

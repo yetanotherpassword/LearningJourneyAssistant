@@ -415,3 +415,170 @@ button.linkish:hover { text-decoration: underline; }
   .partner-labels { grid-column: 1 / -1; }
 }
 #chord-min { vertical-align: middle; margin: 0 6px; } #chord-min-out { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- priority groups (index/cohort), /run and /glossary --- */
+
+/* A defined term links to the glossary without looking like a body link. */
+a.term { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+a.term:hover { color: var(--accent); }
+th a.term { color: inherit; }
+
+.prio {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.prio-1 { color: var(--status-persistent); background: var(--status-persistent-bg); }
+.prio-2 { color: var(--status-isolated); background: var(--status-isolated-bg); }
+.prio-3 { color: var(--status-developing); background: var(--status-developing-bg); }
+
+.priority-group { margin: 0 0 28px; }
+.priority-group h3 { font-size: 1rem; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+.priority-group h3 a { color: var(--ink); text-decoration: none; }
+.priority-group h3 a:hover { color: var(--accent); }
+.group-blurb { color: var(--muted); font-size: 0.9rem; margin: 0 0 10px; }
+.group-more { margin: 8px 0 0; font-size: 0.9rem; }
+.group-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+/* The priority group shows as a coloured left edge on the row, so a sorted
+   table still reads which group each student is in. */
+table.sortable tr.priority-1 td:first-child { border-left: 3px solid var(--status-persistent); }
+table.sortable tr.priority-2 td:first-child { border-left: 3px solid var(--status-isolated); }
+table.sortable tr.priority-3 td:first-child { border-left: 3px solid var(--status-developing); }
+table.sortable td .muted { margin-left: 6px; font-size: 0.8rem; }
+
+/* /run */
+pre.command {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 18px; overflow-x: auto; font-size: 0.85rem; margin: 0 0 14px;
+}
+dl.kv { margin: 0 0 12px; }
+dl.kv div { display: flex; gap: 12px; padding: 4px 0; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
+dl.kv dt { flex: 0 0 140px; color: var(--muted); }
+dl.kv dd { margin: 0; word-break: break-all; }
+.rule-steps { padding-left: 22px; line-height: 1.7; }
+.rule-steps li { margin-bottom: 6px; }
+.rule-basis { color: var(--muted); font-size: 0.88rem; margin: 0 0 24px; }
+table.params td.val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.params tr.changed td.val:nth-child(2) { font-weight: 700; }
+table.params { margin-bottom: 28px; }
+
+/* /glossary */
+dl.glossary div { padding: 12px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+dl.glossary dt { font-weight: 700; margin-bottom: 4px; }
+dl.glossary dd { margin: 0; color: var(--ink); line-height: 1.55; }
+dl.glossary div:target { background: var(--surface); border-left: 3px solid var(--accent); padding-left: 12px; }
+
+/* Statistic tiles are links too (to the cohort or the glossary); the grid
+   blockifies the anchor, so only the hover treatment needs stating. */
+.stat-grid a.stat-link { display: block; }
+
+/* Glossary: A-Z jump list above the entries. */
+.glossary-index { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.88rem; }
+.glossary-index a { color: var(--accent); text-decoration: none; }
+.glossary-index a:hover { text-decoration: underline; }
+
+/* Priority tiles on the index: red, amber, blue, one row of their own. */
+.priority-strip { margin-top: -12px; }
+.prio-tile { border-width: 2px; }
+.prio-tile-1 { border-color: var(--status-persistent); background: var(--status-persistent-bg); }
+.prio-tile-1 .num { color: var(--status-persistent); }
+.prio-tile-2 { border-color: var(--status-isolated); background: var(--status-isolated-bg); }
+.prio-tile-2 .num { color: var(--status-isolated); }
+.prio-tile-3 { border-color: var(--status-developing); background: var(--status-developing-bg); }
+.prio-tile-3 .num { color: var(--status-developing); }
+a.prio-tile:hover { filter: brightness(1.08); }
+
+/* Bounded scroll box for long tables: the page stays one or two screens
+   long and the reader scrolls inside the box, or straight past it. */
+.scroll-box { max-height: 60vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 4px; }
+.scroll-box:focus-visible { outline: 2px solid var(--accent); }
+.scroll-box table { border: none; border-radius: 0; }
+.scroll-box thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
+.scroll-note { color: var(--muted); font-size: 0.8rem; margin: 0 0 28px; }
+
+/* Scroll-panel toolbar: live filter + full-screen toggle (static/scrollbox.js). */
+.scroll-tools { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+.scroll-search {
+  flex: 1 1 260px; max-width: 420px; padding: 7px 10px; font-size: 0.9rem;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+}
+.scroll-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.scroll-count { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.is-filtered .scroll-count { color: var(--accent); font-weight: 600; }
+.scroll-expand {
+  margin-left: auto; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+}
+.scroll-expand:hover { border-color: var(--accent); color: var(--accent); }
+.scroll-expand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Full screen: the panel becomes a fixed overlay; toolbar pinned, box fills the rest. */
+.scroll-panel.is-full {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+  background: var(--bg); padding: 16px 24px;
+}
+.scroll-panel.is-full .scroll-box { flex: 1 1 auto; max-height: none; }
+.scroll-panel.is-full .scroll-note { margin: 8px 0 0; }
+body.has-modal { overflow: hidden; }
+
+/* Chart enlarge button and modal (static/chartzoom.js). */
+.chart-card.has-enlarge { position: relative; }
+.chart-enlarge {
+  position: absolute; top: 12px; right: 12px; z-index: 3; padding: 4px 10px; font-size: 0.78rem; font-weight: 600;
+  background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+}
+.chart-enlarge:hover { color: var(--accent); border-color: var(--accent); }
+.chart-zoom {
+  position: fixed; inset: 0; z-index: 110; display: flex; flex-direction: column;
+  background: var(--bg); padding: 14px 24px;
+}
+/* `hidden` must beat the display:flex above, or the empty modal covers every page. */
+.chart-zoom[hidden] { display: none; }
+.chart-zoom-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.chart-zoom-title { font-size: 1.05rem; }
+.chart-zoom-readout { flex: 1; color: var(--accent); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.chart-zoom-close { padding: 6px 14px; font-weight: 600; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.chart-zoom-body { flex: 1 1 auto; min-height: 0; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.chart-zoom-body canvas { width: 100% !important; height: 100% !important; }
+.chart-zoom-note { color: var(--muted); font-size: 0.82rem; margin: 8px 0 0; }
+
+/* Competency trace diagram (competency page). */
+.trace { width: 100%; height: auto; display: block; }
+.trace-link { fill: none; stroke: var(--line); stroke-width: 1.5; opacity: 0.9; }
+.trace-node rect { fill: var(--surface-2); stroke: var(--line); }
+.trace-node text { font-size: 12px; fill: var(--ink); }
+.trace-node.comp rect { fill: var(--accent); stroke: var(--accent); }
+.trace-node.comp text { fill: #fff; font-weight: 700; font-size: 13px; }
+.trace-node.subj text { font-weight: 700; font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px; }
+.trace-node.subj:hover rect { stroke: var(--accent); }
+.trace-node.silo text { font-size: 11px; }
+.trace-node.silo.vague rect { stroke: var(--status-isolated); }
+.trace-node.silo.flagged rect { stroke: var(--status-persistent); stroke-width: 2; }
+.disc-0 { --dc: var(--series-1); } .disc-1 { --dc: var(--series-2); } .disc-2 { --dc: var(--series-3); } .disc-3 { --dc: var(--series-4); }
+.disc-4 { --dc: var(--series-5); } .disc-5 { --dc: var(--series-6); } .disc-6 { --dc: var(--series-7); } .disc-7 { --dc: var(--series-8); }
+.trace-link[class*="disc-"] { stroke: var(--dc); opacity: 0.55; }
+.trace-node.subj[class*="disc-"] rect { stroke: var(--dc); stroke-width: 2; }
+.trace-paths { padding-left: 22px; }
+.trace-paths li { margin-bottom: 12px; line-height: 1.5; }
+.trace-text { display: block; margin-top: 2px; }
+
+/* Competency x discipline map. */
+table.comp-map td.m { background: color-mix(in srgb, var(--accent) calc(var(--w) * 85%), var(--surface)); }
+table.comp-map td.m a { color: var(--ink); text-decoration: none; font-weight: 600; display: block; }
+table.comp-map td.tot { color: var(--muted); font-weight: 600; }
+table.comp-map tbody th a { color: var(--ink); text-decoration: none; }
+table.comp-map tbody th a:hover { color: var(--accent); }
+
+/* Heat matrix inside a scroll box: keep its own sticky first column and compact cells. */
+.scroll-box table.heat { width: max-content; min-width: 100%; }
+.scroll-box .evidence-table { border: none; }
+
+/* "?" beside a column heading: opens the glossary without sorting. */
+a.term-help {
+  display: inline-block; width: 15px; height: 15px; line-height: 15px; margin-left: 4px; text-align: center;
+  border-radius: 50%; font-size: 0.68rem; font-weight: 700; text-decoration: none; text-transform: none;
+  color: var(--muted); background: var(--surface); border: 1px solid var(--line); vertical-align: middle;
+}
+a.term-help:hover { color: var(--accent); border-color: var(--accent); }
+

@@ -1,0 +1,50 @@
+flowchart LR
+    subgraph Sources
+        X[Excel workbook<br/>data-fixtures/*.xlsx]
+        M[(Moodle 5.2 Postgres<br/>read-only role lja_reader)]
+    end
+    subgraph "lja.data"
+        EL[excel_loader]
+        ML[moodle_loader + sql]
+        LD[loading<br/>--source excel or moodle]
+    end
+    DS[[LjaDataset<br/>silos · assessments · results · summaries]]
+    subgraph "lja.model"
+        SC[silo_clustering]
+        GD[gap_detection]
+        GE[gap_evidence]
+        LP[learning_plan]
+    end
+    subgraph "lja.llm"
+        LC{{LLMClient}}
+        AC[AnthropicClient]
+        OC[OpenAICompatibleClient]
+        GR[grounding validator]
+    end
+    RV[review<br/>staff gate]
+    subgraph Outputs
+        CSV[clusters.csv · gap_report.csv]
+        CACHE[(silo_clustering.json<br/>+ .review.json)]
+        PL[plans/learning_plan_ID.json + .md]
+    end
+    DB[lja.dashboard<br/>FastAPI + Jinja2 + Chart.js]
+
+    X --> EL --> LD
+    M --> ML --> LD
+    LD --> DS
+    DS --> SC
+    SC <--> LC
+    LC --> AC
+    LC --> OC
+    SC --> GR
+    SC --> CACHE
+    CACHE --> RV
+    RV --> GD
+    DS --> GD --> CSV
+    GD --> GE --> LP
+    LP <--> LC
+    LP --> GR
+    LP --> PL
+    DS --> DB
+    GD --> DB
+    CACHE --> DB
