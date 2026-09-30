@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}This run &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<h1>This run</h1>
+<p class="dek">
+  What produced the numbers on every other page: the command, the input files, the classification
+  rules and the values they were run with. Terms are defined in the <a href="/glossary">glossary</a>.
+</p>
+
+<h2>Command</h2>
+{% if run_info %}
+<pre class="command">{{ run_info.command }}</pre>
+<dl class="kv">
+  <div><dt>Started</dt><dd>{{ run_info.started_at }}</dd></div>
+  <div><dt>Code version</dt><dd>{% if run_info.code_version %}git <code>{{ run_info.code_version }}</code>{% else %}not a git checkout{% endif %}</dd></div>
+  <div><dt>Workbook</dt><dd><code>{{ run_info.excel_path }}</code></dd></div>
+  <div><dt>Clustering cache</dt><dd><code>{{ run_info.clustering_cache }}</code></dd></div>
+  <div><dt>Review file</dt><dd>{% if run_info.review_file %}<code>{{ run_info.review_file }}</code>{% else %}none &mdash; every cluster counts as pending{% endif %}</dd></div>
+</dl>
+<p class="chart-note">
+  The dashboard classifies from the workbook and the clustering cache at start-up; it never calls the LLM.
+  The gap report the CLI wrote is not read here, so a CLI run with different flags is not what this page shows &mdash;
+  the values below are.
+</p>
+{% else %}
+<p class="empty-state">No command recorded: this app was created in-process rather than started with <code>python -m lja.dashboard</code>.</p>
+{% endif %}
+
+<h2>Inputs</h2>
+<p class="dek">Each count links to the list it counts.</p>
+{% from "_macros.html" import tile %}
+<div class="stat-grid">
+  {{ tile(inputs.students, "students", "/cohort/all") }}
+  {{ tile(inputs.subjects, "subjects", "/subjects") }}
+  {{ tile(inputs.silos, "SILOs", "/silos/list/all") }}
+  {{ tile(inputs.assessments, "assessments", "/assessments") }}
+  {{ tile(inputs.results, "result rows", "/assessments", title="One row per student per assessment; the assessments page totals them") }}
+  {{ tile(inputs.clusters, "competencies (clusters)", "/competencies") }}
+  {{ tile(inputs.silos_clustered, "SILOs clustered", "/competencies", title="Every SILO placed in a competency; the competencies page lists them per cluster") }}
+  {{ tile(inputs.gap_rows, "student × competency rows", "/competencies", title="Classified rows; the competencies page totals them per competency") }}
+</div>
+
+<h2 id="rules">Classification rules</h2>
+<p class="dek">
+  Each student &times; competency row gets one of four labels. The absolute rules are checked first, then whether
+  the student's profile has enough spread for the relative rule, then the relative rule itself.
+  <a class="term" href="/glossary#mad">MAD</a> is the median absolute deviation of the student's own competency marks.
+</p>
+<ol class="rule-steps">
+  <li>Below <strong>{{ "%g"|format(rules.absolute_floor) }}%</strong> &rarr; <span class="badge persistent-gap">gap</span> (absolute floor), whatever the rest of the profile.</li>
+  <li>At or above <strong>{{ "%g"|format(rules.absolute_ceiling) }}%</strong> &rarr; <span class="badge proficient">proficient</span> (absolute ceiling).</li>
+  <li>Fewer than <strong>{{ rules.min_competencies }}</strong> competencies, or a profile MAD below <strong>{{ "%g"|format(rules.min_spread) }}</strong> (a flat profile) &rarr; no relative judgement:
+    at or above <strong>{{ "%g"|format(rules.fallback_proficient) }}%</strong> is <span class="badge proficient">proficient</span>, below it <span class="badge developing">developing</span> (insufficient data).</li>
+  <li>Otherwise, position = (mark &minus; the student's median) &divide; MAD.
+    At or below <strong>{{ "%g"|format(rules.relative_gap_cutoff) }}</strong> &rarr; <span class="badge persistent-gap">gap</span>;
+    at or above <strong>{{ "%+g"|format(rules.relative_strong_cutoff) }}</strong> &rarr; <span class="badge proficient">proficient</span>;
+    between &rarr; <span class="badge developing">developing</span> (relative position).</li>
+  <li>A gap evidenced in <strong>{{ rules.persistent_min_subjects }}+ subjects</strong> is <span class="badge persistent-gap">persistent gap</span>; in one subject, <span class="badge isolated-gap">isolated gap</span>.</li>
+</ol>
+<p class="rule-basis">
+  In this run: {{ gap_summary.flagged_students }} of {{ gap_summary.students }} students have at least one flagged competency,
+  {{ gap_summary.floor_students }} with a mark below the floor and {{ gap_summary.relative_only_students }} flagged only relative to their own median.
+  Of the {{ gap_summary.gap_rows }} flagged rows, {{ gap_summary.basis_floor }} tripped the floor and {{ gap_summary.basis_relative }} the relative rule.
+  A relative-only flag says which of a student's competencies are weakest, not that they failed anything.
+</p>
+
+<h2 id="parameters">Parameter values for this run</h2>
+<p class="dek">
+  The value each rule above used, beside the code default. A value that differs from the default is marked.
+  Every parameter can be set with its environment variable (read from <code>python/.env</code> or the shell);
+  the CLI flag column is for <code>python -m lja.cli</code>, and the two marked &#9679; are also flags on <code>python -m lja.dashboard</code>.
+</p>
+<table class="compact params sortable">
+  <thead>
+    <tr><th data-sort-type="text">Parameter</th><th data-sort-type="number">This run</th><th data-sort-type="number">Default</th><th data-sort-type="text">Environment variable</th><th data-sort-type="text">CLI flag</th><th data-sort-type="text">Meaning</th></tr>
+  </thead>
+  <tbody>
+    {% for r in threshold_rows %}
+    <tr class="{{ 'changed' if r.changed }}">
+      <td><code>{{ r.field }}</code></td>
+      <td class="val">{{ "%g"|format(r.value) }}{{ " " + r.unit if r.unit }}{% if r.changed %} <span class="issue">changed</span>{% endif %}</td>
+      <td class="val muted">{{ "%g"|format(r.default) }}{{ " " + r.unit if r.unit }}</td>
+      <td><code>{{ r.env }}</code>{% if r.env_value is not none %} <span class="muted">= {{ r.env_value }}</span>{% endif %}</td>
+      <td>{% if r.flag %}<code>{{ r.flag }}</code>{% if r.dashboard_flag %} &#9679;{% endif %}{% else %}<span class="muted">env only</span>{% endif %}</td>
+      <td class="wording">{{ r.meaning }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td><code>persistent_min_subjects</code></td>
+      <td class="val">{{ rules.persistent_min_subjects }}</td>
+      <td class="val muted">{{ rules.persistent_min_subjects }}</td>
+      <td><span class="muted">fixed in code</span></td>
+      <td><span class="muted">&mdash;</span></td>
+      <td class="wording">Subjects that must evidence a gap for it to be persistent rather than isolated.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="chart-card">
+  <h3>Where the flagged marks sit</h3>
+  <p class="chart-note">Attainment of every flagged competency in this run, 5-point bins. Red bins are below the {{ "%g"|format(rules.absolute_floor) }}% floor; nothing at or above the {{ "%g"|format(rules.absolute_ceiling) }}% ceiling can be flagged.</p>
+  <canvas id="gap-marks-chart" height="120"></canvas>
+</div>
+
+{% if run_info and run_info.generator %}
+<h2 id="generator">Synthetic cohort</h2>
+<p class="dek">
+  A generator record sits beside the workbook, so this cohort is synthetic. These are the values it was built with;
+  the record's answer key (which student was given which gap) is deliberately not read by the dashboard.
+</p>
+<dl class="kv">
+  <div><dt>Truth file</dt><dd><code>{{ run_info.generator.truth_file }}</code></dd></div>
+  <div><dt>Catalogue</dt><dd><code>{{ run_info.generator.catalogue }}</code></dd></div>
+  <div><dt>Seed</dt><dd>{{ run_info.generator.seed }}</dd></div>
+</dl>
+<table class="compact sortable">
+  <thead><tr><th data-sort-type="text">Generator parameter</th><th data-sort-type="text">Value</th></tr></thead>
+  <tbody>
+    {% for k, v in run_info.generator.params.items() %}
+    <tr><td><code>{{ k }}</code></td><td class="val">{{ v }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<script>
+  const gapMarks = {{ gap_marks_data|safe }};
+  const styles = getComputedStyle(document.documentElement);
+  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  new Chart(document.getElementById("gap-marks-chart"), {
+    type: "bar",
+    data: {
+      labels: gapMarks.labels,
+      datasets: [{
+        label: "Flagged competencies",
+        data: gapMarks.values,
+        backgroundColor: gapMarks.below_floor.map((b) => cssVar(b ? "--status-persistent" : "--status-isolated")),
+      }],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Flagged competencies" } },
+        x: { title: { display: true, text: "Attainment (%)" }, ticks: { autoSkip: true, maxRotation: 45 } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (item) => `${item.raw} flagged (${gapMarks.below_floor[item.dataIndex] ? "below the floor" : "relative to own median"})`,
+          },
+        },
+      },
+    },
+  });
+</script>
+{% endblock %}

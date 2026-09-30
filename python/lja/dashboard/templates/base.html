@@ -12,6 +12,11 @@
      progressive enhancement -- if this fails to load, rows still render in
      the server's default order. -->
 <script src="/static/sort.js" defer></script>
+<!-- Filter box and full-screen button on every scroll-boxed table; same
+     progressive-enhancement contract as sort.js. -->
+<script src="/static/scrollbox.js" defer></script>
+<!-- "Enlarge" on every chart: full-screen modal with a live value readout. -->
+<script src="/static/chartzoom.js" defer></script>
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -22,6 +27,8 @@
     <a href="/">Students</a>
     <a href="/clusters">Competency clusters</a>
     <a href="/silos">Outcome quality</a>
+    <a href="/run">This run</a>
+    <a href="/glossary">Glossary</a>
   </nav>
   <label class="picker">Student
     <select onchange="if (this.value) location.href = '/student/' + this.value">

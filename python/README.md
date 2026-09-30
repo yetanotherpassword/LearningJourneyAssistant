@@ -196,11 +196,123 @@ time series. The year level is read from the subject code, as
 `gap_evidence.py` documents, and a code that does not follow that pattern sorts
 last with no trend. The 5-point stable band is unratified (action A-01).
 
+**Priority groups.** Below the statistics and charts, flagged students are
+split into three groups that combine classifications the pipeline already
+made — no new threshold: **1st** at least one competency below the absolute
+floor (a gap whatever the profile), **2nd** no floor breach but a persistent
+gap (flagged only relative to the student's own median), **3rd** isolated gaps
+only. Each group shows its count, its definition, and its ten most severe
+students (lowest flagged mark first), and links to a cohort page with all of
+them; the full table at the bottom lists everyone in the same order with a
+Priority column and a coloured left edge per group. Two columns support the
+ordering: *Below floor* (gaps that tripped the absolute floor) and *Lowest
+gap* (the student's lowest flagged mark, with its MAD position where the
+relative rule decided it). The split matters because on a cohort with real
+per-competency spread the relative rule fires for most students (the A-01
+finding on IOLG-113: 4,195 of 5,000 synthetic students carry a "persistent
+gap", but only 1,145 have anything under the 50% floor), and a tile that says
+"4195" without saying why is misleading. Splitting a group further needs a
+cut-off nobody has ratified, which is action A-01, not a dashboard default.
+Severity is computed from the classifier's own outputs and nothing else: the
+dashboard never reads a generator's answer key, and on the 100-subject
+synthetic cohort no such ordering surfaces the planted gaps (62 of 371 in the
+top 371 by lowest mark) — a finding about the method, not something the page
+can fix.
+
+**This run (`/run`).** Provenance for the numbers on every other page: the
+command that started the dashboard (reconstructed from argv), when, the git
+hash of the code, the workbook, clustering cache and review file, input
+counts, the classification rules as an ordered list with this run's values,
+and a parameters table with one row per `LJA_GAP_*` threshold showing the
+value used, the code default, the environment variable and the CLI flag, with
+changed values marked. `create_app()` takes the `GapThresholds` object so the
+page can only describe the run it shows; `__main__.py` passes the same object
+to `compute_gaps()` and a `RunInfo` from `run_info.py`. When a
+`<workbook>.truth.json` sits beside the workbook the page also shows the
+generator's seed and parameters — and only those; the answer key in that file
+is deliberately not read. A chart, "Where the flagged marks sit", bins every
+flagged competency's attainment in 5-point steps and colours the bins under
+the floor red. When A-01 ratifies the seven thresholds, this table is where
+the ratified values are visible.
+
+**Glossary (`/glossary`).** Every term defined once — SILO, competency,
+attainment, median, MAD (median absolute deviation, with a worked example),
+relative position, the absolute floor and ceiling, flat profile, the four
+classifications, basis, lowest gap, priority groups, cohort, population
+statistics, synthetic cohort — with this run's values where a rule applies.
+Tables and the student page link terms to their entries rather than
+re-defining them.
+
+**Every count is a link.** A tile that says "448 SILOs" links to the 448;
+"5 link to no other subject" links to the 5. The rule holds on every page
+(the `tile` macro in `_macros.html` is the only way a tile is rendered), and
+the list pages are: `/subjects` (one row per subject) and `/subject/<code>`
+(its outcomes and assessments); `/silos/list/<all|flagged|orphan|unassessed|vague>`
+(the outcome table filtered, with a sentence stating the filter and the
+other lists' counts); `/competencies` (one row per cluster with its member
+SILOs, subjects spanned and the classification breakdown of its student
+rows, which total the "student × competency rows" tile on `/run`); and
+`/assessments` (every assessment with its SILOs and result-row count, which
+total the "result rows" tile). Subject codes link to their subject page
+wherever they appear. Statistic tiles (mean, quartiles, …) are not counts
+of anything, so they link to the glossary entry that defines them, and the
+students tile links to the cohort. Each list page decides membership in
+`app.py`, never in a template, and the tests in `tests/test_dashboard_lists.py`
+check that a list holds exactly what its tile counted.
+
+**Charts before lists, and lists in a box.** Every long table is a data
+set, so each list page opens with one or two charts drawn from exactly the
+rows the table holds (a point on the chart is a row in the table, and
+clicking it opens that row's page), aimed at trends and outliers: the index
+and cohort pages plot every flagged student's average total against their
+lowest flagged mark, coloured by priority group (a point far below the
+diagonal is a strong student with one deep gap); `/subjects` and `/silos`
+show attainment and gap rate by year level and every subject as a bubble;
+the outcome lists show the spread of outcome attainment and every outcome
+against its gap rate, coloured by issue count; `/competencies` stacks each
+competency's classification shares, gap-heaviest first; `/assessments` shows
+the spread of assessment mean scores and weight against mean score with
+hurdles in red. Below the charts, any table that can exceed a screen sits
+in a bounded scroll box (`scrollbox` macro in `_macros.html`, 60% of the
+viewport, sticky header, row count stated underneath) so a page is never
+more than a couple of screens long and a reader scrolls inside the box or
+straight past it. Each box has a toolbar (`static/scrollbox.js`, hidden
+until JavaScript reveals it): a filter field that hides rows as you type
+unless some cell contains the text, with a "13 of 100 subjects match"
+count, and an Expand button that opens the same box full screen with the
+toolbar pinned, so every column is readable; Esc or Close returns. Sorting
+and filtering compose, since one permutes rows and the other hides them.
+The same box wraps every table that can exceed a screen, including the
+term table, progression table and subject-by-competency matrix on the
+outcome-quality page and the strengths and progress tables on the student
+page; tables that stay under a screen are left plain.
+
+**Competency traceability.** Every competency has a page (`/competency/<slug>`,
+single-subject ones included) that opens with a layered diagram: the
+competency on the left, the subjects whose outcomes were grouped into it in
+the middle (coloured by discipline, click to open), and those outcomes on
+the right (hover for the full wording; a red outline is a clustering flag,
+amber is vague wording). Under it, every path is listed with the assessments
+that evidence each outcome — the chain from a student's mark to their
+competency classification. The progression chart follows for competencies
+taught in two or more subjects. `/competencies` opens with a competency ×
+discipline map (cell = outcomes from that discipline, multi-discipline
+competencies first) so the organisation is visible at a glance; every
+competency name on the dashboard links to its page.
+
+**Enlarge any chart.** `static/chartzoom.js` adds an Enlarge button to every
+Chart.js chart; it opens the same chart (type, data, options and click
+handlers) full screen in a modal, with hover tooltips and a live readout of
+the pointer's position in data units on every axis. Esc or Close returns.
+The d3 figures on the outcome-quality page (word cloud, chord) are not
+Chart.js and have no Enlarge button.
+
 **Cohorts.** Each figure in the stat strip links to `/cohort/<key>` — the
 same student table and statistics over just that subset, with a sentence
 stating what put those students in it. Cohorts are registered in
 `_COHORTS` in `app.py`, so adding one is a registry entry rather than a new
-route and a new template. Two exist today: `all` and `persistent-gap`.
+route and a new template. Five exist today: `all`, `persistent-gap` and the
+three priority groups `priority-1`, `priority-2`, `priority-3`.
 
 > **No "At Risk" cohort yet, and that is a decision.** The Sprint 3 runbook
 > (§9) lists the at-risk threshold as a stop-and-ask: the project owner
@@ -222,8 +334,9 @@ sample drawn from a larger body.
 
 **Sorting.** Every column heading on those tables sorts, ascending then
 descending. That is client-side progressive enhancement
-(`lja/dashboard/static/sort.js`): the server always renders rows in student-id
-order, so the table is still correct with JavaScript disabled. Cells carry a
+(`lja/dashboard/static/sort.js`): the server always renders rows in priority
+order (group, then lowest flagged mark, then student id), so the table is
+still correct with JavaScript disabled. Cells carry a
 `data-sort-value` with the raw figure, because sorting the *rendered* text
 would order "100.0%" before "20.0%".
 

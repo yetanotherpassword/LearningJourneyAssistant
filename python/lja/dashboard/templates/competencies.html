@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Competencies &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<a class="back-link" href="/silos">&larr; outcome quality</a>
+<h1>Competencies</h1>
+<p class="dek">
+  All {{ rows|length }} competencies the clustering produced, one row each: the SILOs grouped into it, how many
+  subjects they come from, and every student &times; competency row classified against it
+  ({{ total_gap_rows }} rows in all). A competency taught in two or more subjects links to its progression page.
+  The rationale is the clustering model&rsquo;s own words.
+</p>
+{% from "_macros.html" import scrollbox, chart_prelude %}
+<h2>How the competencies are organised</h2>
+<p class="dek">
+  One row per competency, one column per discipline (subject-code prefix); a cell is how many of that
+  discipline's outcomes were grouped into the competency. Competencies drawn from several disciplines sit at
+  the top: those are the ones where a mark in one field is evidence about another. Click a competency for
+  the full trace of subjects, outcomes and assessments behind it.
+</p>
+<div class="heat-wrap">
+  <table class="heat comp-map">
+    <thead><tr><th>Competency</th>{% for d in heat_disciplines %}<th><span>{{ d }}</span></th>{% endfor %}<th><span>SILOs</span></th></tr></thead>
+    <tbody>
+    {% for h in heat %}
+      <tr>
+        <th><a href="/competency/{{ h.slug }}">{{ h.label }}</a></th>
+        {% for c in h.cells %}
+        {% if c %}<td class="m" style="--w: {{ (c / heat_max)|round(2) }}" title="{{ h.label }}: {{ c }} outcome{{ 's' if c != 1 }} from {{ heat_disciplines[loop.index0] }}"><a href="/competency/{{ h.slug }}">{{ c }}</a></td>
+        {% else %}<td class="h-none"></td>{% endif %}
+        {% endfor %}
+        <td class="tot">{{ h.total }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="chart-card">
+  <h3>How each competency's students are classified</h3>
+  <p class="chart-note">One bar per competency, the share of its student rows in each classification, gap-heaviest first. A competency whose red and amber dominate is where the cohort struggles; one that is all green may be taught below the students' level. Click a bar to open the competency.</p>
+  <canvas id="competency-chart" height="{{ [120, rows|length * 16 + 40]|max }}"></canvas>
+</div>
+<script>
+(function () {
+  const C = {{ competency_chart|safe }};
+  {{ chart_prelude() }}
+  const order = ["persistent gap", "isolated gap", "developing", "proficient"];
+  new Chart(document.getElementById("competency-chart"), {
+    type: "bar",
+    data: {
+      labels: C.map((c) => c.label),
+      datasets: order.map((k) => ({ label: k, data: C.map((c) => c.share[k]), backgroundColor: CLASS_COLORS[k], stack: "s" })),
+    },
+    options: {
+      indexAxis: "y", animation: false, maintainAspectRatio: false,
+      scales: { x: { stacked: true, max: 100, title: { display: true, text: "Share of student rows (%)" } }, y: { stacked: true, ticks: { autoSkip: false, font: { size: 10 } } } },
+      plugins: { legend: { position: "top" }, tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw}% of ${C[item.dataIndex].n} rows` } } },
+      onClick: (evt, els) => { if (els.length) location.href = `/competency/${C[els[0].index].slug}`; },
+    },
+  });
+})();
+</script>
+{% call scrollbox(rows|length, "competencies") %}
+<table class="sortable">
+  <thead><tr>
+    <th data-sort-type="text" aria-sort="ascending">Competency</th>
+    <th data-sort-type="number">SILOs</th><th data-sort-type="number">Subjects</th>
+    <th data-sort-type="number">Student rows</th>
+    <th data-sort-type="number">Persistent</th><th data-sort-type="number">Isolated</th>
+    <th data-sort-type="number">Developing</th><th data-sort-type="number">Proficient</th>
+    <th data-sort-type="text">Rationale</th>
+  </tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr>
+      <td data-sort-value="{{ c.label }}">
+        <a href="/competency/{{ c.slug }}">{{ c.label }}</a>{% if not c.has_progression %} <span class="muted">(one subject)</span>{% endif %}
+        <div class="muted">{% for m in c.members %}<a class="term" href="/subject/{{ m.subject_code }}">{{ m.subject_code }}</a> {{ m.silo_local_id }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
+      </td>
+      <td data-sort-value="{{ c.n_silos }}">{{ c.n_silos }}</td>
+      <td data-sort-value="{{ c.n_subjects }}">{{ c.n_subjects }}</td>
+      <td data-sort-value="{{ c.n_rows }}">{{ c.n_rows }}</td>
+      <td data-sort-value="{{ c.counts['persistent gap'] }}">{% if c.counts['persistent gap'] %}<span class="badge persistent-gap">{{ c.counts['persistent gap'] }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ c.counts['isolated gap'] }}">{% if c.counts['isolated gap'] %}<span class="badge isolated-gap">{{ c.counts['isolated gap'] }}</span>{% else %}&mdash;{% endif %}</td>
+      <td data-sort-value="{{ c.counts['developing'] }}">{{ c.counts['developing'] or "—" }}</td>
+      <td data-sort-value="{{ c.counts['proficient'] }}">{{ c.counts['proficient'] or "—" }}</td>
+      <td data-sort-value="{{ c.rationale }}" class="wording rationale">{{ c.rationale }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="empty-state">The clustering has no competencies.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endcall %}
+{% endblock %}
