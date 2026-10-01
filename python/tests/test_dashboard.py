@@ -731,3 +731,71 @@ def test_cohort_title_prints_the_floor_in_force_not_a_placeholder() -> None:
     assert "{floor}" not in body
     assert "below the 50% floor" in body
 
+
+
+# --- practice quiz (tender R8) ----------------------------------------------
+
+from lja.model.quiz import QuizDocument, QuizItem, QuizSubject  # noqa: E402
+
+
+def _one_student() -> LjaDataset:
+    return _dataset([StudentSummary(student_id="STU0001", subject_totals={}, average_total=70.0, performance_band="Credit")])
+
+
+def _quiz_document() -> QuizDocument:
+    return QuizDocument(
+        student_id="STU0001",
+        introduction="Two practice questions on data structures; this is practice, not assessment.",
+        items=[
+            QuizItem(
+                competency_label="Data Structures",
+                gap_kind="persistent gap",
+                subject_code="CSE2ALG",
+                silo_key="CSE2ALG:SILO1",
+                assessment_key="CSE2ALG:Assignment 1",
+                stem="Which linked-list operation is constant time from the head?",
+                options=["Insert at the head", "Find the last node", "Delete by value"],
+                correct_index=0,
+                explanation="Only the head is reachable without traversal. Revisit CSE2ALG:SILO1.",
+            )
+        ],
+        subjects=[
+            QuizSubject(code="CSE2ALG", title="Algorithms and Data Structures", year_level=2, synopsis="Linear structures, trees and graphs."),
+            QuizSubject(code="CSE3CAP"),
+        ],
+    )
+
+
+def test_student_detail_renders_the_quiz_with_subjects_answer_and_caveat(tmp_path) -> None:
+    (tmp_path / "quiz_STU0001.json").write_text(_quiz_document().model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+
+    section = body.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+    assert "this is practice, not assessment" in section
+    assert "Which linked-list operation is constant time from the head?" in section
+    assert "<li>Insert at the head</li>" in section
+    assert "Show answer" in section
+    assert "<strong>A.</strong> Insert at the head" in section
+    assert "Revisit CSE2ALG:SILO1." in section
+    assert "CSE2ALG:SILO1 &middot; CSE2ALG:Assignment 1" in section
+    # Subject info: synopsis where the catalogue had one, an honest note where it did not.
+    assert "Algorithms and Data Structures" in section
+    assert "Linear structures, trees and graphs." in section
+    assert "No handbook synopsis in the catalogue for this subject." in section
+    # The page says what the checks do not cover.
+    assert "do <strong>not</strong> confirm the marked answer is correct" in section
+
+
+def test_student_detail_shows_quiz_empty_state_when_file_is_missing(tmp_path) -> None:
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    assert "No practice quiz has been generated for this student yet" in body
+    assert "python -m lja.quiz" in body
+
+
+def test_student_detail_without_quizzes_directory_is_safe() -> None:
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=None)
+    response = TestClient(app).get("/student/STU0001")
+    assert response.status_code == 200
+    assert "No practice quiz has been generated" in response.text

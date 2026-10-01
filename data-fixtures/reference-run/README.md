@@ -23,6 +23,7 @@ review of the clustering is in `docs/cluster-review-sprint5.md` (Sui Lung, Sprin
 | `plans/learning_plan_STU0003.*` | Learning plan, persistent gap on the relative basis |
 | `plans/learning_plan_STU0004.*` | Learning plan, persistent gap below the absolute floor |
 | `plans/learning_plan_STU0022.*` | Learning plan, persistent gap on the relative basis at 71.5% |
+| `quizzes/quiz_STU0003.*` | Practice quiz (tender R8 thin slice), 2 questions per gap; `qwen/qwen3-vl-30b` via LM Studio, 2 Oct 2026, grounded first attempt. Answer key not verified: see question 3 |
 
 ## Using it
 

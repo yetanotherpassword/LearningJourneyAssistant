@@ -47,6 +47,65 @@
 </p>
 {% endif %}
 
+<h2>Practice quiz</h2>
+{% if quiz %}
+<p class="dek">
+  Written by a language model from this student's own gaps, SILOs, assessments and marker
+  feedback, with the handbook synopsis of each subject as background. Every question is checked
+  to be tied to one of this student's gaps, a SILO of that competency and an assessment that
+  covers it. The checks do <strong>not</strong> confirm the marked answer is correct, so a
+  member of staff should review the answers before a student relies on them.
+</p>
+<p>{{ quiz.introduction }}</p>
+
+{% if quiz.subjects %}
+<div class="quiz-subjects">
+  {% for s in quiz.subjects %}
+  <div class="quiz-subject">
+    <div class="quiz-subject-head">
+      <span class="competency-name">{{ s.code }}</span>
+      {% if s.title %}<span class="quiz-subject-title">{{ s.title }}</span>{% endif %}
+      {% if s.year_level %}<span class="badge">year {{ s.year_level }}</span>{% endif %}
+    </div>
+    {% if s.synopsis %}
+    <p class="quiz-synopsis">{{ s.synopsis }}</p>
+    {% else %}
+    <p class="quiz-synopsis dek">No handbook synopsis in the catalogue for this subject.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<ol class="quiz-list">
+  {% for item in quiz.items %}
+  <li class="quiz-item">
+    <div class="quiz-meta">
+      <span class="competency-name">{{ item.competency_label }}</span>
+      <span class="badge {{ item.gap_kind|replace(' ', '-') }}">{{ item.gap_kind }}</span>
+      <span class="dek quiz-refs">{{ item.silo_key }} &middot; {{ item.assessment_key }}</span>
+    </div>
+    <p class="quiz-stem">{{ item.stem }}</p>
+    <ol class="quiz-options" type="A">
+      {% for option in item.options %}
+      <li>{{ option }}</li>
+      {% endfor %}
+    </ol>
+    <details class="quiz-answer">
+      <summary>Show answer</summary>
+      <p><strong>{{ "ABCD"[item.correct_index] }}.</strong> {{ item.options[item.correct_index] }}</p>
+      <p class="dek">{{ item.explanation }}</p>
+    </details>
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="empty-state">
+  No practice quiz has been generated for this student yet
+  (<code>python -m lja.quiz &lt;xlsx&gt; {{ summary.student_id }}</code>).
+</p>
+{% endif %}
+
 <h2>Strengths</h2>
 {% if strengths %}
 {% call scrollbox(strengths|length, "strengths") %}
