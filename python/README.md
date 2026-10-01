@@ -661,6 +661,21 @@ rubric criteria text) so questions can be checked against a source, or a second
 independent model pass that answers each question blind and rejects any disagreement.
 Neither is built.
 
+**Educator review: a blind second pass.** After the quiz grounds, `lja.quiz` makes one more
+call (skip with `--skip-educator-review`): the model is given every question with its
+options, the SILO wording, the assessment and the synopsis, but **not** the answer key, and
+asked to choose, say how confident it is, write the explanation a tutor would give the
+student (why the answer is right, why the others are wrong, what the question practises
+from the SILO), and flag concerns such as two defensible answers or a level mismatch.
+The code, not the model, compares its choice with the key. The result is stored as
+`educator_review` in the JSON, rendered under each question on the student page in a
+collapsed block labelled "For educator view only" (a label, not an access control: the
+dashboard has no logins), with a summary line naming any question the blind pass
+disagreed on. A disagreement does not prove either side wrong; it tells the educator which
+question to check first. A review that never grounds is a warning, not a failure: the
+quiz is still written, without notes. Checks: one note per question, a valid choice, a
+non-empty explanation, no invented codes in prose; `tests/test_quiz.py` covers them.
+
 **Synopses.** The handbook crawl (`lja.data.handbook`) always parsed each subject's
 handbook description; it now carries it into the catalogue as `Subject.description`.
 The three supplied subjects in `data-fixtures/subject_catalogue.yaml` have theirs from
@@ -673,6 +688,14 @@ one isolated gap, each tied to a different SILO and assessment. It also shows ex
 the limit above: question 3 marks "composition" for a car and its wheels and calls
 "aggregation" the tempting distractor, which a tutor could reasonably mark the other
 way. The grounding checks cannot see that; a person has to.
+
+**Blind review on the same run** (same model as reviewer): one call, 8 s, chose the
+author's answer on all four questions with high confidence and raised no concern,
+including on question 3. A model reviewing its own questions shares its own blind spots,
+so the review is useful for the teaching explanations and for catching slips, not for
+catching a shared misconception. Point the reviewer at a different model family where
+one is available (`LJA_OPENAI_MODEL` for the review call is a one-line change in
+`lja.quiz` if the team wants it as an option).
 
 ## Export — structured extract for longitudinal / A/B evaluation
 

@@ -34,6 +34,7 @@ from .model.quiz import (
     generate_quiz,
     has_gaps,
     render_markdown,
+    review_quiz,
 )
 from .model.silo_clustering import SiloClusteringResult
 from .model.study_strategy import gap_competencies
@@ -85,6 +86,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--max-attempts", type=int, default=3, help="Generation attempts before giving up (default: %(default)s)")
     parser.add_argument("--extra-instructions", default=None, help="Extra text appended to the system prompt, for prompt experiments")
+    parser.add_argument(
+        "--skip-educator-review",
+        action="store_true",
+        help="Do not run the blind second pass that answers each question without the key and writes the educator notes",
+    )
     args = parser.parse_args(argv)
 
     cache_path = Path(clustering_cache_path(args.source, args.clustering_cache))
@@ -139,6 +145,21 @@ def main(argv: list[str] | None = None) -> int:
     print(f"LLM usage: {client.usage_summary()}")
 
     document = QuizDocument.from_quiz(quiz, context)
+    if not args.skip_educator_review:
+        # Blind second pass. A review that never grounds is reported, not
+        # fatal: the quiz is still grounded, it just has no educator notes.
+        try:
+            review = review_quiz(client, document, context, max_attempts=args.max_attempts)
+        except GroundingError as exc:
+            print(f"\nWARNING: educator review not written: {exc}", file=sys.stderr)
+        else:
+            document = document.model_copy(update={"educator_review": review})
+            disagree = document.disagreements
+            if disagree:
+                print(f"Blind check DISAGREES with the answer key on question(s) {', '.join(str(i + 1) for i in disagree)}.")
+            else:
+                print("Blind check agrees with the answer key on every question.")
+        print(f"LLM usage: {client.usage_summary()}")
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / f"quiz_{args.student_id}.json"

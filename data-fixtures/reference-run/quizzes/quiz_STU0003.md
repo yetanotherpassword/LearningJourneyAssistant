@@ -60,6 +60,26 @@ Which of the following is the best example of code sharing and reuse through obj
 
 **4.** B. The correct answer is 'Using inheritance to extend a base class' because it allows new classes to inherit properties and methods from existing ones, promoting code reuse and reducing development time, which aligns with the SILO's focus on code sharing and reuse through object-oriented techniques. The most tempting distractor, 'Copying and pasting code', leads to redundancy and maintenance issues, violating the principles of object-oriented design. This question targets CSE1OOF:SILO3.
 
+## Educator notes (blind check)
+
+A second pass (provider=openai_compatible model=qwen/qwen3-vl-30b base_url=http://localhost:1234/v1/ temperature=0.2 max_tokens=16000) answered each question without seeing the key, then wrote a teaching explanation. It chose the author's answer on every question.
+
+**1.** Blind answer C (high confidence), agrees with the key.
+
+A binary search tree (BST) is the most appropriate data structure for storing unique, sorted integers with fast lookup and insertion because it maintains order and allows O(log n) average-case time complexity for both operations. Arrays and linked lists don’t maintain order efficiently for lookup, and hash tables don’t preserve sorting. Hash tables are fast for lookup and insertion but don’t maintain order, so they’re not suitable when sorted access is required. This question practices identifying the right data structure for a given computational need, which is key to SILO2.
+
+**2.** Blind answer B (high confidence), agrees with the key.
+
+Merge sort is the best choice because it is both efficient (O(n log n) time complexity) and stable (it preserves the relative order of equal elements), which is important for sorting integers. Quick sort is fast but unstable and has poor worst-case performance. Heap sort is efficient but not stable. Bubble sort is inefficient (O(n²)) and not suitable for large datasets. This question practices selecting the right algorithm based on performance and stability, aligning with SILO3.
+
+**3.** Blind answer B (high confidence), agrees with the key.
+
+Composition best describes the relationship between a 'Car' and 'Wheel' because the wheels are part of the car and cannot exist independently. In composition, the part is dependent on the whole, which matches the real-world scenario where wheels are created and destroyed with the car. Inheritance is about 'is-a' relationships, aggregation is a weaker 'has-a' relationship, and association is too general. This question practices identifying object-oriented relationships, which is central to SILO1.
+
+**4.** Blind answer B (high confidence), agrees with the key.
+
+Using inheritance to extend a base class is the best example of code reuse because it allows new classes to inherit and build upon existing functionality without duplicating code. Copying and pasting code or creating new classes for every function leads to redundancy and maintenance issues. Writing new methods for similar tasks doesn’t promote reuse. This question practices understanding how object-oriented techniques reduce development time, which is the focus of SILO3.
+
 ## The subjects
 
 - **CSE1OOF** Object-Oriented Programming Fundamentals. The Object-Oriented (OO) paradigm is a significant influence in software development in the computer industry. It divides a system into objects that exist in the model of the application domain. In this subject, students will be introduced to OO concepts, terminologies, syntax and programming using Java.

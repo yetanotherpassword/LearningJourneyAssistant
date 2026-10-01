@@ -153,10 +153,31 @@ class QuizSubject(BaseModel):
     synopsis: str = ""
 
 
+class EducatorNote(BaseModel):
+    """One question's blind check: the reviewer's own answer, chosen without
+    seeing the author's key, plus a teaching explanation for the student
+    and any concern about the question itself."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question_index: int = Field(ge=0)  # position in QuizDocument.items
+    chosen_index: int = Field(ge=0, lt=MAX_OPTIONS)
+    confidence: Literal["high", "medium", "low"]
+    teaching_explanation: str  # why the answer is right, why the others are wrong, how it serves the SILO
+    concerns: str = ""  # more than one defensible answer, ambiguity, level mismatch; empty if none
+
+
+class EducatorReview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    notes: list[EducatorNote]
+    reviewer: str = ""  # the LLM client's describe() string, for provenance
+
+
 class QuizDocument(BaseModel):
     """What is written to disk and what the dashboard renders: the quiz plus
     the subject info it was shown, so the page can print the same synopsis
-    the model saw and nothing more."""
+    the model saw and nothing more, and the educator review if one ran."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -164,6 +185,23 @@ class QuizDocument(BaseModel):
     introduction: str
     items: list[QuizItem]
     subjects: list[QuizSubject] = []
+    educator_review: EducatorReview | None = None
+
+    def note_for(self, index: int) -> EducatorNote | None:
+        if self.educator_review is None:
+            return None
+        return next((n for n in self.educator_review.notes if n.question_index == index), None)
+
+    def agrees(self, index: int) -> bool | None:
+        """Whether the blind reviewer chose the author's answer; None without a review."""
+        note = self.note_for(index)
+        if note is None:
+            return None
+        return note.chosen_index == self.items[index].correct_index
+
+    @property
+    def disagreements(self) -> list[int]:
+        return [i for i in range(len(self.items)) if self.agrees(i) is False]
 
     @classmethod
     def from_quiz(cls, quiz: Quiz, context: QuizContext) -> QuizDocument:
@@ -370,6 +408,125 @@ def generate_quiz(
     ) from last_error
 
 
+# --- Educator review (blind second pass) -----------------------------------
+#
+# The generator's grounding checks cannot see whether the answer key is
+# right. This pass gives a model each question WITHOUT the key, asks it to
+# choose and to write the explanation a tutor would, and the code compares
+# its choice with the author's. A disagreement does not prove either wrong;
+# it tells the educator which question to look at first.
+
+_REVIEW_SYSTEM_PROMPT = """You are a university tutor checking a practice quiz before a student sees it. For \
+each question you are given the stem and the options, the learning outcome (SILO) it is meant to test, \
+the assessment it is pitched at and the subject's handbook synopsis. You are NOT given the author's \
+answer key.
+
+For every question, in order:
+
+1. Choose the correct option yourself (chosen_index, 0-based) and say how confident you are: high, \
+medium or low. Choose from the options as written; if more than one is defensible, pick the best and \
+say so in concerns.
+2. Write teaching_explanation for the student: why the correct option is right, why each other option \
+is wrong or less good, and what working through this question practises from the named SILO. Three to \
+six sentences, in plain language, no bullet points.
+3. Write concerns if the question has a problem: more than one defensible answer, ambiguous wording, a \
+level that does not fit the named assessment, or content the SILO does not cover. Leave it empty if \
+there is none.
+
+Rules that are checked automatically: one note per question, question_index copied from the input, \
+chosen_index within that question's options, and any subject code or SILO key you mention copied \
+exactly from the input.
+"""
+
+
+def _render_review_context(document: QuizDocument, context: QuizContext) -> str:
+    synopsis = {s.code: s for s in context.subjects}
+    lines = [f"Student: {document.student_id}", ""]
+    for i, item in enumerate(document.items):
+        subject = synopsis.get(item.subject_code)
+        lines += [
+            f"Question {i} (question_index {i}): competency '{item.competency_label}' ({item.gap_kind})",
+            f"  Subject {item.subject_code}" + (f" {subject.title}" if subject and subject.title else ""),
+            f"  SILO {item.silo_key}: {context.plan.silo_text.get(item.silo_key, '(wording not available)')}",
+            f"  Pitched at assessment {item.assessment_key}",
+        ]
+        if subject and subject.synopsis:
+            lines.append(f"  Synopsis: {subject.synopsis}")
+        lines.append(f"  Stem: {item.stem}")
+        for j, option in enumerate(item.options):
+            lines.append(f"    option {j}: {option}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def review_grounding_checks(review: EducatorReview, document: QuizDocument, context: QuizContext) -> list[ReferenceCheck]:
+    prose = "\n".join(n.teaching_explanation + "\n" + n.concerns for n in review.notes)
+    return [
+        ReferenceCheck(
+            "question index",
+            [str(n.question_index) for n in review.notes],
+            [str(i) for i in range(len(document.items))],
+            require_complete=True,
+            require_unique=True,
+        ),
+        ReferenceCheck("SILO mentioned in prose", extract_codes(prose, SILO_KEY_PATTERN), context.plan.known_silos),
+        ReferenceCheck("subject mentioned in prose", extract_codes(prose, SUBJECT_CODE_PATTERN), context.known_subjects),
+    ]
+
+
+def review_structure_problems(review: EducatorReview, document: QuizDocument) -> list[str]:
+    problems: list[str] = []
+    for note in review.notes:
+        if not 0 <= note.question_index < len(document.items):
+            continue  # reported by the index check
+        n = note.question_index + 1
+        options = len(document.items[note.question_index].options)
+        if not 0 <= note.chosen_index < options:
+            problems.append(f"question {n}: chosen_index {note.chosen_index} is outside its {options} options")
+        if not note.teaching_explanation.strip():
+            problems.append(f"question {n} has no teaching explanation")
+    return problems
+
+
+def validate_review(review: EducatorReview, document: QuizDocument, context: QuizContext) -> None:
+    artefact = f"educator review of the quiz for {document.student_id}"
+    report = check_grounding(artefact, review_grounding_checks(review, document, context))
+    structure = review_structure_problems(review, document)
+    if report.ok and not structure:
+        return
+    parts = [p.describe() for p in report.problems] + structure
+    raise GroundingError(f"{artefact} failed grounding validation -- " + "; ".join(parts))
+
+
+def review_quiz(
+    client: LLMClient,
+    document: QuizDocument,
+    context: QuizContext,
+    *,
+    max_attempts: int = 3,
+) -> EducatorReview:
+    """Blind second pass. Same generate/validate/retry loop; raises if it
+    never grounds. The caller decides whether a failed review blocks the
+    quiz (lja.quiz writes the quiz without a review and says so)."""
+    base_prompt = _render_review_context(document, context)
+    last_error: GroundingError | None = None
+    for _attempt in range(1, max_attempts + 1):
+        user_prompt = base_prompt
+        if last_error is not None:
+            user_prompt += f"\n\nYour previous review was rejected: {last_error} Fix every item named there."
+        review = client.complete_structured(system=_REVIEW_SYSTEM_PROMPT, user=user_prompt, schema=EducatorReview)
+        try:
+            validate_review(review, document, context)
+            return review.model_copy(update={"reviewer": client.describe()})
+        except GroundingError as exc:
+            last_error = exc
+            continue
+    raise GroundingError(
+        f"Educator review for {document.student_id} failed grounding validation on all {max_attempts} attempts. "
+        f"Last error: {last_error}"
+    ) from last_error
+
+
 # --- Rendering -------------------------------------------------------------
 
 _LETTERS = "ABCD"
@@ -395,6 +552,27 @@ def render_markdown(document: QuizDocument, context: QuizContext) -> str:
     out += ["## Answers", ""]
     for n, item in enumerate(document.items, 1):
         out += [f"**{n}.** {_LETTERS[item.correct_index]}. {item.explanation}", ""]
+    if document.educator_review is not None:
+        review = document.educator_review
+        disagree = document.disagreements
+        out += ["## Educator notes (blind check)", ""]
+        out += [
+            f"A second pass ({review.reviewer or 'same model'}) answered each question without seeing the key, "
+            f"then wrote a teaching explanation. "
+            + (f"It disagreed on question(s) {', '.join(str(i + 1) for i in disagree)}; check those first."
+               if disagree else "It chose the author's answer on every question."),
+            "",
+        ]
+        for n, item in enumerate(document.items, 1):
+            note = document.note_for(n - 1)
+            if note is None:
+                out += [f"**{n}.** No note.", ""]
+                continue
+            verdict = "agrees" if note.chosen_index == item.correct_index else "DISAGREES"
+            out += [f"**{n}.** Blind answer {_LETTERS[note.chosen_index]} ({note.confidence} confidence), {verdict} with the key.", ""]
+            out += [note.teaching_explanation, ""]
+            if note.concerns.strip():
+                out += [f"*Concern:* {note.concerns}", ""]
     if any(s.title or s.synopsis for s in document.subjects):
         out += ["## The subjects", ""]
         for s in document.subjects:

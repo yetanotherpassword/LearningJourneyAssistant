@@ -57,6 +57,19 @@
   member of staff should review the answers before a student relies on them.
 </p>
 <p>{{ quiz.introduction }}</p>
+{% if quiz.educator_review %}
+<p class="dek">
+  A second, blind pass answered every question without seeing the key and wrote the educator
+  notes under each question.
+  {% if quiz.disagreements %}
+  It <strong>disagreed on question{% if quiz.disagreements|length > 1 %}s{% endif %}
+  {% for i in quiz.disagreements %}{{ i + 1 }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>; check those first.
+  {% else %}
+  It chose the author's answer on every question.
+  {% endif %}
+  The educator blocks are a label, not an access control: this dashboard has no logins.
+</p>
+{% endif %}
 
 {% if quiz.subjects %}
 <div class="quiz-subjects">
@@ -96,6 +109,27 @@
       <p><strong>{{ "ABCD"[item.correct_index] }}.</strong> {{ item.options[item.correct_index] }}</p>
       <p class="dek">{{ item.explanation }}</p>
     </details>
+    {% set note = quiz.note_for(loop.index0) %}
+    {% if note %}
+    {% set agrees = quiz.agrees(loop.index0) %}
+    <details class="quiz-educator{% if not agrees %} disagree{% endif %}">
+      <summary>
+        <span class="quiz-educator-label">For educator view only</span>
+        {% if agrees %}
+        <span class="badge proficient">blind check agrees</span>
+        {% else %}
+        <span class="badge persistent-gap">blind check disagrees: chose {{ "ABCD"[note.chosen_index] }}</span>
+        {% endif %}
+        <span class="dek quiz-refs">{{ note.confidence }} confidence</span>
+      </summary>
+      <div class="quiz-educator-body">
+        <p>{{ note.teaching_explanation }}</p>
+        {% if note.concerns %}
+        <p><strong>Concern:</strong> {{ note.concerns }}</p>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
   </li>
   {% endfor %}
 </ol>

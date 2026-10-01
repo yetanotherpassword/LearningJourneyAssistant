@@ -600,3 +600,8 @@ a.term-help:hover { color: var(--accent); border-color: var(--accent); }
 .quiz-options li { margin: 2px 0; }
 .quiz-answer summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .quiz-answer p { margin: 8px 0 0; }
+.quiz-educator { margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.quiz-educator summary { cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.9rem; }
+.quiz-educator-label { font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; font-size: 0.75rem; color: var(--muted); }
+.quiz-educator-body { padding: 8px 0 0 12px; border-left: 3px solid var(--line); margin-top: 8px; }
+.quiz-educator.disagree .quiz-educator-body { border-left-color: var(--status-persistent); }

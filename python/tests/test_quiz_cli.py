@@ -9,9 +9,9 @@ from lja.llm.grounding import GroundingError
 from lja.model.quiz import QuizContext, SubjectInfo
 
 
-class _FakeDocument:
-    def model_dump_json(self, indent=2):
-        return "{}"
+from lja.model.quiz import EducatorReview, QuizDocument  # noqa: E402
+
+_EMPTY_DOCUMENT = QuizDocument(student_id="S001", introduction="Practice.", items=[])
 
 
 class _FakeClient:
@@ -43,7 +43,8 @@ def _setup(monkeypatch, tmp_path, *, state="confirmed", gaps=True, generate=None
     monkeypatch.setattr(quiz_module, "gap_competencies", lambda _c: [competency] if gaps else [])
     monkeypatch.setattr(quiz_module, "get_llm_client", lambda: _FakeClient())
     monkeypatch.setattr(quiz_module, "generate_quiz", generate or (lambda *_a, **_k: SimpleNamespace()))
-    monkeypatch.setattr(quiz_module.QuizDocument, "from_quiz", classmethod(lambda cls, *_a: _FakeDocument()))
+    monkeypatch.setattr(quiz_module.QuizDocument, "from_quiz", classmethod(lambda cls, *_a: _EMPTY_DOCUMENT))
+    monkeypatch.setattr(quiz_module, "review_quiz", lambda *_a, **_k: EducatorReview(notes=[], reviewer="fake"))
     monkeypatch.setattr(quiz_module, "render_markdown", lambda *_a: "# quiz")
     return ["dummy.xlsx", "S001", "--clustering-cache", str(cache), "--out-dir", str(tmp_path / "out"), "--catalogue", str(tmp_path / "none.yaml")]
 
@@ -51,7 +52,8 @@ def _setup(monkeypatch, tmp_path, *, state="confirmed", gaps=True, generate=None
 def test_confirmed_review_writes_both_files(monkeypatch, tmp_path, capsys):
     argv = _setup(monkeypatch, tmp_path)
     assert quiz_module.main(argv) == 0
-    assert (tmp_path / "out" / "quiz_S001.json").read_text() == "{}"
+    written = QuizDocument.model_validate_json((tmp_path / "out" / "quiz_S001.json").read_text())
+    assert written.student_id == "S001" and written.educator_review.reviewer == "fake"
     assert (tmp_path / "out" / "quiz_S001.md").read_text() == "# quiz"
     captured = capsys.readouterr()
     assert "WARNING" not in captured.err
@@ -98,3 +100,49 @@ def test_load_subject_info_reads_the_catalogue_and_tolerates_a_missing_file(tmp_
     assert info["CSE1OOF"].year_level == 1
     assert info["CSE1OOF"].synopsis.startswith("The Object-Oriented (OO) paradigm")
     assert info["CSE2ALG"].synopsis and info["CSE3CAP"].synopsis
+
+
+def test_educator_review_runs_by_default_and_reports_disagreement(monkeypatch, tmp_path, capsys):
+    from lja.model.quiz import EducatorNote, QuizItem
+
+    item = QuizItem(
+        competency_label="Data Structures", gap_kind="persistent gap", subject_code="CSE1OOF", silo_key="CSE1OOF:SILO1",
+        assessment_key="CSE1OOF:Test", stem="Q?", options=["a", "b", "c"], correct_index=0, explanation="a.",
+    )
+    document = QuizDocument(student_id="S001", introduction="Practice.", items=[item])
+    argv = _setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(quiz_module.QuizDocument, "from_quiz", classmethod(lambda cls, *_a: document))
+    calls = []
+
+    def fake_review(client, doc, ctx, *, max_attempts):
+        calls.append(doc)
+        return EducatorReview(notes=[EducatorNote(question_index=0, chosen_index=2, confidence="low", teaching_explanation="c, because.")])
+
+    monkeypatch.setattr(quiz_module, "review_quiz", fake_review)
+    assert quiz_module.main(argv) == 0
+    assert calls == [document]
+    written = QuizDocument.model_validate_json((tmp_path / "out" / "quiz_S001.json").read_text())
+    assert written.disagreements == [0]
+    assert "Blind check DISAGREES with the answer key on question(s) 1." in capsys.readouterr().out
+
+
+def test_skip_educator_review_never_calls_it(monkeypatch, tmp_path):
+    argv = _setup(monkeypatch, tmp_path) + ["--skip-educator-review"]
+
+    def boom(*_a, **_k):
+        raise AssertionError("review must not run")
+
+    monkeypatch.setattr(quiz_module, "review_quiz", boom)
+    assert quiz_module.main(argv) == 0
+
+
+def test_failed_educator_review_warns_but_still_writes_the_quiz(monkeypatch, tmp_path, capsys):
+    argv = _setup(monkeypatch, tmp_path)
+
+    def ungrounded(*_a, **_k):
+        raise GroundingError("Educator review for S001 failed grounding validation on all 3 attempts")
+
+    monkeypatch.setattr(quiz_module, "review_quiz", ungrounded)
+    assert quiz_module.main(argv) == 0
+    assert (tmp_path / "out" / "quiz_S001.json").exists()
+    assert "WARNING: educator review not written" in capsys.readouterr().err

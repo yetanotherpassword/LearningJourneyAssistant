@@ -799,3 +799,41 @@ def test_student_detail_without_quizzes_directory_is_safe() -> None:
     response = TestClient(app).get("/student/STU0001")
     assert response.status_code == 200
     assert "No practice quiz has been generated" in response.text
+
+
+def test_student_detail_shows_educator_block_and_flags_disagreement(tmp_path) -> None:
+    from lja.model.quiz import EducatorNote, EducatorReview
+
+    document = _quiz_document()
+    document.items.append(document.items[0].model_copy(update={"stem": "Second question?", "correct_index": 1}))
+    document = document.model_copy(
+        update={
+            "educator_review": EducatorReview(
+                reviewer="fake",
+                notes=[
+                    EducatorNote(question_index=0, chosen_index=0, confidence="high", teaching_explanation="Head insert needs no traversal."),
+                    EducatorNote(question_index=1, chosen_index=2, confidence="low", teaching_explanation="Delete by value is also linear.", concerns="Two options are defensible."),
+                ],
+            )
+        }
+    )
+    (tmp_path / "quiz_STU0001.json").write_text(document.model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    section = body.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+
+    assert section.count("For educator view only") == 2
+    assert "blind check agrees" in section
+    assert "blind check disagrees: chose C" in section
+    assert "Head insert needs no traversal." in section
+    assert "<strong>Concern:</strong> Two options are defensible." in section
+    assert "disagreed on question 2</strong>; check those first." in " ".join(section.split())
+    assert "a label, not an access control" in section
+
+
+def test_student_detail_quiz_without_review_has_no_educator_block(tmp_path) -> None:
+    (tmp_path / "quiz_STU0001.json").write_text(_quiz_document().model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    assert "For educator view only" not in body
+    assert "blind pass" not in body

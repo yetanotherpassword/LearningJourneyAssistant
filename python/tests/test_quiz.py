@@ -250,3 +250,101 @@ def test_markdown_shows_questions_answers_subjects_and_evidence() -> None:
     assert "**CSE2ALG** Algorithms and Data Structures. Linear structures" in text
     assert "staff should check the answer key" in text
     assert "| Data Structures | persistent gap | 50.8% | CSE1OOF 55.0%, CSE2ALG 48.0% |" in text
+
+
+# --- educator review (blind second pass) -----------------------------------
+
+from lja.model.quiz import EducatorNote, EducatorReview, _render_review_context, review_quiz, validate_review  # noqa: E402
+
+
+class _FakeReviewClient(_FakeLLMClient):
+    def complete_structured(self, *, system: str, user: str, schema: type[BaseModel]) -> BaseModel:
+        assert schema is EducatorReview
+        index = min(self.call_count, len(self._results) - 1)
+        self.call_count += 1
+        self.users_seen.append(user)
+        self.systems_seen.append(system)
+        return self._results[index]
+
+    def describe(self) -> str:
+        return "fake-reviewer"
+
+
+def _document() -> QuizDocument:
+    return QuizDocument.from_quiz(_good_quiz(), _quiz_context())
+
+
+def _note(index: int, chosen: int, **overrides) -> EducatorNote:
+    fields = dict(question_index=index, chosen_index=chosen, confidence="high", teaching_explanation="Because traversal costs grow with length. Practises CSE2ALG:SILO1.")
+    fields.update(overrides)
+    return EducatorNote(**fields)
+
+
+def test_review_prompt_hides_the_key_and_shows_silo_assessment_and_synopsis() -> None:
+    text = _render_review_context(_document(), _quiz_context())
+    assert "correct" not in text.lower()
+    assert "explanation" not in text.lower()
+    assert "SILO CSE2ALG:SILO2: analyse algorithm complexity" in text
+    assert "Pitched at assessment CSE2ALG:Assignment 1" in text
+    assert "Synopsis: Linear structures, trees, hash tables and graphs." in text
+    assert "option 1: O(log n)" in text
+
+
+def test_review_must_cover_every_question_once_with_a_valid_choice() -> None:
+    doc, ctx = _document(), _quiz_context()
+    with pytest.raises(GroundingError, match=r"question index in the input but absent from the output: \['1'\]"):
+        validate_review(EducatorReview(notes=[_note(0, 0)]), doc, ctx)
+    with pytest.raises(GroundingError, match=r"question index referenced more than once: \['0'\]"):
+        validate_review(EducatorReview(notes=[_note(0, 0), _note(0, 1), _note(1, 1)]), doc, ctx)
+    with pytest.raises(GroundingError, match=r"question 1: chosen_index 3 is outside its 3 options"):
+        validate_review(EducatorReview(notes=[_note(0, 3), _note(1, 1)]), doc, ctx)
+    with pytest.raises(GroundingError, match=r"question 2 has no teaching explanation"):
+        validate_review(EducatorReview(notes=[_note(0, 0), _note(1, 1, teaching_explanation=" ")]), doc, ctx)
+    with pytest.raises(GroundingError, match=r"SILO mentioned in prose not present in the input: \['CSE9ZZZ:SILO1'\]"):
+        validate_review(EducatorReview(notes=[_note(0, 0, concerns="Overlaps CSE9ZZZ:SILO1."), _note(1, 1)]), doc, ctx)
+
+
+def test_review_agreement_is_computed_in_code_not_asked_for() -> None:
+    review = EducatorReview(notes=[_note(0, 0), _note(1, 0, confidence="low", concerns="Two options are defensible.")])
+    doc = _document().model_copy(update={"educator_review": review})
+    assert doc.agrees(0) is True
+    assert doc.agrees(1) is False
+    assert doc.disagreements == [1]
+    assert doc.note_for(1).concerns == "Two options are defensible."
+    assert _document().agrees(0) is None and _document().disagreements == []
+
+
+def test_review_retries_then_records_the_reviewer() -> None:
+    bad = EducatorReview(notes=[_note(0, 0)])
+    good = EducatorReview(notes=[_note(0, 0), _note(1, 1)])
+    client = _FakeReviewClient(bad, good)
+    review = review_quiz(client, _document(), _quiz_context())
+    assert client.call_count == 2
+    assert "Your previous review was rejected" in client.users_seen[1]
+    assert review.reviewer == "fake-reviewer"
+    assert review.notes == good.notes
+
+
+def test_review_never_grounding_raises() -> None:
+    client = _FakeReviewClient(EducatorReview(notes=[]))
+    with pytest.raises(GroundingError, match="Educator review for S001 failed grounding validation on all 3 attempts"):
+        review_quiz(client, _document(), _quiz_context())
+
+
+def test_markdown_lists_educator_notes_and_flags_disagreement() -> None:
+    ctx = _quiz_context()
+    review = EducatorReview(notes=[_note(0, 0), _note(1, 0, confidence="medium", concerns="Stem does not say the array is sorted.")], reviewer="fake-reviewer")
+    doc = _document().model_copy(update={"educator_review": review})
+    text = render_markdown(doc, ctx)
+    assert "## Educator notes (blind check)" in text
+    assert "It disagreed on question(s) 2; check those first." in text
+    assert "**1.** Blind answer A (high confidence), agrees with the key." in text
+    assert "**2.** Blind answer A (medium confidence), DISAGREES with the key." in text
+    assert "*Concern:* Stem does not say the array is sorted." in text
+
+
+def test_a_document_without_a_review_still_loads_and_renders() -> None:
+    doc = _document()
+    assert "educator_review" in doc.model_dump_json()
+    assert QuizDocument.model_validate_json(doc.model_dump_json()).educator_review is None
+    assert "Educator notes" not in render_markdown(doc, _quiz_context())
