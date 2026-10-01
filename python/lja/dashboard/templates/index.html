@@ -8,12 +8,17 @@
    registered in app.py, so a new tile is a registry entry rather than a new
    template -- including the "At Risk" tile the team has asked for, which is
    held back until its definition is agreed (see _COHORTS in app.py). #}
+{% from "_macros.html" import tile %}
 <div class="stat-strip">
-  {% for tile in tiles %}
-  <a class="stat stat-link" href="/cohort/{{ tile.key }}">
-    <div class="num">{{ tile.count }}</div>
-    <div class="label">{{ tile.label }}</div>
-  </a>
+  {% for t in tiles if not t.rank %}
+  {{ tile(t.count, t.label, "/cohort/" ~ t.key) }}
+  {% endfor %}
+</div>
+{# The three priority groups on their own row, coloured by rank: red, amber,
+   blue -- the same three colours the priority badges and row edges use. #}
+<div class="stat-strip priority-strip">
+  {% for t in tiles if t.rank %}
+  {{ tile(t.count, t.label, "/cohort/" ~ t.key, extra_class="prio-tile prio-tile-" ~ t.rank) }}
   {% endfor %}
 </div>
 

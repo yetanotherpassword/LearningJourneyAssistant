@@ -1,0 +1,76 @@
+{# Traceability for one competency: competency -> subjects -> SILOs ->
+   assessments, drawn as a layered diagram and listed as paths. Expects
+   `trace` from app.py: {label, slug, rationale, disciplines: [{code,
+   subjects: [{code, year, silos: [{id, text, flagged, flag_reason,
+   vague_terms, assessments: [{name, weight}]}]}]}], layout: {...}}. #}
+<h2 id="trace">How this competency is put together</h2>
+<p class="dek">
+  Left to right: the competency, the subjects whose outcomes were grouped into it (coloured by discipline),
+  and those outcomes. Hover an outcome for its full wording; click a subject to open it. Every path is
+  listed underneath with the assessments that evidence each outcome, which is where a student's mark on
+  this competency comes from.
+</p>
+<div class="chart-card trace-card">
+  <svg class="trace" viewBox="0 0 {{ trace.layout.width }} {{ trace.layout.height }}" role="img"
+       aria-label="Competency {{ trace.label }}: {{ trace.layout.n_subjects }} subjects, {{ trace.layout.n_silos }} outcomes">
+    {# links first so nodes draw over them #}
+    {% for s in trace.layout.subjects %}
+    <path class="trace-link disc-{{ s.disc_index }}" d="M {{ trace.layout.x_comp + 150 }} {{ trace.layout.y_comp }} C {{ trace.layout.x_subj - 60 }} {{ trace.layout.y_comp }}, {{ trace.layout.x_subj - 60 }} {{ s.y }}, {{ trace.layout.x_subj }} {{ s.y }}"/>
+    {% endfor %}
+    {% for o in trace.layout.silos %}
+    <path class="trace-link disc-{{ o.disc_index }}" d="M {{ trace.layout.x_subj + 90 }} {{ o.subject_y }} C {{ trace.layout.x_silo - 60 }} {{ o.subject_y }}, {{ trace.layout.x_silo - 60 }} {{ o.y }}, {{ trace.layout.x_silo }} {{ o.y }}"/>
+    {% endfor %}
+    <g class="trace-node comp">
+      <rect x="{{ trace.layout.x_comp }}" y="{{ trace.layout.y_comp - 22 }}" width="150" height="44" rx="8"/>
+      <text x="{{ trace.layout.x_comp + 75 }}" y="{{ trace.layout.y_comp + 5 }}" text-anchor="middle">{{ trace.label|truncate(24, True) }}</text>
+      <title>{{ trace.label }}</title>
+    </g>
+    {% for s in trace.layout.subjects %}
+    <a href="/subject/{{ s.code }}">
+      <g class="trace-node subj disc-{{ s.disc_index }}">
+        <rect x="{{ trace.layout.x_subj }}" y="{{ s.y - 12 }}" width="90" height="24" rx="6"/>
+        <text x="{{ trace.layout.x_subj + 45 }}" y="{{ s.y + 4 }}" text-anchor="middle">{{ s.code }}</text>
+        <title>{{ s.code }}: year {{ s.year if s.year is not none else "?" }}, {{ s.n_silos }} outcome{{ "s" if s.n_silos != 1 }} in this competency</title>
+      </g>
+    </a>
+    {% endfor %}
+    {% for o in trace.layout.silos %}
+    <g class="trace-node silo {{ 'flagged' if o.flagged }} {{ 'vague' if o.vague }}">
+      <rect x="{{ trace.layout.x_silo }}" y="{{ o.y - 10 }}" width="{{ trace.layout.silo_w }}" height="20" rx="5"/>
+      <text x="{{ trace.layout.x_silo + 8 }}" y="{{ o.y + 4 }}">{{ o.subject }} {{ o.id }}: {{ o.text|truncate(52, True) }}</text>
+      <title>{{ o.subject }} {{ o.id }} — {{ o.text }}{% if o.flagged %} [flagged: {{ o.flag_reason }}]{% endif %}{% if o.vague %} [vague: {{ o.vague|join(", ") }}]{% endif %}</title>
+    </g>
+    {% endfor %}
+  </svg>
+  <p class="chart-note">
+    {{ trace.layout.n_subjects }} subject{{ "s" if trace.layout.n_subjects != 1 }} in
+    {{ trace.disciplines|length }} discipline{{ "s" if trace.disciplines|length != 1 }},
+    {{ trace.layout.n_silos }} outcome{{ "s" if trace.layout.n_silos != 1 }}.
+    A red outline marks an outcome the clustering flagged; an amber one, vague wording.
+  </p>
+</div>
+
+<h3>Every path, with the assessments behind it</h3>
+<ol class="trace-paths">
+  {% for d in trace.disciplines %}
+  {% for s in d.subjects %}
+  {% for o in s.silos %}
+  <li>
+    <span class="path-step">{{ trace.label }}</span><span class="path-arrow">&rarr;</span>
+    <span class="path-step"><a href="/subject/{{ s.code }}">{{ s.code }}</a></span><span class="path-arrow">&rarr;</span>
+    <span class="path-step {{ 'flagged' if o.flagged }}">{{ o.id }}</span>
+    <span class="trace-text">{{ o.text }}</span>
+    {% if o.flagged %}<div class="flag-reason">Flagged: {{ o.flag_reason }}</div>{% endif %}
+    {% if o.vague_terms %}<div class="flag-reason vague">Vague terms: {{ o.vague_terms|join(", ") }}</div>{% endif %}
+    <div class="muted">
+      {% if o.assessments %}
+      Evidenced by {% for a in o.assessments %}{{ a.name }} ({{ "%g"|format(a.weight) }}%){% if not loop.last %}, {% endif %}{% endfor %}
+      {% else %}
+      No assessment in {{ s.code }}'s map evidences this outcome, so no student has a mark against it.
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+  {% endfor %}
+  {% endfor %}
+</ol>
