@@ -54,3 +54,14 @@ python -m lja.review --cluster <id> --state confirmed   # for each of the 5 clus
 python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx
 python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003   # also STU0004, STU0022
 ```
+
+### Demo Sprint 5 staff review
+
+From `python/`:
+
+```bash
+mkdir -p output/demo && cp ../data-fixtures/reference-run/silo_clustering.json output/demo/ && cp ../data-fixtures/reference-run/silo_clustering.review.sui-lung.json output/demo/silo_clustering.review.json
+LJA_DASHBOARD_CLUSTERING_CACHE=output/demo/silo_clustering.json python -m lja.dashboard
+```
+
+The demo copy contains the staff-review verdicts while the committed default review file remains all-confirmed for the offline reference run.

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ summary.student_id }} &mdash; LJA Dashboard{% endblock %}
+{% from "_macros.html" import scrollbox %}
 {% block content %}
 <a class="back-link" href="/">&larr; all students</a>
 <h1>{{ summary.student_id }}</h1>
@@ -48,8 +49,9 @@
 
 <h2>Strengths</h2>
 {% if strengths %}
-<table class="evidence-table">
-  <thead><tr><th>Competency</th><th>Attainment</th><th>Basis</th></tr></thead>
+{% call scrollbox(strengths|length, "strengths") %}
+<table class="evidence-table sortable">
+  <thead><tr><th data-sort-type="text">Competency</th><th data-sort-type="number" aria-sort="descending">Attainment</th><th data-sort-type="text">Basis</th></tr></thead>
   <tbody>
     {% for s in strengths %}
     <tr>
@@ -57,12 +59,13 @@
       <td>{{ "%.1f"|format(s.attainment_pct) }}%</td>
       <td>
         <span class="basis-badge">{{ s.classification_basis }}</span>
-        {% if s.relative_position is not none %}{{ "%+.2f"|format(s.relative_position) }} MAD above this student's own median{% endif %}
+        {% if s.relative_position is not none %}{{ "%+.2f"|format(s.relative_position) }} <a class="term" href="/glossary#mad">MAD</a> above this student's own median{% endif %}
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No competency is classified proficient for this student yet.</p>
 {% endif %}
@@ -77,12 +80,13 @@
   <canvas id="progress-chart" height="110" aria-label="Attainment per competency across subjects in year order" role="img"></canvas>
   <p id="progress-chart-note" class="chart-note" hidden></p>
 </div>
-<table class="evidence-table progress-table">
+{% call scrollbox(progress_rows|length, "competencies") %}
+<table class="evidence-table progress-table sortable">
   <thead>
     <tr>
-      <th>Competency</th>
-      {% for c in progress_subjects %}<th>{{ c }}</th>{% endfor %}
-      <th>Trend</th>
+      <th data-sort-type="text">Competency</th>
+      {% for c in progress_subjects %}<th data-sort-type="number">{{ c }}</th>{% endfor %}
+      <th data-sort-type="text">Trend</th>
     </tr>
   </thead>
   <tbody>
@@ -95,6 +99,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% endcall %}
 {% else %}
 <p class="empty-state">No subject evidence for this student.</p>
 {% endif %}
@@ -111,13 +116,13 @@
       <span class="badge {{ gap.classification|replace(' ', '-') }}">{{ gap.classification }}</span>
     </summary>
     <div class="gap-card-body">
-      <table class="evidence-table">
+      <table class="evidence-table sortable">
         <thead>
           <tr>
-            <th>Subject</th>
-            <th>Year</th>
-            <th>Attainment</th>
-            <th>Observations</th>
+            <th data-sort-type="text">Subject</th>
+            <th data-sort-type="number">Year</th>
+            <th data-sort-type="number">Attainment</th>
+            <th data-sort-type="number">Observations</th>
           </tr>
         </thead>
         <tbody>
@@ -140,7 +145,7 @@
         <span class="basis-badge">{{ gap.classification_basis }}</span>
         {% if gap.relative_position is not none %}
         <span class="basis-detail">
-          {{ "%+.2f"|format(gap.relative_position) }} MAD from this student's own median
+          {{ "%+.2f"|format(gap.relative_position) }} <a class="term" href="/glossary#mad">MAD</a> from this student's own median
           across all their competencies
         </span>
         {% endif %}

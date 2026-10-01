@@ -1,0 +1,38 @@
+{# One row per SILO. Expects `silo_rows` (SiloQuality rows, already in the
+   order the page wants) in context. Shared by /silos, /silos/list/* and
+   /subject/* so a SILO reads the same everywhere. #}
+{% from "_macros.html" import pct, scrollbox %}
+{% call scrollbox(silo_rows|length, "outcomes") %}
+<table class="sortable compact">
+  <thead><tr>
+    <th data-sort-type="text">SILO</th><th data-sort-type="text">Wording</th><th data-sort-type="text">Competency</th>
+    <th data-sort-type="number" aria-sort="descending">Issues</th><th data-sort-type="number">Assessments</th>
+    <th data-sort-type="number">Students</th><th data-sort-type="number">Mean attainment</th><th data-sort-type="number">Gap rate</th>
+  </tr></thead>
+  <tbody>
+  {% for r in silo_rows %}
+    <tr class="{{ 'has-issue' if r.issues }}">
+      <td data-sort-value="{{ r.key }}"><a href="/subject/{{ r.subject_code }}"><strong>{{ r.subject_code }}</strong></a> {{ r.silo_local_id }}</td>
+      <td data-sort-value="{{ r.text }}" class="wording">
+        {{ r.text }}
+        {% if r.flagged %}<div class="flag-reason">Flagged: {{ r.flag_reason }}</div>{% endif %}
+        {% if r.vague_terms %}<div class="flag-reason vague">Vague terms: {{ r.vague_terms|join(", ") }}</div>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.competency_label or '' }}">
+        {% if r.competency_label %}<a href="/competency/{{ r.competency_label|slug }}">{{ r.competency_label }}</a>{% if r.orphan %} <span class="muted">(this subject only)</span>{% endif %}
+        {% else %}<span class="muted">not clustered</span>{% endif %}
+      </td>
+      <td data-sort-value="{{ r.issues|length }}">
+        {% for issue in r.issues %}<span class="issue">{{ issue }}</span>{% else %}&mdash;{% endfor %}
+      </td>
+      <td data-sort-value="{{ r.n_assessments }}">{{ r.n_assessments }}</td>
+      <td data-sort-value="{{ r.n_students }}">{{ r.n_students }}</td>
+      <td data-sort-value="{{ r.mean_attainment if r.mean_attainment is not none else -1 }}">{{ pct(r.mean_attainment) }}</td>
+      <td data-sort-value="{{ r.gap_rate if r.gap_rate is not none else -1 }}">{{ pct(r.gap_rate) }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="empty-state">No outcomes match.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endcall %}

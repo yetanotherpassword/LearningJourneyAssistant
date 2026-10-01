@@ -1,9 +1,16 @@
 {# Shared by index.html and cohort.html. Everything here is already computed
-   by app.py's view_model() -- this file formats, it does not aggregate. #}
+   by app.py's view_model() -- this file formats, it does not aggregate.
+
+   Order: the cohort's statistics and charts as they always were, then the
+   priority groups (who to look at, in what order, and how many there are),
+   then everyone. The rules behind the labels live on /run and the words on
+   /glossary, linked rather than repeated. #}
 
 {% macro figure(value, suffix="") -%}
   {%- if value is none %}&mdash;{% else %}{{ "%.2f"|format(value) }}{{ suffix }}{% endif -%}
 {%- endmacro %}
+
+{% from "_student_table.html" import student_table %}
 
 <h2>Statistics</h2>
 <p class="dek">
@@ -15,17 +22,20 @@
   {% endif %}
 </p>
 
+{# The count links to the cohort it counts; each statistic links to the
+   glossary entry that defines it. Same rule as every other tile. #}
+{% from "_macros.html" import tile, scrollbox, chart_prelude %}
 <div class="stat-grid">
-  <div class="stat"><div class="num">{{ stats.n }}</div><div class="label">students</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.mean, "%") }}</div><div class="label">mean</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.median, "%") }}</div><div class="label">median</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.stdev) }}</div><div class="label">std deviation</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.variance) }}</div><div class="label">variance</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.minimum, "%") }}</div><div class="label">minimum</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.maximum, "%") }}</div><div class="label">maximum</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.q1, "%") }}</div><div class="label">lower quartile</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.q3, "%") }}</div><div class="label">upper quartile</div></div>
-  <div class="stat"><div class="num">{{ figure(stats.iqr) }}</div><div class="label">interquartile range</div></div>
+  {{ tile(stats.n, "students", "/cohort/" ~ cohort.key ~ "#everyone") }}
+  {{ tile(figure(stats.mean, "%"), "mean", "/glossary#mean") }}
+  {{ tile(figure(stats.median, "%"), "median", "/glossary#median") }}
+  {{ tile(figure(stats.stdev), "std deviation", "/glossary#standard-deviation") }}
+  {{ tile(figure(stats.variance), "variance", "/glossary#variance") }}
+  {{ tile(figure(stats.minimum, "%"), "minimum", "/glossary#range") }}
+  {{ tile(figure(stats.maximum, "%"), "maximum", "/glossary#range") }}
+  {{ tile(figure(stats.q1, "%"), "lower quartile", "/glossary#quartiles") }}
+  {{ tile(figure(stats.q3, "%"), "upper quartile", "/glossary#quartiles") }}
+  {{ tile(figure(stats.iqr), "interquartile range", "/glossary#quartiles") }}
 </div>
 
 {% if rows %}
@@ -42,48 +52,53 @@
   </div>
 </div>
 
-<h2>Students</h2>
-<p class="dek">Click any column heading to sort by it; click again to reverse.</p>
-<table class="sortable">
-  <thead>
-    <tr>
-      <th data-sort-type="text" aria-sort="ascending">Student</th>
-      <th data-sort-type="number">Average</th>
-      <th data-sort-type="text">Band</th>
-      <th data-sort-type="number">Strengths</th>
-      <th data-sort-type="number">Persistent gaps</th>
-      <th data-sort-type="number">Isolated gaps</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in rows %}
-    <tr>
-      <td data-sort-value="{{ row.student_id }}">
-        <a href="/student/{{ row.student_id }}" class="{{ 'at-risk' if row.persistent_gap_count > 0 }}">
-          {{ row.student_id }}
-        </a>
-      </td>
-      <td data-sort-value="{{ row.average_total }}">{{ "%.1f"|format(row.average_total) }}%</td>
-      <td data-sort-value="{{ row.performance_band }}">{{ row.performance_band }}</td>
-      <td data-sort-value="{{ row.strength_count }}">{{ row.strength_count }}</td>
-      <td data-sort-value="{{ row.persistent_gap_count }}">
-        {% if row.persistent_gap_count > 0 %}
-        <span class="badge persistent-gap">{{ row.persistent_gap_count }}</span>
-        {% else %}
-        &mdash;
-        {% endif %}
-      </td>
-      <td data-sort-value="{{ row.isolated_gap_count }}">
-        {% if row.isolated_gap_count > 0 %}
-        <span class="badge isolated-gap">{{ row.isolated_gap_count }}</span>
-        {% else %}
-        &mdash;
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{# --- Outliers at a glance: each flagged student's average against their
+   lowest flagged mark. A student far below the diagonal is strong overall
+   with one deep gap -- exactly what the relative rule exists to find, and
+   invisible in either number alone. --- #}
+{% if severity_scatter_n %}
+<div class="chart-card">
+  <h3>Where each flagged student sits</h3>
+  <p class="chart-note">
+    One point per student: average total across subjects against their lowest competency mark, coloured by priority
+    group for the {{ severity_scatter_n }} flagged students. The {{ severity_scatter_unflagged }} students with no flag
+    are the grey points, placed at their lowest mark of all, which the rules did not count as a gap.
+    The dashed lines are the two absolute rules: below the red floor a mark is a gap whatever the profile, and at or above the green
+    ceiling it never is, so no flagged point can sit above it. Between the lines the relative rule decides, one line per student, so it cannot
+    be drawn. Points far to the right of the amber band are students who do well overall but have one deep gap. Hover for the student; click to open them.
+  </p>
+  <canvas id="severity-chart" height="130"></canvas>
+</div>
+{% endif %}
+
+{# --- Priority groups: who to look at, in what order, and how many. --- #}
+<h2 id="priority">Students by priority</h2>
+<p class="dek">
+  {{ gap_summary.flagged_students }} of {{ gap_summary.students }} students have at least one flagged competency;
+  {{ unflagged_count }} have none. Flagged students fall into three groups from the classification rules already applied
+  (<a href="/run#rules">how these are decided</a>, <a href="/glossary">what the words mean</a>).
+  Each group lists every student in it, worst first: type in its filter box to narrow the list, click a column
+  heading to sort, Expand for full screen. The <a href="#everyone">full table</a> below lists everyone in the same order.
+</p>
+
+{% for group in priority_groups %}
+<section class="priority-group priority-group-{{ group.rank }}">
+  <h3>
+    <span class="prio prio-{{ group.rank }}">{{ group.rank }}</span>
+    <a href="/cohort/{{ group.key }}">{{ group.ordinal }} priority &mdash; {{ group.label }}: {{ group.count }} student{{ 's' if group.count != 1 }}</a>
+  </h3>
+  <p class="group-blurb">{{ group.blurb }}</p>
+  {% if group.rows %}
+  {% call scrollbox(group.rows|length, "students") %}{{ student_table(group.rows, false) }}{% endcall %}
+  {% else %}
+  <p class="empty-state">No students in this group.</p>
+  {% endif %}
+</section>
+{% endfor %}
+
+<h2 id="everyone">All students</h2>
+<p class="dek">Priority order, worst first within each group. Click any column heading to sort by it; click again to reverse.</p>
+{% call scrollbox(rows|length, "students") %}{{ student_table(rows, true) }}{% endcall %}
 {% else %}
 <p class="empty-state">No students in this cohort.</p>
 {% endif %}
@@ -92,12 +107,66 @@
 <script>
   const distribution = {{ distribution_data|safe }};
   const classification = {{ classification_data|safe }};
+  const severity = {{ severity_scatter|safe }};
+  const severityLines = {{ severity_lines|safe }};
 
   // One colour source for the whole dashboard: read the same CSS custom
   // properties the badges use, so a chart segment and a badge for the same
   // classification cannot drift apart. Same technique as student.html.
-  const styles = getComputedStyle(document.documentElement);
-  const cssVar = (name) => styles.getPropertyValue(name).trim();
+  {{ chart_prelude() }}
+
+  if (document.getElementById("severity-chart")) {
+    // Unflagged first so the coloured groups draw over the grey.
+    const groups = [{
+      label: "no flag",
+      data: severity.filter((p) => p.p === 0),
+      backgroundColor: cssVar("--muted") + "55",
+      borderColor: cssVar("--muted") + "88",
+      pointRadius: severity.length > 1500 ? 2 : 3,
+      pointHoverRadius: 5,
+    }];
+    groups.push(...[1, 2, 3].map((rank) => ({
+      label: `${rank}${rank === 1 ? "st" : rank === 2 ? "nd" : "rd"} priority`,
+      data: severity.filter((p) => p.p === rank),
+      backgroundColor: PRIO[rank] + "aa",
+      borderColor: PRIO[rank],
+      pointRadius: severity.length > 1500 ? 2 : 3,
+      pointHoverRadius: 5,
+    })));
+    // The two absolute rules as horizontal lines: below the floor is always
+    // a gap (red), at or above the ceiling never is (so no colour above it).
+    // The relative rule cannot be drawn: it is a different line per student.
+    groups.push({
+      label: `absolute floor (${severityLines.floor}%)`, type: "line",
+      data: [{ x: 0, y: severityLines.floor }, { x: 100, y: severityLines.floor }],
+      borderColor: cssVar("--status-persistent"), borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+    }, {
+      label: `absolute ceiling (${severityLines.ceiling}%)`, type: "line",
+      data: [{ x: 0, y: severityLines.ceiling }, { x: 100, y: severityLines.ceiling }],
+      borderColor: cssVar("--status-proficient"), borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+    });
+    new Chart(document.getElementById("severity-chart"), {
+      type: "scatter",
+      data: { datasets: groups },
+      options: {
+        animation: false,
+        parsing: false,
+        scales: {
+          x: { title: { display: true, text: "Average total (%)" }, min: 0, max: 100 },
+          y: { title: { display: true, text: "Lowest flagged mark (%)" }, min: 0, max: 100 },
+        },
+        plugins: {
+          legend: { position: "right" },
+          tooltip: { callbacks: { label: (item) => item.raw.id ? `${item.raw.id}: average ${item.raw.x}%, lowest ${item.raw.p ? "flagged " : ""}mark ${item.raw.y}%` : "" } },
+        },
+        onClick: (evt, els, chart) => {
+          if (!els.length) return;
+          const p = chart.data.datasets[els[0].datasetIndex].data[els[0].index];
+          if (p && p.id) location.href = `/student/${p.id}`;
+        },
+      },
+    });
+  }
 
   new Chart(document.getElementById("distribution-chart"), {
     type: "bar",
