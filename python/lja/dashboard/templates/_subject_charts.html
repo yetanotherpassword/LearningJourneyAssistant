@@ -1,0 +1,72 @@
+{# Two charts above any subjects table: the year-level trend, and every
+   subject as a point so outliers stand out. Expects `subject_charts` JSON
+   from app.py (per-subject points + per-year aggregates). #}
+{% from "_macros.html" import chart_prelude %}
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Attainment and gap rate by year level</h3>
+    <p class="chart-note">Mean over the subjects at each year level, weighted by students. A rising gap rate across years is the trend to look for.</p>
+    <canvas id="year-trend-chart" height="150"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Every subject: attainment against gap rate</h3>
+    <p class="chart-note">One point per subject, sized by students, coloured by year level. Top-left is the outlier corner: low attainment and a high gap rate. Hover for the code; click to open.</p>
+    <canvas id="subject-scatter-chart" height="150"></canvas>
+  </div>
+</div>
+<script>
+(function () {
+  const S = {{ subject_charts|safe }};
+  {{ chart_prelude() }}
+  const yearColor = (y) => (y === null || y === undefined) ? cssVar("--muted") : SERIES[(y - 1) % SERIES.length];
+
+  new Chart(document.getElementById("year-trend-chart"), {
+    type: "bar",
+    data: {
+      labels: S.years.map((y) => y.year === null ? "?" : `Year ${y.year}`),
+      datasets: [
+        { label: "Mean attainment (%)", data: S.years.map((y) => y.mean_attainment), backgroundColor: cssVar("--status-proficient"), yAxisID: "y" },
+        { label: "Gap rate (%)", data: S.years.map((y) => y.gap_rate), backgroundColor: cssVar("--status-persistent"), yAxisID: "y" },
+        { label: "Subjects", data: S.years.map((y) => y.n_subjects), type: "line", borderColor: cssVar("--muted"), borderDash: [4, 4], yAxisID: "y2", pointRadius: 3 },
+      ],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, max: 100, title: { display: true, text: "%" } },
+        y2: { position: "right", beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: "Subjects" }, ticks: { precision: 0 } },
+      },
+    },
+  });
+
+  const years = [...new Set(S.subjects.map((s) => s.year))].sort((a, b) => (a ?? 99) - (b ?? 99));
+  const maxStudents = Math.max(1, ...S.subjects.map((s) => s.n_students));
+  new Chart(document.getElementById("subject-scatter-chart"), {
+    type: "bubble",
+    data: {
+      datasets: years.map((y) => ({
+        label: y === null ? "Year ?" : `Year ${y}`,
+        data: S.subjects.filter((s) => s.year === y && s.mean_attainment !== null && s.gap_rate !== null)
+          .map((s) => ({ x: s.mean_attainment, y: s.gap_rate, r: 3 + 9 * Math.sqrt(s.n_students / maxStudents), code: s.code, n: s.n_students })),
+        backgroundColor: yearColor(y) + "99",
+        borderColor: yearColor(y),
+      })),
+    },
+    options: {
+      animation: false,
+      scales: {
+        x: { title: { display: true, text: "Mean attainment (%)" } },
+        y: { title: { display: true, text: "Gap rate (%)" }, beginAtZero: true },
+      },
+      plugins: {
+        legend: { position: "right" },
+        tooltip: { callbacks: { label: (item) => `${item.raw.code}: attainment ${item.raw.x}%, gap rate ${item.raw.y}%, ${item.raw.n} students` } },
+      },
+      onClick: (evt, els, chart) => {
+        if (!els.length) return;
+        const p = chart.data.datasets[els[0].datasetIndex].data[els[0].index];
+        if (p && p.code) location.href = `/subject/${p.code}`;
+      },
+    },
+  });
+})();
+</script>
