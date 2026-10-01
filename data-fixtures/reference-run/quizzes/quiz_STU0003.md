@@ -1,84 +1,100 @@
 # Practice quiz for STU0003
 
-This quiz covers two competencies marked as gaps: 'Data Structures and Algorithms' (persistent gap) and 'Object-Oriented Design and Implementation' (isolated gap). These questions are practice only and not part of any formal assessment.
+This quiz is practice, not assessment. It covers two competencies marked as gaps: 'Object-Oriented Design and Implementation' and 'Data Structures and Algorithms'. Each competency has two questions to help you check your understanding and close the gap.
 
 > The grounding checks confirm every question is tied to one of this student's own gaps,
 > SILOs and assessments. They do not confirm the marked answer is correct: a member of
 > staff should check the answer key before a student uses this.
 
-## 1. Data Structures and Algorithms (persistent gap)
-
-*CSE2ALG, CSE2ALG:SILO2, pitched at CSE2ALG:Test*
-
-In a computing context, which of the following is the most appropriate data structure for efficiently storing and retrieving a set of unique, sorted integers where fast lookup and insertion are required?
-
-- A. Array
-- B. Hash table
-- C. Binary search tree
-- D. Linked list
-
-## 2. Data Structures and Algorithms (persistent gap)
-
-*CSE2ALG, CSE2ALG:SILO3, pitched at CSE2ALG:Assignment*
-
-When implementing a sorting algorithm in Java to sort an array of integers, which of the following is the most appropriate choice for ensuring the algorithm is both efficient and stable?
-
-- A. Quick sort
-- B. Merge sort
-- C. Heap sort
-- D. Bubble sort
-
-## 3. Object-Oriented Design and Implementation (isolated gap)
+## 1. Object-Oriented Design and Implementation (isolated gap)
 
 *CSE1OOF, CSE1OOF:SILO1, pitched at CSE1OOF:Test*
 
-In object-oriented modelling, which of the following best describes the relationship between a 'Car' object and a 'Wheel' object when a car has four wheels?
+*Written task.* Compare and contrast object-oriented modelling using objects that combine data structure and behaviour with a procedural approach. Explain how this difference supports analysis, design, and implementation in a real-life problem context.
 
-- A. Inheritance
-- B. Composition
-- C. Aggregation
-- D. Association
-
-## 4. Object-Oriented Design and Implementation (isolated gap)
+## 2. Object-Oriented Design and Implementation (isolated gap)
 
 *CSE1OOF, CSE1OOF:SILO3, pitched at CSE1OOF:Assignment*
 
-Which of the following is the best example of code sharing and reuse through object-oriented techniques to reduce development time?
+*Written task.* Design a Java class that demonstrates code sharing and reuse through object-oriented techniques. Explain how your design reduces development time and supports maintainability.
 
-- A. Writing a new method for each similar task
-- B. Using inheritance to extend a base class
-- C. Copying and pasting code from one file to another
-- D. Creating a new class for every function
+## 3. Data Structures and Algorithms (persistent gap)
+
+*CSE2ALG, CSE2ALG:SILO2, pitched at CSE2ALG:Test*
+
+*Written task.* Identify a data structure and a sorting algorithm suitable for managing a large list of student records that must be frequently searched and sorted by name. Justify your choices based on performance and use case.
+
+## 4. Data Structures and Algorithms (persistent gap)
+
+*CSE2ALG, CSE2ALG:SILO5, pitched at CSE2ALG:Assignment*
+
+*Written task.* Design a Java solution to process a stream of incoming sensor readings. Evaluate your solution using appropriate performance measures (e.g., time complexity, space complexity) and explain how you would improve it if performance were inadequate.
 
 ## Answers
 
-**1.** C. The correct answer is 'Binary search tree' because it supports efficient insertion, deletion, and lookup operations in O(log n) average time, and maintains elements in sorted order, which aligns with the SILO's focus on identifying data structures in computing contexts. The most tempting distractor, 'Hash table', provides fast average-case lookup and insertion but does not maintain order, making it less suitable for sorted retrieval. This question targets CSE2ALG:SILO2.
+**1.** Model answer: Object-oriented modelling combines data and behaviour within objects, promoting modularity and encapsulation. In contrast, procedural programming separates data and functions, often leading to tightly coupled code. For example, in a library system, an object-oriented approach uses a Book object with attributes like title and methods like borrow(), making the design more intuitive and easier to maintain. This supports analysis by aligning the model with real-world entities, design by enabling modular components, and implementation by reducing dependencies and improving code reuse.
 
-**2.** B. The correct answer is 'Merge sort' because it has a time complexity of O(n log n) and is stable, meaning it preserves the relative order of equal elements, which aligns with the SILO's focus on implementing data structures and sorting algorithms in Java. The most tempting distractor, 'Quick sort', is efficient but unstable and has a worst-case time complexity of O(n²), making it less reliable. This question targets CSE2ALG:SILO3.
+A good answer must:
+- Clearly contrasts object-oriented and procedural approaches
+- Explains how combining data and behaviour supports analysis
+- Explains how combining data and behaviour supports design
+- Explains how combining data and behaviour supports implementation
+- Provides a relevant real-life example
 
-**3.** B. The correct answer is 'Composition' because a 'Car' object is composed of 'Wheel' objects, and the wheels cannot exist independently of the car, which aligns with the SILO's focus on analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour. The most tempting distractor, 'Aggregation', implies a 'has-a' relationship where the parts can exist independently, which is not the case here. This question targets CSE1OOF:SILO1.
+This question targets SILO CSE1OOF:SILO1, which requires analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour. The feedback from CSE1OOF:Test noted a need for stronger evidence in explaining design decisions, so this written task prompts the student to articulate the conceptual difference and its practical impact. A strong answer will clearly contrast the two paradigms and link them to real-life problem-solving.
 
-**4.** B. The correct answer is 'Using inheritance to extend a base class' because it allows new classes to inherit properties and methods from existing ones, promoting code reuse and reducing development time, which aligns with the SILO's focus on code sharing and reuse through object-oriented techniques. The most tempting distractor, 'Copying and pasting code', leads to redundancy and maintenance issues, violating the principles of object-oriented design. This question targets CSE1OOF:SILO3.
+**2.** Model answer: A Java class like 'Vehicle' with common attributes (e.g., speed, fuelLevel) and methods (e.g., start(), stop()) can be extended by subclasses like 'Car' and 'Bike'. This reuse reduces development time because common functionality is defined once. It also improves maintainability because changes to shared code (e.g., fuel consumption logic) are applied in one place, reducing the risk of inconsistencies across the system.
+
+A good answer must:
+- Designs a class that enables code sharing and reuse
+- Explains how the design reduces development time
+- Explains how the design supports maintainability
+- Uses appropriate object-oriented techniques (e.g., inheritance)
+- Provides a clear and practical example
+
+This question targets SILO CSE1OOF:SILO3, which focuses on code sharing and reuse through object-oriented techniques to reduce development time. The feedback from CSE1OOF:Assignment emphasized the need for clearer reasoning and technical precision, so this task requires the student to design a reusable class and justify its benefits. A strong answer will show a practical example of reuse and link it to development efficiency.
+
+**3.** Model answer: A hash table with a hash function based on student name is ideal for fast lookups, providing O(1) average-case search time. For sorting, merge sort is suitable because it guarantees O(n log n) time complexity and is stable, preserving order for equal keys. This combination ensures efficient searching and consistent sorting performance, which is critical for a large student database.
+
+A good answer must:
+- Identifies a suitable data structure (e.g., hash table)
+- Identifies a suitable sorting algorithm (e.g., merge sort)
+- Justifies the data structure choice based on performance
+- Justifies the sorting algorithm choice based on performance
+- Links choices to the specific use case (e.g., frequent searches and sorting)
+
+This question targets SILO CSE2ALG:SILO2, which requires identifying data structures and searching and sorting algorithms in computing contexts. The feedback from CSE2ALG:Test noted a need for clearer reasoning, so this task prompts the student to justify their choices. A strong answer will link the data structure and algorithm to the specific requirements of the use case.
+
+**4.** Model answer: Use a circular buffer (array-based queue) to store sensor readings, allowing O(1) insertion and O(1) retrieval. The time complexity is O(n) for processing n readings, and space complexity is O(n) for storing the buffer. If performance were inadequate, I would use a more efficient data structure like a heap for priority-based processing or implement batch processing to reduce overhead.
+
+A good answer must:
+- Designs a Java solution for processing sensor readings
+- Evaluates the solution using appropriate performance measures (e.g., time and space complexity)
+- Explains the evaluation clearly
+- Proposes a realistic improvement strategy
+- Links the improvement to the performance issue
+
+This question targets SILO CSE2ALG:SILO5, which requires designing, implementing, and evaluating Java solutions using performance measures. The feedback from CSE2ALG:Assignment emphasized the need for more complete testing and reflection, so this task prompts the student to evaluate their solution and propose improvements. A strong answer will include a clear design, performance analysis, and a realistic improvement strategy.
 
 ## Educator notes (blind check)
 
-A second pass (provider=openai_compatible model=qwen/qwen3-vl-30b base_url=http://localhost:1234/v1/ temperature=0.2 max_tokens=16000) answered each question without seeing the key, then wrote a teaching explanation. It chose the author's answer on every question.
+A second pass (provider=openai_compatible model=qwen/qwen3-vl-30b base_url=http://localhost:1234/v1/ temperature=0.2 max_tokens=16000) answered each multiple-choice question without seeing the key, marked each written model answer against its marking points, and wrote a teaching explanation. It agreed with the author on every question.
 
-**1.** Blind answer C (high confidence), agrees with the key.
+**1.** Second marker: model answer meets its marking points (high confidence).
 
-A binary search tree (BST) is the most appropriate data structure for storing unique, sorted integers with fast lookup and insertion because it maintains order and allows O(log n) average-case time complexity for both operations. Arrays and linked lists don’t maintain order efficiently for lookup, and hash tables don’t preserve sorting. Hash tables are fast for lookup and insertion but don’t maintain order, so they’re not suitable when sorted access is required. This question practices identifying the right data structure for a given computational need, which is key to SILO2.
+The model answer correctly contrasts object-oriented and procedural programming by highlighting encapsulation and modularity in OO, versus data-function separation in procedural approaches. It explains how combining data and behaviour supports analysis by aligning the model with real-world entities, design by enabling modular components, and implementation by reducing dependencies and improving reuse. The library system example is relevant and clearly illustrates these concepts. All marking points are addressed, and the explanation is clear and concise, demonstrating understanding of SILO1: analysis/design/implementation in object-oriented modelling.
 
-**2.** Blind answer B (high confidence), agrees with the key.
+**2.** Second marker: model answer meets its marking points (high confidence).
 
-Merge sort is the best choice because it is both efficient (O(n log n) time complexity) and stable (it preserves the relative order of equal elements), which is important for sorting integers. Quick sort is fast but unstable and has poor worst-case performance. Heap sort is efficient but not stable. Bubble sort is inefficient (O(n²)) and not suitable for large datasets. This question practices selecting the right algorithm based on performance and stability, aligning with SILO3.
+The model answer effectively designs a Java class ('Vehicle') that demonstrates code reuse through inheritance, with subclasses like 'Car' and 'Bike'. It explains how this reduces development time by avoiding redundant code and supports maintainability by centralizing shared functionality. The use of inheritance is appropriate and clearly linked to the goal of code sharing. The example is practical and relevant, satisfying all marking points. This response aligns well with SILO3: code sharing and reuse through object-oriented techniques.
 
-**3.** Blind answer B (high confidence), agrees with the key.
+**3.** Second marker: model answer meets its marking points (high confidence).
 
-Composition best describes the relationship between a 'Car' and 'Wheel' because the wheels are part of the car and cannot exist independently. In composition, the part is dependent on the whole, which matches the real-world scenario where wheels are created and destroyed with the car. Inheritance is about 'is-a' relationships, aggregation is a weaker 'has-a' relationship, and association is too general. This question practices identifying object-oriented relationships, which is central to SILO1.
+The model answer correctly identifies a hash table for fast lookups and merge sort for stable, efficient sorting, both suitable for managing student records. It justifies the hash table with O(1) average search time and merge sort with O(n log n) guaranteed performance, linking these choices to the need for frequent searches and sorting. The explanation is clear and directly addresses the use case. All marking points are met, and the response demonstrates strong understanding of SILO2: identifying data structures and algorithms in computing contexts.
 
-**4.** Blind answer B (high confidence), agrees with the key.
+**4.** Second marker: model answer meets its marking points (high confidence).
 
-Using inheritance to extend a base class is the best example of code reuse because it allows new classes to inherit and build upon existing functionality without duplicating code. Copying and pasting code or creating new classes for every function leads to redundancy and maintenance issues. Writing new methods for similar tasks doesn’t promote reuse. This question practices understanding how object-oriented techniques reduce development time, which is the focus of SILO3.
+The model answer designs a circular buffer for sensor data processing, evaluating it with O(1) insertion/retrieval and O(n) time complexity for processing n readings, along with O(n) space complexity. It explains the evaluation clearly and proposes realistic improvements like using a heap for priority processing or batch processing to reduce overhead. The solution is appropriate for a stream of sensor readings, and the performance measures are correctly applied. The response satisfies all marking points and demonstrates competence in SILO5: designing, implementing, and evaluating Java solutions with performance measures.
 
 ## The subjects
 

@@ -6,10 +6,7 @@ from types import SimpleNamespace
 
 import lja.quiz as quiz_module
 from lja.llm.grounding import GroundingError
-from lja.model.quiz import QuizContext, SubjectInfo
-
-
-from lja.model.quiz import EducatorReview, QuizDocument  # noqa: E402
+from lja.model.quiz import EducatorReview, QuizContext, QuizDocument, SubjectInfo  # noqa: E402
 
 _EMPTY_DOCUMENT = QuizDocument(student_id="S001", introduction="Practice.", items=[])
 
@@ -107,7 +104,7 @@ def test_educator_review_runs_by_default_and_reports_disagreement(monkeypatch, t
 
     item = QuizItem(
         competency_label="Data Structures", gap_kind="persistent gap", subject_code="CSE1OOF", silo_key="CSE1OOF:SILO1",
-        assessment_key="CSE1OOF:Test", stem="Q?", options=["a", "b", "c"], correct_index=0, explanation="a.",
+        assessment_key="CSE1OOF:Test", kind="multiple_choice", stem="Q?", options=["a", "b", "c"], correct_index=0, explanation="a.",
     )
     document = QuizDocument(student_id="S001", introduction="Practice.", items=[item])
     argv = _setup(monkeypatch, tmp_path)
@@ -116,7 +113,7 @@ def test_educator_review_runs_by_default_and_reports_disagreement(monkeypatch, t
 
     def fake_review(client, doc, ctx, *, max_attempts):
         calls.append(doc)
-        return EducatorReview(notes=[EducatorNote(question_index=0, chosen_index=2, confidence="low", teaching_explanation="c, because.")])
+        return EducatorReview(notes=[EducatorNote(question_index=0, chosen_index=2, marking_verdict=None, confidence="low", teaching_explanation="c, because.")])
 
     monkeypatch.setattr(quiz_module, "review_quiz", fake_review)
     assert quiz_module.main(argv) == 0

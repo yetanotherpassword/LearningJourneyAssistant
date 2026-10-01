@@ -53,6 +53,34 @@ GAP_KINDS = (PERSISTENT_GAP, ISOLATED_GAP)
 MIN_OPTIONS = 3
 MAX_OPTIONS = 4
 DEFAULT_ITEMS_PER_GAP = 2
+MIN_MARKING_POINTS = 2
+MAX_MARKING_POINTS = 5
+
+# Question formats. The educator sets the policy per run; under "mixed" the
+# model chooses per question, inside the rule below.
+MULTIPLE_CHOICE = "multiple_choice"
+WRITTEN = "written"
+QuizFormat = Literal["multiple_choice", "written", "mixed"]
+ITEM_KINDS = (MULTIPLE_CHOICE, WRITTEN)
+DEFAULT_FORMAT: QuizFormat = "mixed"
+
+# A SILO whose wording asks the student to DO something (implement, design,
+# evaluate...) is not served by recognising an option: under the mixed policy
+# such a SILO must get a written task. Matched as substrings of the
+# lower-cased SILO text, so "implementing" and "implementation" both count.
+# "identify", "compare", "state" and the like are left to the model.
+DOING_VERBS = (
+    "implement", "design", "develop", "build", "construct", "creat", "writ", "program",
+    "analys", "evaluat", "explain", "apply", "solv", "model", "test", "debug",
+)
+
+
+def requires_written(silo_text: str) -> bool:
+    """The mixed-policy rule: does this SILO's wording ask for doing rather
+    than recognising? Pure function so the prompt, the checks and the tests
+    read the same rule."""
+    text = silo_text.lower()
+    return any(verb in text for verb in DOING_VERBS)
 
 # --- Context ---------------------------------------------------------------
 
@@ -80,6 +108,17 @@ class QuizContext:
     plan: PlanContext
     subjects: tuple[SubjectInfo, ...] = ()
     items_per_gap: int = DEFAULT_ITEMS_PER_GAP
+    format: QuizFormat = DEFAULT_FORMAT
+
+    def expected_kind(self, silo_key: str) -> str | None:
+        """What kind an item on this SILO must have under the policy: a fixed
+        kind for the single-format policies, "written" for a doing SILO under
+        "mixed", None when the model may choose."""
+        if self.format == MULTIPLE_CHOICE:
+            return MULTIPLE_CHOICE
+        if self.format == WRITTEN:
+            return WRITTEN
+        return WRITTEN if requires_written(self.plan.silo_text.get(silo_key, "")) else None
 
     @property
     def student_id(self) -> str:
@@ -98,18 +137,21 @@ def build_quiz_context(
     subjects_by_code: dict[str, SubjectInfo] | None = None,
     *,
     items_per_gap: int = DEFAULT_ITEMS_PER_GAP,
+    format: QuizFormat = DEFAULT_FORMAT,
 ) -> QuizContext:
     """Attach the catalogue's subject info for every subject the plan
     context mentions. Subjects the catalogue does not know are listed with
     their code only, so the page never claims a synopsis it does not have."""
     if items_per_gap < 1:
         raise ValueError("items_per_gap must be at least 1")
+    if format not in (MULTIPLE_CHOICE, WRITTEN, "mixed"):
+        raise ValueError(f"format must be multiple_choice, written or mixed, not {format!r}")
     subjects_by_code = subjects_by_code or {}
     infos = []
     for code in sorted(plan.known_subjects):
         info = subjects_by_code.get(code)
         infos.append(info if info is not None else SubjectInfo(code=code, title="", year_level=0))
-    return QuizContext(plan=plan, subjects=tuple(infos), items_per_gap=items_per_gap)
+    return QuizContext(plan=plan, subjects=tuple(infos), items_per_gap=items_per_gap, format=format)
 
 
 def has_gaps(context: QuizContext) -> bool:
@@ -128,10 +170,19 @@ class QuizItem(BaseModel):
     subject_code: str  # the subject the SILO and assessment belong to
     silo_key: str  # "SUBJECT:SILOn" -- the outcome this question tests
     assessment_key: str  # "SUBJECT:Assessment name" -- the student's assessment it is pitched at
-    stem: str
-    options: list[str] = Field(min_length=MIN_OPTIONS, max_length=MAX_OPTIONS)
-    correct_index: int = Field(ge=0, lt=MAX_OPTIONS)
+    kind: Literal["multiple_choice", "written"]  # required: a defaulted field is omitted by the model
+    stem: str  # the question, or for a written item the task
+    # multiple_choice only
+    options: list[str] = Field(default_factory=list, max_length=MAX_OPTIONS)
+    correct_index: int | None = Field(default=None, ge=0, lt=MAX_OPTIONS)
+    # written only
+    model_answer: str = ""  # a full answer a tutor would accept
+    marking_points: list[str] = Field(default_factory=list, max_length=MAX_MARKING_POINTS)  # what a good answer must contain
     explanation: str  # why the answer is right, naming the SILO to revisit
+
+    @property
+    def is_written(self) -> bool:
+        return self.kind == WRITTEN
 
 
 class Quiz(BaseModel):
@@ -161,7 +212,12 @@ class EducatorNote(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     question_index: int = Field(ge=0)  # position in QuizDocument.items
-    chosen_index: int = Field(ge=0, lt=MAX_OPTIONS)
+    # Both fields are required but nullable: a defaulted field is omitted by
+    # the model, and then every written task fails the verdict check.
+    # multiple choice: the reviewer's own choice, made without the key; null for a written task
+    chosen_index: int | None = Field(ge=0, lt=MAX_OPTIONS)
+    # written: the reviewer marks the author's model answer against the marking points; null for multiple choice
+    marking_verdict: Literal["meets", "partly", "fails"] | None
     confidence: Literal["high", "medium", "low"]
     teaching_explanation: str  # why the answer is right, why the others are wrong, how it serves the SILO
     concerns: str = ""  # more than one defensible answer, ambiguity, level mismatch; empty if none
@@ -193,11 +249,16 @@ class QuizDocument(BaseModel):
         return next((n for n in self.educator_review.notes if n.question_index == index), None)
 
     def agrees(self, index: int) -> bool | None:
-        """Whether the blind reviewer chose the author's answer; None without a review."""
+        """Multiple choice: whether the blind reviewer chose the author's
+        answer. Written: whether the reviewer found the model answer meets
+        its marking points. None without a review."""
         note = self.note_for(index)
         if note is None:
             return None
-        return note.chosen_index == self.items[index].correct_index
+        item = self.items[index]
+        if item.is_written:
+            return note.marking_verdict == "meets"
+        return note.chosen_index == item.correct_index
 
     @property
     def disagreements(self) -> list[int]:
@@ -233,6 +294,7 @@ def quiz_grounding_checks(quiz: Quiz, context: QuizContext) -> list[ReferenceChe
     prose = [quiz.introduction]
     for item in quiz.items:
         prose += [getattr(item, f) for f in _ITEM_PROSE_FIELDS] + list(item.options)
+        prose += [item.model_answer] + list(item.marking_points)
     prose_text = "\n".join(prose)
 
     checks = [
@@ -261,6 +323,34 @@ def quiz_grounding_checks(quiz: Quiz, context: QuizContext) -> list[ReferenceChe
     return checks
 
 
+def _item_shape_problems(item: QuizItem) -> list[str]:
+    """What each kind must and must not carry."""
+    problems: list[str] = []
+    if item.is_written:
+        if item.options or item.correct_index is not None:
+            problems.append("a written task carries no options or correct_index")
+        if not item.model_answer.strip():
+            problems.append("a written task needs a model_answer")
+        points = [m.strip() for m in item.marking_points]
+        if any(not m for m in points):
+            problems.append("has a blank marking point")
+        if not MIN_MARKING_POINTS <= len(points) <= MAX_MARKING_POINTS:
+            problems.append(f"has {len(points)} marking point(s); give {MIN_MARKING_POINTS} to {MAX_MARKING_POINTS}")
+        return problems
+    if item.model_answer.strip() or item.marking_points:
+        problems.append("a multiple-choice question carries no model_answer or marking_points")
+    cleaned = [o.strip() for o in item.options]
+    if not MIN_OPTIONS <= len(cleaned) <= MAX_OPTIONS:
+        problems.append(f"has {len(cleaned)} option(s); give {MIN_OPTIONS} to {MAX_OPTIONS}")
+    if any(not o for o in cleaned):
+        problems.append("has a blank option")
+    if len(set(cleaned)) != len(cleaned):
+        problems.append("repeats an option")
+    if item.correct_index is None or not 0 <= item.correct_index < len(cleaned):
+        problems.append(f"correct_index {item.correct_index} is outside its {len(cleaned)} options")
+    return problems
+
+
 def quiz_structure_problems(quiz: Quiz, context: QuizContext) -> list[str]:
     """Well-formedness and the per-gap count. Plain sentences, quoted back
     to the model on retry."""
@@ -279,15 +369,16 @@ def quiz_structure_problems(quiz: Quiz, context: QuizContext) -> list[str]:
         where = f"question {n}"
         if not item.stem.strip():
             problems.append(f"{where} has an empty stem")
-        cleaned = [o.strip() for o in item.options]
-        if any(not o for o in cleaned):
-            problems.append(f"{where} has a blank option")
-        if len(set(cleaned)) != len(cleaned):
-            problems.append(f"{where} repeats an option")
-        if not 0 <= item.correct_index < len(item.options):
-            problems.append(f"{where}: correct_index {item.correct_index} is outside its {len(item.options)} options")
         if not item.explanation.strip():
             problems.append(f"{where} has no explanation")
+        expected = context.expected_kind(item.silo_key)
+        if expected is not None and item.kind != expected:
+            why = (
+                f"the quiz format is {context.format}" if context.format != "mixed"
+                else f"{item.silo_key} asks the student to do something, so it needs a written task"
+            )
+            problems.append(f"{where} is {item.kind} but must be {expected}: {why}")
+        problems += [f"{where}: {p}" for p in _item_shape_problems(item)]
         # The SILO and the assessment must be in the subject the item says
         # they are; the per-competency checks above only confirm each exists.
         if item.silo_key.split(":", 1)[0] != item.subject_code:
@@ -316,9 +407,15 @@ cross-subject competency, which of those are gaps, the wording of the learning o
 behind each gap, their own assessment scores and marker feedback, and a short handbook synopsis of \
 each subject where one is available.
 
-Write multiple-choice questions ONLY for competencies marked "persistent gap" or "isolated gap". \
-Mastery estimates are formative signals, never a verdict on the student; the introduction should \
-say the quiz is practice, not assessment.
+Write questions ONLY for competencies marked "persistent gap" or "isolated gap". Mastery \
+estimates are formative signals, never a verdict on the student; the introduction should say the \
+quiz is practice, not assessment.
+
+Two kinds of question exist. A multiple_choice question has a stem, 3 or 4 options and a \
+correct_index. A written task has a stem that asks the student to produce something -- a short \
+explanation, a design, a code fragment, a worked comparison -- plus a model_answer a tutor would \
+accept and {min_points} to {max_points} marking_points saying what a good answer must contain. \
+{format_policy}
 
 Rules that are checked automatically -- a quiz that breaks them is rejected and you will be asked again:
 
@@ -332,13 +429,30 @@ exact key. Do not mention any subject or SILO that is not in the input.
 3. The question tests what that SILO's wording describes, pitched at the level of the named \
 assessment and the subject synopsis. Do not test anything the SILO does not say. Where the marker's \
 feedback names a specific mistake, build a question around that mistake.
-4. Give 3 or 4 options. Exactly one is correct; correct_index is its 0-based position. Distractors \
-are plausible mistakes, not jokes or obviously wrong answers. Vary which position holds the correct \
-answer.
-5. explanation says why the correct option is right, why the most tempting distractor is wrong, \
-and names the silo_key to revisit.
+4. For multiple_choice: give 3 or 4 options, exactly one correct, correct_index its 0-based \
+position, no model_answer or marking_points. Distractors are plausible mistakes, not jokes. Vary \
+which position holds the correct answer. For written: no options or correct_index; a model_answer \
+of three to eight sentences (or a short code fragment with a sentence of justification), and \
+marking_points that a tutor could tick off.
+5. explanation says why the answer is right (for multiple choice, why the most tempting distractor \
+is wrong; for written, what distinguishes a strong answer from a weak one) and names the silo_key \
+to revisit.
 6. introduction is one or two sentences on what the quiz covers and that it is practice.
 """
+
+
+def _format_policy(context: QuizContext) -> str:
+    if context.format == MULTIPLE_CHOICE:
+        return "The educator has set this quiz to multiple choice only: every question is multiple_choice."
+    if context.format == WRITTEN:
+        return "The educator has set this quiz to written tasks only: every question is written."
+    return (
+        "The educator has allowed both kinds. Choose per question from the SILO's wording and the subject: "
+        "a SILO that asks the student to DO something (implement, design, develop, build, analyse, evaluate, "
+        "explain, apply, solve, write, model, test) MUST get a written task; a SILO about identifying, "
+        "comparing, recognising or stating may be either. Each SILO marked \"(written task required)\" below "
+        "is one the checks will hold to that rule."
+    )
 
 
 def _render_context(context: QuizContext) -> str:
@@ -349,7 +463,8 @@ def _render_context(context: QuizContext) -> str:
         lines.append(f"- {c.competency_label}: {c.classification}, attainment {c.attainment_pct:.1f}% (per subject: {per_subject})")
         if c.classification in GAP_KINDS:
             for key in c.silo_keys:
-                lines.append(f"    SILO {key}: {plan.silo_text.get(key, '(wording not available)')}")
+                tag = " (written task required)" if context.expected_kind(key) == WRITTEN and context.format == "mixed" else ""
+                lines.append(f"    SILO {key}: {plan.silo_text.get(key, '(wording not available)')}{tag}")
             covering = sorted(assessments_for(plan, c))
             lines.append(f"    Assessments covering it: {', '.join(covering) or 'none'}")
     lines += ["", "This student's assessments (score is a percentage; feedback is the marker's comment):"]
@@ -381,7 +496,12 @@ def generate_quiz(
     if not has_gaps(context):
         raise ValueError(f"Student {context.student_id} has no isolated or persistent gap; no quiz is needed.")
 
-    system_prompt = _SYSTEM_PROMPT.format(items_per_gap=context.items_per_gap)
+    system_prompt = _SYSTEM_PROMPT.format(
+        items_per_gap=context.items_per_gap,
+        min_points=MIN_MARKING_POINTS,
+        max_points=MAX_MARKING_POINTS,
+        format_policy=_format_policy(context),
+    )
     if extra_instructions:
         system_prompt = f"{system_prompt}\n\n{extra_instructions}"
     base_prompt = _render_context(context)
@@ -417,25 +537,28 @@ def generate_quiz(
 # it tells the educator which question to look at first.
 
 _REVIEW_SYSTEM_PROMPT = """You are a university tutor checking a practice quiz before a student sees it. For \
-each question you are given the stem and the options, the learning outcome (SILO) it is meant to test, \
-the assessment it is pitched at and the subject's handbook synopsis. You are NOT given the author's \
-answer key.
+each question you are given the learning outcome (SILO) it is meant to test, the assessment it is \
+pitched at and the subject's handbook synopsis. Questions come in two kinds.
 
-For every question, in order:
+For a MULTIPLE CHOICE question you are given the stem and the options but NOT the author's answer \
+key. Choose the correct option yourself (chosen_index, 0-based); leave marking_verdict null. If more \
+than one option is defensible, pick the best and say so in concerns.
 
-1. Choose the correct option yourself (chosen_index, 0-based) and say how confident you are: high, \
-medium or low. Choose from the options as written; if more than one is defensible, pick the best and \
-say so in concerns.
-2. Write teaching_explanation for the student: why the correct option is right, why each other option \
-is wrong or less good, and what working through this question practises from the named SILO. Three to \
-six sentences, in plain language, no bullet points.
-3. Write concerns if the question has a problem: more than one defensible answer, ambiguous wording, a \
-level that does not fit the named assessment, or content the SILO does not cover. Leave it empty if \
-there is none.
+For a WRITTEN task you are given the stem, the author's model_answer and the marking_points. Act as a \
+second marker: does the model answer actually satisfy every marking point, and would the marking \
+points let a tutor mark a student's answer fairly? Set marking_verdict to meets, partly or fails; \
+leave chosen_index null. Say in concerns what is missing or unfair.
+
+For every question, in order, also give your confidence (high, medium or low) and write \
+teaching_explanation for the student: why the answer is right, why the alternatives or common weak \
+answers fall short, and what working through this question practises from the named SILO. Three to \
+six sentences, plain language, no bullet points. Write concerns if the question has a problem: more \
+than one defensible answer, ambiguous wording, a level that does not fit the named assessment, or \
+content the SILO does not cover. Leave it empty if there is none.
 
 Rules that are checked automatically: one note per question, question_index copied from the input, \
-chosen_index within that question's options, and any subject code or SILO key you mention copied \
-exactly from the input.
+chosen_index within that question's options for multiple choice, marking_verdict set for written \
+tasks, and any subject code or SILO key you mention copied exactly from the input.
 """
 
 
@@ -452,9 +575,12 @@ def _render_review_context(document: QuizDocument, context: QuizContext) -> str:
         ]
         if subject and subject.synopsis:
             lines.append(f"  Synopsis: {subject.synopsis}")
-        lines.append(f"  Stem: {item.stem}")
-        for j, option in enumerate(item.options):
-            lines.append(f"    option {j}: {option}")
+        if item.is_written:
+            lines += ["  Kind: written task", f"  Task: {item.stem}", f"  Author's model answer: {item.model_answer}"]
+            lines += [f"    marking point {j}: {m}" for j, m in enumerate(item.marking_points)]
+        else:
+            lines += ["  Kind: multiple choice", f"  Stem: {item.stem}"]
+            lines += [f"    option {j}: {option}" for j, option in enumerate(item.options)]
         lines.append("")
     return "\n".join(lines)
 
@@ -480,9 +606,18 @@ def review_structure_problems(review: EducatorReview, document: QuizDocument) ->
         if not 0 <= note.question_index < len(document.items):
             continue  # reported by the index check
         n = note.question_index + 1
-        options = len(document.items[note.question_index].options)
-        if not 0 <= note.chosen_index < options:
-            problems.append(f"question {n}: chosen_index {note.chosen_index} is outside its {options} options")
+        item = document.items[note.question_index]
+        if item.is_written:
+            if note.marking_verdict is None:
+                problems.append(f"question {n} is a written task; set marking_verdict")
+            if note.chosen_index is not None:
+                problems.append(f"question {n} is a written task; chosen_index must be null")
+        else:
+            options = len(item.options)
+            if note.chosen_index is None or not 0 <= note.chosen_index < options:
+                problems.append(f"question {n}: chosen_index {note.chosen_index} is outside its {options} options")
+            if note.marking_verdict is not None:
+                problems.append(f"question {n} is multiple choice; marking_verdict must be null")
         if not note.teaching_explanation.strip():
             problems.append(f"question {n} has no teaching explanation")
     return problems
@@ -546,21 +681,29 @@ def render_markdown(document: QuizDocument, context: QuizContext) -> str:
         kind = "persistent gap" if item.gap_kind == PERSISTENT_GAP else "isolated gap"
         out += [f"## {n}. {item.competency_label} ({kind})", ""]
         out += [f"*{item.subject_code}, {item.silo_key}, pitched at {item.assessment_key}*", ""]
-        out += [item.stem, ""]
-        out += [f"- {_LETTERS[i]}. {o}" for i, o in enumerate(item.options)]
-        out.append("")
+        if item.is_written:
+            out += [f"*Written task.* {item.stem}", ""]
+        else:
+            out += [item.stem, ""]
+            out += [f"- {_LETTERS[i]}. {o}" for i, o in enumerate(item.options)]
+            out.append("")
     out += ["## Answers", ""]
     for n, item in enumerate(document.items, 1):
-        out += [f"**{n}.** {_LETTERS[item.correct_index]}. {item.explanation}", ""]
+        if item.is_written:
+            out += [f"**{n}.** Model answer: {item.model_answer}", ""]
+            out += ["A good answer must:"] + [f"- {m}" for m in item.marking_points] + ["", item.explanation, ""]
+        else:
+            out += [f"**{n}.** {_LETTERS[item.correct_index]}. {item.explanation}", ""]
     if document.educator_review is not None:
         review = document.educator_review
         disagree = document.disagreements
         out += ["## Educator notes (blind check)", ""]
         out += [
-            f"A second pass ({review.reviewer or 'same model'}) answered each question without seeing the key, "
-            f"then wrote a teaching explanation. "
+            f"A second pass ({review.reviewer or 'same model'}) answered each multiple-choice question without "
+            f"seeing the key, marked each written model answer against its marking points, and wrote a teaching "
+            f"explanation. "
             + (f"It disagreed on question(s) {', '.join(str(i + 1) for i in disagree)}; check those first."
-               if disagree else "It chose the author's answer on every question."),
+               if disagree else "It agreed with the author on every question."),
             "",
         ]
         for n, item in enumerate(document.items, 1):
@@ -568,8 +711,11 @@ def render_markdown(document: QuizDocument, context: QuizContext) -> str:
             if note is None:
                 out += [f"**{n}.** No note.", ""]
                 continue
-            verdict = "agrees" if note.chosen_index == item.correct_index else "DISAGREES"
-            out += [f"**{n}.** Blind answer {_LETTERS[note.chosen_index]} ({note.confidence} confidence), {verdict} with the key.", ""]
+            if item.is_written:
+                out += [f"**{n}.** Second marker: model answer {note.marking_verdict} its marking points ({note.confidence} confidence).", ""]
+            else:
+                verdict = "agrees" if note.chosen_index == item.correct_index else "DISAGREES"
+                out += [f"**{n}.** Blind answer {_LETTERS[note.chosen_index]} ({note.confidence} confidence), {verdict} with the key.", ""]
             out += [note.teaching_explanation, ""]
             if note.concerns.strip():
                 out += [f"*Concern:* {note.concerns}", ""]

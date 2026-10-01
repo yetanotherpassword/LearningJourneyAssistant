@@ -661,13 +661,30 @@ rubric criteria text) so questions can be checked against a source, or a second
 independent model pass that answers each question blind and rejects any disagreement.
 Neither is built.
 
+**Two kinds of question, and who decides.** A `multiple_choice` item has 3 or 4 options and
+a key; a `written` task has a stem that asks the student to produce something, a
+`model_answer` a tutor would accept, and 2 to 5 `marking_points`. Retrieval practice works
+best when the student has to generate the answer, so written tasks are the better learning
+instrument where the SILO asks for doing; multiple choice is the only kind that self-marks.
+`--format` sets the educator's policy: `multiple_choice`, `written`, or `mixed` (the
+default). Under `mixed` the model chooses per question, inside one rule checked in code
+(`requires_written()`): a SILO whose wording contains a doing verb (implement, design,
+develop, build, analyse, evaluate, explain, apply, solve, write, model, test, debug,
+create, construct, program) must get a written task; identifying, comparing or stating
+SILOs may be either. The prompt tags those SILOs "(written task required)" so the model
+and the validator read the same rule. The page shows a written task with "Show model
+answer" revealing the model answer and the marking points.
+
 **Educator review: a blind second pass.** After the quiz grounds, `lja.quiz` makes one more
 call (skip with `--skip-educator-review`): the model is given every question with its
 options, the SILO wording, the assessment and the synopsis, but **not** the answer key, and
 asked to choose, say how confident it is, write the explanation a tutor would give the
 student (why the answer is right, why the others are wrong, what the question practises
 from the SILO), and flag concerns such as two defensible answers or a level mismatch.
-The code, not the model, compares its choice with the key. The result is stored as
+The code, not the model, compares its choice with the key. For a written task the pass
+acts as a second marker instead: it sees the model answer and the marking points and
+returns `meets`, `partly` or `fails`, with what is missing in `concerns`; anything but
+`meets` is shown as a disagreement. The result is stored as
 `educator_review` in the JSON, rendered under each question on the student page in a
 collapsed block labelled "For educator view only" (a label, not an access control: the
 dashboard has no logins), with a summary line naming any question the blind pass
@@ -682,20 +699,18 @@ The three supplied subjects in `data-fixtures/subject_catalogue.yaml` have their
 the cached 2026 handbook pages; synthetic subjects have none, and the page says so
 rather than inventing one.
 
-**First live run** (2026-10-02, `qwen/qwen3-vl-30b` via LM Studio, reference run, STU0003):
-one call, 17 s, grounded on the first attempt, four questions across one persistent and
-one isolated gap, each tied to a different SILO and assessment. It also shows exactly
-the limit above: question 3 marks "composition" for a car and its wheels and calls
-"aggregation" the tempting distractor, which a tutor could reasonably mark the other
-way. The grounding checks cannot see that; a person has to.
-
-**Blind review on the same run** (same model as reviewer): one call, 8 s, chose the
-author's answer on all four questions with high confidence and raised no concern,
-including on question 3. A model reviewing its own questions shares its own blind spots,
-so the review is useful for the teaching explanations and for catching slips, not for
-catching a shared misconception. Point the reviewer at a different model family where
-one is available (`LJA_OPENAI_MODEL` for the review call is a one-line change in
-`lja.quiz` if the team wants it as an option).
+**First live runs** (2026-10-02, `qwen/qwen3-vl-30b` via LM Studio, reference run, STU0003).
+Multiple choice only: one call, 17 s, grounded on the first attempt, four questions across
+one persistent and one isolated gap. It also showed exactly the limit above: a question
+marked "composition" for a car and its wheels and called "aggregation" the tempting
+distractor, which a tutor could reasonably mark the other way; the blind review by the
+same model agreed with it at high confidence. A model reviewing its own questions shares
+its own blind spots, so point the reviewer at a different model family where one is
+available. Mixed policy (the committed artefact): every gap SILO for this student is a
+doing SILO, so all four questions came out as written tasks with model answers and five
+marking points each, grounded on the second attempt (the first omitted the `kind` field,
+which is why that field is required rather than defaulted); the second-marker pass found
+every model answer meets its marking points. Both runs were one review call of under 10 s.
 
 ## Export — structured extract for longitudinal / A/B evaluation
 

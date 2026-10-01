@@ -753,6 +753,7 @@ def _quiz_document() -> QuizDocument:
                 subject_code="CSE2ALG",
                 silo_key="CSE2ALG:SILO1",
                 assessment_key="CSE2ALG:Assignment 1",
+                kind="multiple_choice",
                 stem="Which linked-list operation is constant time from the head?",
                 options=["Insert at the head", "Find the last node", "Delete by value"],
                 correct_index=0,
@@ -811,8 +812,8 @@ def test_student_detail_shows_educator_block_and_flags_disagreement(tmp_path) ->
             "educator_review": EducatorReview(
                 reviewer="fake",
                 notes=[
-                    EducatorNote(question_index=0, chosen_index=0, confidence="high", teaching_explanation="Head insert needs no traversal."),
-                    EducatorNote(question_index=1, chosen_index=2, confidence="low", teaching_explanation="Delete by value is also linear.", concerns="Two options are defensible."),
+                    EducatorNote(question_index=0, chosen_index=0, marking_verdict=None, confidence="high", teaching_explanation="Head insert needs no traversal."),
+                    EducatorNote(question_index=1, chosen_index=2, marking_verdict=None, confidence="low", teaching_explanation="Delete by value is also linear.", concerns="Two options are defensible."),
                 ],
             )
         }
@@ -837,3 +838,41 @@ def test_student_detail_quiz_without_review_has_no_educator_block(tmp_path) -> N
     body = TestClient(app).get("/student/STU0001").text
     assert "For educator view only" not in body
     assert "blind pass" not in body
+
+
+def test_student_detail_renders_a_written_task_with_model_answer_and_second_marker(tmp_path) -> None:
+    from lja.model.quiz import EducatorNote, EducatorReview, QuizItem
+
+    document = _quiz_document()
+    document.items.append(
+        QuizItem(
+            competency_label="Data Structures", gap_kind="persistent gap", subject_code="CSE2ALG",
+            silo_key="CSE2ALG:SILO1", assessment_key="CSE2ALG:Assignment 1", kind="written",
+            stem="Implement insert-at-head for a singly linked list and state its cost.",
+            model_answer="Create a node pointing at the current head and make it the head: O(1).",
+            marking_points=["New node points at old head", "States O(1)"],
+            explanation="A weak answer traverses first. Revisit CSE2ALG:SILO1.",
+        )
+    )
+    document = document.model_copy(
+        update={
+            "educator_review": EducatorReview(
+                reviewer="fake",
+                notes=[
+                    EducatorNote(question_index=0, chosen_index=0, marking_verdict=None, confidence="high", teaching_explanation="Head insert needs no traversal."),
+                    EducatorNote(question_index=1, chosen_index=None, marking_verdict="partly", confidence="medium", teaching_explanation="Mention the empty-list case.", concerns="No marking point covers the empty list."),
+                ],
+            )
+        }
+    )
+    (tmp_path / "quiz_STU0001.json").write_text(document.model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    section = TestClient(app).get("/student/STU0001").text.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+
+    assert "Written task.</span> Implement insert-at-head" in section
+    assert "Show model answer" in section
+    assert "Create a node pointing at the current head" in section
+    assert "<li>States O(1)</li>" in section
+    assert "second marker: model answer partly the marking points" in section
+    assert "disagreed on question 2</strong>; check those first." in " ".join(section.split())
+    assert "No marking point covers the empty list." in section

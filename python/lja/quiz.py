@@ -27,6 +27,7 @@ from .llm.grounding import GroundingError
 from .model.gap_detection import GapThresholds, compute_gaps
 from .model.learning_plan import build_plan_context
 from .model.quiz import (
+    DEFAULT_FORMAT,
     DEFAULT_ITEMS_PER_GAP,
     QuizDocument,
     SubjectInfo,
@@ -84,6 +85,13 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_ITEMS_PER_GAP,
         help="Questions per gap competency (default: %(default)s)",
     )
+    parser.add_argument(
+        "--format",
+        choices=["multiple_choice", "written", "mixed"],
+        default=DEFAULT_FORMAT,
+        help="Question format policy. mixed lets the model choose per question, except that a SILO that asks the "
+        "student to do something (implement, design, evaluate...) must get a written task (default: %(default)s)",
+    )
     parser.add_argument("--max-attempts", type=int, default=3, help="Generation attempts before giving up (default: %(default)s)")
     parser.add_argument("--extra-instructions", default=None, help="Extra text appended to the system prompt, for prompt experiments")
     parser.add_argument(
@@ -118,7 +126,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         plan_context = build_plan_context(dataset, clustering, gaps, args.student_id)
-        context = build_quiz_context(plan_context, load_subject_info(args.catalogue), items_per_gap=args.items_per_gap)
+        context = build_quiz_context(
+            plan_context, load_subject_info(args.catalogue), items_per_gap=args.items_per_gap, format=args.format
+        )
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -158,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
             if disagree:
                 print(f"Blind check DISAGREES with the answer key on question(s) {', '.join(str(i + 1) for i in disagree)}.")
             else:
-                print("Blind check agrees with the answer key on every question.")
+                print("Blind check agrees with the author on every question.")
         print(f"LLM usage: {client.usage_summary()}")
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

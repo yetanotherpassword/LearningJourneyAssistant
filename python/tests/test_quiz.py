@@ -49,8 +49,10 @@ class _FakeLLMClient:
         return self._results[index]
 
 
-def _quiz_context(items_per_gap: int = 1):
-    return build_quiz_context(_context(), SUBJECTS, items_per_gap=items_per_gap)
+def _quiz_context(items_per_gap: int = 1, format: str = "multiple_choice"):
+    # The multiple-choice fixtures below are written against the explicit
+    # multiple-choice policy; the mixed-policy tests at the end build their own.
+    return build_quiz_context(_context(), SUBJECTS, items_per_gap=items_per_gap, format=format)
 
 
 def _ds_item(**overrides) -> QuizItem:
@@ -60,6 +62,7 @@ def _ds_item(**overrides) -> QuizItem:
         subject_code="CSE2ALG",
         silo_key="CSE2ALG:SILO1",
         assessment_key="CSE2ALG:Assignment 1",
+        kind="multiple_choice",
         stem="Which operation on a singly linked list is O(1) when you hold a reference to the head?",
         options=["Insert at the head", "Find the last node", "Delete a node by value"],
         correct_index=0,
@@ -76,6 +79,7 @@ def _aa_item(**overrides) -> QuizItem:
         subject_code="CSE2ALG",
         silo_key="CSE2ALG:SILO2",
         assessment_key="CSE2ALG:Assignment 1",
+        kind="multiple_choice",
         stem="What is the time complexity of binary search on a sorted array of n items?",
         options=["O(n)", "O(log n)", "O(n log n)", "O(1)"],
         correct_index=1,
@@ -167,14 +171,14 @@ def test_invented_codes_in_prose_and_options_are_rejected() -> None:
 def test_a_subject_named_only_in_a_synopsis_is_allowed_in_prose() -> None:
     subjects = dict(SUBJECTS)
     subjects["CSE3CAP"] = SubjectInfo("CSE3CAP", "Capstone Project", 3, "Builds on CSE3PRM and CSE3CAP in consecutive semesters.")
-    ctx = build_quiz_context(_context(), subjects, items_per_gap=1)
+    ctx = build_quiz_context(_context(), subjects, items_per_gap=1, format=MULTIPLE_CHOICE)
     assert "CSE3PRM" in ctx.known_subjects
     validate_quiz(_good_quiz(_ds_item(), _aa_item(explanation="Also useful before CSE3PRM. See CSE2ALG:SILO2.")), ctx)
 
 
 def test_options_are_well_formed() -> None:
-    with pytest.raises(ValidationError):
-        _aa_item(options=["only", "two"])
+    with pytest.raises(GroundingError, match=r"question 2: has 2 option\(s\); give 3 to 4"):
+        validate_quiz(_good_quiz(_ds_item(), _aa_item(options=["only", "two"], correct_index=0)), _quiz_context())
     with pytest.raises(ValidationError):
         _aa_item(options=["a", "b", "c", "d", "e"])
     with pytest.raises(GroundingError) as exc:
@@ -183,8 +187,8 @@ def test_options_are_well_formed() -> None:
             _quiz_context(),
         )
     message = str(exc.value)
-    assert "question 1 has a blank option" in message
-    assert "question 1 repeats an option" in message
+    assert "question 1: has a blank option" in message
+    assert "question 1: repeats an option" in message
     assert "question 1 has no explanation" in message
     assert "question 2: correct_index 3 is outside its 3 options" in message
 
@@ -254,7 +258,13 @@ def test_markdown_shows_questions_answers_subjects_and_evidence() -> None:
 
 # --- educator review (blind second pass) -----------------------------------
 
-from lja.model.quiz import EducatorNote, EducatorReview, _render_review_context, review_quiz, validate_review  # noqa: E402
+from lja.model.quiz import (  # noqa: E402
+    EducatorNote,
+    EducatorReview,
+    _render_review_context,
+    review_quiz,
+    validate_review,
+)
 
 
 class _FakeReviewClient(_FakeLLMClient):
@@ -274,8 +284,8 @@ def _document() -> QuizDocument:
     return QuizDocument.from_quiz(_good_quiz(), _quiz_context())
 
 
-def _note(index: int, chosen: int, **overrides) -> EducatorNote:
-    fields = dict(question_index=index, chosen_index=chosen, confidence="high", teaching_explanation="Because traversal costs grow with length. Practises CSE2ALG:SILO1.")
+def _note(index: int, chosen: int | None, **overrides) -> EducatorNote:
+    fields = dict(question_index=index, chosen_index=chosen, marking_verdict=None, confidence="high", teaching_explanation="Because traversal costs grow with length. Practises CSE2ALG:SILO1.")
     fields.update(overrides)
     return EducatorNote(**fields)
 
@@ -348,3 +358,118 @@ def test_a_document_without_a_review_still_loads_and_renders() -> None:
     assert "educator_review" in doc.model_dump_json()
     assert QuizDocument.model_validate_json(doc.model_dump_json()).educator_review is None
     assert "Educator notes" not in render_markdown(doc, _quiz_context())
+
+
+# --- written tasks and the format policy -------------------------------------
+
+from lja.model.quiz import MULTIPLE_CHOICE, WRITTEN, requires_written  # noqa: E402
+
+
+def _written_item(**overrides) -> QuizItem:
+    fields = dict(
+        competency_label="Data Structures",
+        gap_kind="persistent gap",
+        subject_code="CSE2ALG",
+        silo_key="CSE2ALG:SILO1",
+        assessment_key="CSE2ALG:Assignment 1",
+        kind=WRITTEN,
+        stem="Implement a singly linked list node class and an insert-at-head method, and explain its cost.",
+        model_answer="A Node holds a value and a next reference. insert_at_head creates a node pointing at the current head and makes it the head, so it is O(1) regardless of length.",
+        marking_points=["Node holds value and next reference", "New node points at the old head", "States O(1) with a reason"],
+        explanation="A weak answer walks the list first. Revisit CSE2ALG:SILO1.",
+    )
+    fields.update(overrides)
+    return QuizItem(**fields)
+
+
+def test_doing_verbs_decide_which_silos_need_a_written_task() -> None:
+    assert requires_written("implement data structures")
+    assert requires_written("Designing, implementing and evaluating Java solutions")
+    assert not requires_written("identify data structures in computing contexts")
+    assert not requires_written("compare sorting algorithms")
+
+
+def test_mixed_policy_requires_written_for_a_doing_silo_and_allows_either_otherwise() -> None:
+    ctx = _quiz_context(format="mixed")  # CSE2ALG:SILO1 "implement data structures" is a doing SILO; SILO2 "analyse" too
+    assert ctx.expected_kind("CSE2ALG:SILO1") == WRITTEN
+    assert ctx.expected_kind("CSE2ALG:SILO2") == WRITTEN
+    assert ctx.expected_kind("CSE3CAP:SILO1") is None  # "deliver a software project in a team"
+    with pytest.raises(GroundingError, match=r"question 1 is multiple_choice but must be written: CSE2ALG:SILO1 asks the student to do something"):
+        validate_quiz(_good_quiz(_ds_item(), _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="O(log n).", marking_points=["halving", "log n"])), ctx)
+    validate_quiz(
+        _good_quiz(_written_item(), _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="Each step halves the range, so O(log n).", marking_points=["halving", "log n"])),
+        ctx,
+    )
+
+
+def test_single_format_policies_override_the_rule() -> None:
+    mcq = build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=MULTIPLE_CHOICE)
+    assert mcq.expected_kind("CSE2ALG:SILO1") == MULTIPLE_CHOICE
+    validate_quiz(_good_quiz(), mcq)
+    written = build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=WRITTEN)
+    with pytest.raises(GroundingError, match=r"question 1 is multiple_choice but must be written: the quiz format is written"):
+        validate_quiz(_good_quiz(), written)
+    with pytest.raises(ValueError, match="format must be"):
+        build_quiz_context(_context(), SUBJECTS, format="essay")
+
+
+def test_written_task_shape_is_checked() -> None:
+    ctx = build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=WRITTEN)
+    aa = _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="O(log n) by halving.", marking_points=["halving", "log n"])
+    with pytest.raises(GroundingError) as exc:
+        validate_quiz(_good_quiz(_written_item(options=["a", "b", "c"], correct_index=0, model_answer=" ", marking_points=["only one"]), aa), ctx)
+    message = str(exc.value)
+    assert "question 1: a written task carries no options or correct_index" in message
+    assert "question 1: a written task needs a model_answer" in message
+    assert "question 1: has 1 marking point(s); give 2 to 5" in message
+    with pytest.raises(GroundingError, match=r"question 1: a multiple-choice question carries no model_answer or marking_points"):
+        validate_quiz(_good_quiz(_ds_item(model_answer="x"), _aa_item()), build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=MULTIPLE_CHOICE))
+
+
+def test_invented_codes_in_a_model_answer_or_marking_point_are_rejected() -> None:
+    ctx = build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=WRITTEN)
+    bad = _written_item(marking_points=["Mentions CSE9ZZZ:SILO1", "States O(1)"])
+    aa = _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="O(log n).", marking_points=["halving", "log n"])
+    with pytest.raises(GroundingError, match=r"SILO mentioned in prose not present in the input: \['CSE9ZZZ:SILO1'\]"):
+        validate_quiz(_good_quiz(bad, aa), ctx)
+
+
+def test_prompt_states_the_policy_and_tags_doing_silos() -> None:
+    client = _FakeLLMClient(_good_quiz())
+    generate_quiz(client, build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=MULTIPLE_CHOICE))
+    assert "multiple choice only" in client.systems_seen[0]
+    assert "(written task required)" not in client.users_seen[0]
+    client = _FakeLLMClient(_good_quiz(_written_item(), _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="O(log n).", marking_points=["halving", "log n"])))
+    generate_quiz(client, _quiz_context(format="mixed"))
+    assert "The educator has allowed both kinds" in client.systems_seen[0]
+    assert "SILO CSE2ALG:SILO1: implement data structures (written task required)" in client.users_seen[0]
+    assert "SILO CSE3CAP:SILO1" not in client.users_seen[0]  # a strength's SILO is never offered
+
+
+def test_review_marks_a_written_model_answer_as_a_second_marker() -> None:
+    ctx = build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=WRITTEN)
+    aa = _aa_item(kind=WRITTEN, options=[], correct_index=None, model_answer="Each step halves the range, so O(log n).", marking_points=["halving", "log n"])
+    doc = QuizDocument.from_quiz(_good_quiz(_written_item(), aa), ctx)
+    text = _render_review_context(doc, ctx)
+    assert "Kind: written task" in text
+    assert "Author's model answer: A Node holds a value" in text
+    assert "marking point 2: States O(1) with a reason" in text
+    with pytest.raises(GroundingError) as exc:
+        validate_review(EducatorReview(notes=[_note(0, 0), _note(1, None, marking_verdict="meets")]), doc, ctx)
+    assert "question 1 is a written task; set marking_verdict" in str(exc.value)
+    assert "question 1 is a written task; chosen_index must be null" in str(exc.value)
+    review = EducatorReview(notes=[_note(0, None, marking_verdict="partly", concerns="No point covers the next reference."), _note(1, None, marking_verdict="meets")])
+    validate_review(review, doc, ctx)
+    doc = doc.model_copy(update={"educator_review": review})
+    assert doc.agrees(0) is False and doc.agrees(1) is True and doc.disagreements == [0]
+    md = render_markdown(doc, ctx)
+    assert "*Written task.* Implement a singly linked list node class" in md
+    assert "**1.** Model answer: A Node holds a value" in md
+    assert "- States O(1) with a reason" in md
+    assert "**1.** Second marker: model answer partly its marking points (high confidence)." in md
+    with pytest.raises(GroundingError, match=r"question 1 is multiple choice; marking_verdict must be null"):
+        validate_review(EducatorReview(notes=[_note(0, 0, marking_verdict="meets"), _note(1, 1)]), _document(), _quiz_context_mcq())
+
+
+def _quiz_context_mcq():
+    return build_quiz_context(_context(), SUBJECTS, items_per_gap=1, format=MULTIPLE_CHOICE)
