@@ -230,6 +230,26 @@ STU0772 · 11 competencies · median 83.0 · MAD 4.30
 | STU0772 | Analysing agricultural systems | 89.0 | |
 | STU0772 | Applying experimental methods to scientific investigation | 89.8 | |
 
+### 4.5 Progress along the sequence: a trajectory (IOLG-106)
+
+The three students above are each a snapshot: one number per competency, and a verdict. The product also has to answer the question the project owner put first, "a gap in first year, consequence in third year": is a weakness recurring as the student moves through the degree, and where will it be assessed next? The object that answers it is a **trajectory**.
+
+A trajectory takes one student and one competency, finds every subject whose outcomes belong to that competency, and lines them up in the order the degree intends them to be taken. For each subject the student has sat it carries their attainment there (the same per-subject figure as the gap card's evidence table); each subject they have not sat is placed where it will come, marked **ahead**. The trend compares the first and last subjects sat: more than a set number of points up is *improving*, more than that down is *declining*, anything inside the band is *stable*, and fewer than two subjects is *insufficient evidence*. The band is 5 points by default (§5.2) and, like the seven thresholds, is a proposal rather than a ratified value.
+
+![](diagrams/15-trajectory-STU0834.png){height=9cm}
+
+*Figure 5b: STU0834's trajectory in Expressing mathematical arguments, from the 100-subject cohort. Four first-year maths subjects sat, 61% down to 49%, with the last below the floor; two second-year maths subjects ahead. Competency attainment 59.2% is a persistent gap by relative position. The dashboard shows the same thing as a row of chips on the gap card (§16).*
+
+Three things to read off the figure, because they are the three things the chain on the gap card is for:
+
+1. **The shape.** Four marks that drift down across first year are a different story from one bad mark, and the verdict (persistent gap, by relative position) is the same either way. The chain shows which story it is.
+2. **Where it comes next.** MAT2LAL and MAT2VCA are ahead, and they assess this competency. That makes the break before second year the moment to work on it, with the learning plan and study strategy (§9) saying what and how. The dashboard labels those subjects "ahead · prepare".
+3. **What it is not.** A forecast. Four marks are an ordering, not a slope, and the hollow markers have no value; their height on the chart is only where the eye lands. "Ahead" means the competency is assessed there, never that the student should or should not enrol: subject choice is an academic decision whose rules the system does not hold.
+
+**Where the order comes from.** The intended sequence is declared in one setting, `LJA_SUBJECT_SEQUENCE` (§5.2); that is where the project owner's course map goes when one is supplied. A subject not in it is placed by the year digit in its code, and subjects in the same year have no order between them, so in the figure the four first-year subjects are alphabetical. Every trajectory states which rule placed it ("order: declared sequence", "year digit", "mixed" or "none"), in the same spirit as every gap stating its classification basis. The data carries no dates, so this is order, not time, and every page that shows a trajectory says so.
+
+**A caveat on large cohorts.** Without a course map, "ahead" means every subject in the competency the student has no results in. On the three-subject workbook that is exact. On the 100-subject cohort a competency such as scientific communication spans fifteen subjects across seven degrees, so a biochemistry student's chain lists agriculture and engineering subjects they will never take, and a second-year student's chain can show a first-year subject they skipped as "ahead". The chain is still correct about where the competency is assessed; it is not yet filtered to the student's own degree. That filter is what the course map provides, and until it is supplied the chain should be read as "subjects that assess this", not "your next subjects".
+
 ---
 
 ---
@@ -487,7 +507,7 @@ python -m lja.dashboard --excel-path <workbook.xlsx> --clustering-cache <cache.j
 
 With no flags it opens the workbook and cache named in `.env` (`LJA_DASHBOARD_EXCEL_PATH`, `LJA_DASHBOARD_CLUSTERING_CACHE`). The review file is always `<cache>.review.json` beside the cache; if it is missing every group counts as pending and the warning banner shows. Learning plans are read from `LJA_DASHBOARD_PLANS_DIR` (default `output/plans`) and, with PR #52, practice quizzes from `LJA_DASHBOARD_QUIZZES_DIR` (default `output/quizzes`). Only `--absolute-floor` and `--absolute-ceiling` can be changed on this command line; the other thresholds come from the `LJA_GAP_*` variables. The charts load Chart.js from a public CDN, so the browser needs internet access even though the data never leaves the machine.
 
-**The header, on every page.** The title carries the tag "gap report · read-only · dev mode, no sign-in": there is no login yet, so run it on a machine you control. The navigation is **Students**, **Outcome quality**, **This run** and **Glossary**, and a **Student** picker on the right jumps straight to one student's page.
+**The header, on every page.** The title carries the tag "gap report · read-only · dev mode, no sign-in": there is no login yet, so run it on a machine you control. The navigation is **Students**, **Outcome quality**, **Provenance** and **Glossary**, and a **Student** picker on the right jumps straight to one student's page.
 
 **The AI review warning.** When any group in the run is pending or rejected, a red banner at the top of every page states how many of each. It disappears only when staff have confirmed every group (§8).
 
@@ -543,7 +563,7 @@ The header gives the id, the performance band, and the average across the subjec
 
 **Reading a card.** "Classified by: absolute floor" means the mark alone decided it. "Classified by: relative position, −1.53 MAD" means the mark was acceptable in isolation but well below this student's own median. Part A §4 walks three real cards.
 
-**Reading the chain.** "CSE1OOF 62.7% → CSE2ALG 64.1% → CSE3CAP ahead · prepare" says the weakness showed in both first- and second-year subjects and will be assessed again in the capstone; the break before CSE3CAP is the time to work on it, with the learning plan and study strategy above. The chain is an ordering, not a forecast: two or three marks do not make a slope, and "ahead" is where the competency comes up next, never a subject to avoid or a reason to change enrolment. On the reference run every student has sat all three subjects, so no chip is marked ahead; the marker appears on the larger synthetic cohorts and on any real cohort part-way through a degree.
+**Reading the chain.** "CSE1OOF 62.7% → CSE2ALG 64.1% → CSE3CAP ahead · prepare" says the weakness showed in both first- and second-year subjects and will be assessed again in the capstone; the break before CSE3CAP is the time to work on it, with the learning plan and study strategy above. Part A §4.5 draws one as a chart and explains what to read off it. The chain is an ordering, not a forecast: two or three marks do not make a slope, and "ahead" is where the competency comes up next, never a subject to avoid or a reason to change enrolment. On the reference run every student has sat all three subjects, so no chip is marked ahead; the marker appears on the larger synthetic cohorts and on any real cohort part-way through a degree.
 
 ## 17. Outcome quality (`/silos`) and the outcome lists
 
@@ -601,13 +621,13 @@ These three pages are the inputs seen from the curriculum side. **Subjects** ran
 
 **What to do with it.** A high-weight assessment with a low mean and many SILOs attached moves a lot of students' classifications at once; that is where to look first when a competency's gap rate looks wrong.
 
-## 20. This run (`/run`)
+## 20. Provenance (`/run`)
 
 ![](diagrams/14-page-this-run.png){height=22cm}
 
-*Figure 16: This run: the command, the files, the input counts, the rules and the parameter values that produced every other page.*
+*Figure 16: Provenance (titled "This run" when the screenshot was taken; renamed in PR #54): the command, the files, the input counts, the rules and the parameter values that produced every other page.*
 
-Open this page before quoting any number from the dashboard. It shows the exact command that started it, when, the git version, the workbook, cache and review file; linked input counts; the classification rules as an ordered list with this run's values; a table with one row per threshold giving the value used, the code default, the environment variable, the CLI flag, and a mark on anything that differs from the default; a histogram of where the flagged marks sit; and, for a synthetic cohort, the generator's seed and parameters. A further table, **Subject order for progress and trends (IOLG-106)**, shows the declared sequence, the stable band, and how many of this run's subjects were not in the sequence and so were placed by their year digit. When the thresholds are ratified under action A-01, this is where the ratified values will be visible.
+Open this page before quoting any number from the dashboard. It opens with the pipeline command that reproduces its numbers as files, `python -m lja.cli` with the same workbook, cache, review file and any changed threshold (PR #54). Then it shows the exact command that started the dashboard, when, the git version, the workbook, cache and review file; linked input counts; the classification rules as an ordered list with this run's values; a table with one row per threshold giving the value used, the code default, the environment variable, the CLI flag, and a mark on anything that differs from the default; a histogram of where the flagged marks sit; and, for a synthetic cohort, the generator's seed and parameters. A further table, **Subject order for progress and trends (IOLG-106)**, shows the declared sequence, the stable band, and how many of this run's subjects were not in the sequence and so were placed by their year digit. When the thresholds are ratified under action A-01, this is where the ratified values will be visible.
 
 ## 21. Glossary (`/glossary`)
 
@@ -624,7 +644,7 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 | See who needs attention this week | Students page, 1st-priority tile, then each student's gap cards |
 | Explain to a student why they were flagged | Their page, the gap card's evidence table and basis line; the competency page's trace for the outcomes behind it |
 | Tell a student where a weakness comes up next, so they can prepare | Their page, the gap card's subject chain: the first chip marked "ahead" (IOLG-106); then the learning plan and study strategy for what to do about it |
-| Check that a flag is not an artefact of the settings | This run: confirm the thresholds, then the student's basis line (floor is settings-independent; relative depends on MAD) |
+| Check that a flag is not an artefact of the settings | Provenance: confirm the thresholds, then the student's basis line (floor is settings-independent; relative depends on MAD) |
 | Prepare feedback for a subject coordinator | Outcome quality, the vague and never-assessed lists filtered to their subject |
 | Compare two cohorts | Open each in its own dashboard on different ports; the histogram bins are fixed so the shapes compare |
 | Find every student weak in one competency | Not possible on one page yet: the Students table's gap columns are counts, so its filter cannot match a competency name, and the competency's page shows classification counts rather than a student list. Use `python -m lja.export` (§10) and filter `competencies.csv` on the competency label and classification. A per-competency student list is a dashboard follow-up. |
@@ -635,7 +655,7 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 - No login, no roles, no audit trail. It is a development view and says so in its header.
 - Excel input only. A Moodle-sourced run is analysed by the pipeline but is not yet served by the dashboard.
 - No dates, so no true time series; "progress" is the declared subject order (IOLG-106), falling back to year level. The default sequence is the three supplied subjects; a real course map from the project owner has not been supplied, so on a larger cohort most subjects are ordered by their year digit and the card says so.
-- The subjects "ahead" of a student are inferred from the competency's subjects they have no results in, not from enrolment records. Reading next semester's enrolments from Moodle would make it a fact; that is not built.
+- The subjects "ahead" of a student are inferred from the competency's subjects they have no results in, not from enrolment records or a course map, so on a large cohort they include subjects from other degrees (Part A §4.5). Reading next semester's enrolments from Moodle, or a course map per degree, would make it a fact; neither is built.
 - No editing: staff decisions on groups are made with `lja.review`, not in the browser.
 - The seven thresholds are unratified defaults (action A-01). Until then, quote the "This run" page with any number.
 - The AI review warning says how many groups were rejected but not which (finding UAT-02, 28 September). The pipeline names the rejected group when it stops; the banner does not yet.
@@ -674,4 +694,4 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 | 0.1 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | First draft: Chapters 1 to 4 from the "From SILOs to Priority Groups" explainer; walkthrough outlined. |
 | 0.2 | 30 Sep 2026 | Allan Campton (drafted with Claude Code) | Restructured into Parts A, B and C. Chapters 1 to 4 become Part A, Background. New Part B (producing the data: settings, pipeline, review, plans, export, synthetic cohorts, Moodle) and Part C (every dashboard page with screenshots, typical tasks, limits). Figures sized to stay on one page. Open items listed in Appendix B. |
 | 0.3 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8`: the IOLG-134 pages merged (PR #43), so their labels are gone. Practice quiz added to §5.2, §9 and §16, marked (PR #52). §8 records the Sprint 5 cluster review and how reviewer files are kept. §10 export table corrected to the real columns. §12 confirms the dashboard has no Moodle source and no workbook export step exists. §22 answers the filter question (it cannot match competency names). §23 adds findings UAT-01 and UAT-02. |
-| 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-106: the subject sequence and trend band settings (§5.2), the subject chain on every gap card and how to read it (§16), the subject-order table on This run (§20), the glossary entry (§21), a typical task (§22) and the limits (§23). Marked (IOLG-106); ships on that branch. |
+| 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-106: Part A §4.5 explains the trajectory with a worked chart (Figure 5b, STU0834) and the large-cohort caveat; the subject sequence and trend band settings (§5.2), the subject chain on every gap card and how to read it (§16), the subject-order table on This run (§20), the glossary entry (§21), a typical task (§22) and the limits (§23). Marked (IOLG-106); ships on that branch. |
