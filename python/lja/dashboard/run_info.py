@@ -44,6 +44,8 @@ class RunInfo:
 # Every LJA_GAP_* variable config.py reads. Kept as a tuple here rather than
 # scraped from os.environ so an unset variable still appears on the page.
 GAP_ENV_VARS: tuple[str, ...] = (
+    "LJA_SUBJECT_SEQUENCE",
+    "LJA_TREND_STABLE_BAND",
     "LJA_GAP_ABSOLUTE_FLOOR",
     "LJA_GAP_ABSOLUTE_CEILING",
     "LJA_GAP_RELATIVE_GAP_CUTOFF",

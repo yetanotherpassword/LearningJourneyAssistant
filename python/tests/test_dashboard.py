@@ -731,3 +731,79 @@ def test_cohort_title_prints_the_floor_in_force_not_a_placeholder() -> None:
     assert "{floor}" not in body
     assert "below the 50% floor" in body
 
+
+
+# ---------------------------------------------------------------- trajectory (IOLG-106)
+
+def _trajectory_fixture() -> tuple[LjaDataset, list[CompetencyGap], SiloClusteringResult]:
+    """One student who sat CSE1OOF and CSE2ALG; CSE3CAP is ahead."""
+    clustering = _clustering(("Data Structures", [("CSE3CAP", "SILO1"), ("CSE1OOF", "SILO2"), ("CSE2ALG", "SILO2")]))
+    dataset = _dataset(
+        summaries=[
+            StudentSummary(student_id="STU0001", subject_totals={"CSE1OOF": 60.0, "CSE2ALG": 50.0}, average_total=55.0, performance_band="P")
+        ],
+        results=[
+            ResultRow(student_id="STU0001", subject_code="CSE1OOF", assessment_name="Exam", score=60.0,
+                      feedback_comment="", weight=1.0, weighted_score=60.0, silo_ids=("SILO2",)),
+            ResultRow(student_id="STU0001", subject_code="CSE2ALG", assessment_name="Exam", score=50.0,
+                      feedback_comment="", weight=1.0, weighted_score=50.0, silo_ids=("SILO2",)),
+        ],
+    )
+    gaps = [
+        CompetencyGap(
+            student_id="STU0001", competency_label="Data Structures", attainment_pct=55.0,
+            subjects_evidencing=2, n_observations=2, classification="persistent gap",
+            classification_basis=BASIS_RELATIVE, relative_position=-1.4,
+        ),
+    ]
+    return dataset, gaps, clustering
+
+
+def test_gap_card_shows_the_subject_chain_in_sequence_order_with_the_ahead_subject_marked() -> None:
+    dataset, gaps, clustering = _trajectory_fixture()
+    body = _client(dataset, gaps, clustering).get("/student/STU0001").text
+    chain = re.search(r'<ol class="subject-chain">(.*?)</ol>', body, re.S)
+    assert chain is not None
+    steps = re.findall(r'<li class="chain-step (\w+)[^"]*"[^>]*>\s*<a href="/subject/(\w+)">', chain.group(1))
+    assert steps == [("taken", "CSE1OOF"), ("taken", "CSE2ALG"), ("ahead", "CSE3CAP")]
+    assert "prepare" in chain.group(1)
+    assert "order: declared sequence" in body
+    assert "declining" in body  # 60 -> 50 across the sequence
+
+
+def test_gap_card_states_the_order_came_from_the_year_digit_when_nothing_is_declared(monkeypatch) -> None:
+    from lja import config
+
+    monkeypatch.setattr(config, "SUBJECT_SEQUENCE", "")
+    dataset, gaps, clustering = _trajectory_fixture()
+    body = _client(dataset, gaps, clustering).get("/student/STU0001").text
+    assert "order: year digit" in body
+
+
+def test_future_subjects_are_only_offered_for_a_gap_not_a_strength() -> None:
+    dataset, gaps, clustering = _trajectory_fixture()
+    strong = [
+        CompetencyGap(
+            student_id="STU0001", competency_label="Data Structures", attainment_pct=80.0,
+            subjects_evidencing=2, n_observations=2, classification="proficient",
+            classification_basis=BASIS_CEILING, relative_position=None,
+        ),
+    ]
+    body = _client(dataset, strong, clustering).get("/student/STU0001").text
+    assert "Flag for intervention" not in body
+    assert "prepare" not in re.search(r'<ol class="subject-chain">(.*?)</ol>', body, re.S).group(1)
+
+
+def test_run_page_shows_the_declared_sequence_and_the_stable_band() -> None:
+    dataset, gaps, clustering = _trajectory_fixture()
+    body = _client(dataset, gaps, clustering).get("/run").text
+    assert "LJA_SUBJECT_SEQUENCE" in body
+    assert "CSE1OOF &rarr; CSE2ALG &rarr; CSE3CAP" in body
+    assert "LJA_TREND_STABLE_BAND" in body
+
+
+def test_glossary_defines_trajectory() -> None:
+    dataset, gaps, clustering = _trajectory_fixture()
+    body = _client(dataset, gaps, clustering).get("/glossary").text
+    assert 'id="trajectory"' in body
+    assert "Order, not time" in body

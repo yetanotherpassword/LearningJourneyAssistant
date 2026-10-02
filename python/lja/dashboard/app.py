@@ -37,6 +37,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from .. import config
 from ..data.excel_loader import LjaDataset, StudentSummary
 from ..model.gap_detection import (
     BASIS_CEILING,
@@ -46,7 +47,7 @@ from ..model.gap_detection import (
     CompetencyGap,
     GapThresholds,
 )
-from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
+from ..model.gap_evidence import subject_breakdown
 from ..model.learning_plan import LearningPlan
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
@@ -60,6 +61,7 @@ from ..model.silo_quality import (
     summarise_subjects,
     term_weights,
 )
+from ..model.trajectory import SubjectSequence, compute_trajectory
 from .run_info import RunInfo
 from .stats import histogram, summarise
 
@@ -325,7 +327,12 @@ def create_app(
         "min_spread": thresholds.min_spread,
         "fallback_proficient": thresholds.fallback_proficient,
         "persistent_min_subjects": PERSISTENT_MIN_SUBJECTS,
+        # Trajectory (IOLG-106): order, not time. The sequence and the band
+        # are configuration like the thresholds above, and /run shows them.
+        "subject_sequence": config.SUBJECT_SEQUENCE,
+        "stable_band": config.TREND_STABLE_BAND,
     }
+    sequence = SubjectSequence.from_config()
 
     def members(cohort: _Cohort) -> list[StudentSummary]:
         return [
@@ -534,18 +541,24 @@ def create_app(
             }
         )
 
-        # Evidence/trend/future-subjects per gap -- see gap_evidence.py for
-        # what's grounded here vs deliberately not claimed (no LLM call).
+        # Evidence/trend/future-subjects per gap -- see gap_evidence.py and
+        # trajectory.py for what's grounded here vs deliberately not claimed
+        # (no LLM call). The trajectory orders the competency's subjects by
+        # the declared sequence (IOLG-106); the trend word is its label, and
+        # the subjects ahead are shown only for a gap, because "prepare for"
+        # is advice about a weakness, not a remark to make about a strength.
         gap_details = []
         for gap in student_gaps:
             evidence = subject_breakdown(dataset, clustering, student_id, gap.competency_label)
+            trajectory = compute_trajectory(dataset, clustering, student_id, gap.competency_label, sequence=sequence)
             gap_details.append(
                 {
                     "gap": gap,
                     "evidence": evidence,
-                    "trend": describe_trend(evidence),
+                    "trend": trajectory.label,
+                    "trajectory": trajectory,
                     "future_subjects": (
-                        future_subjects_sharing_competency(dataset, clustering, student_id, gap.competency_label)
+                        [p.subject_code for p in trajectory.ahead]
                         if gap.classification in _AT_RISK_CLASSIFICATIONS
                         else None
                     ),
@@ -558,7 +571,7 @@ def create_app(
         # this is "first-year subject, then second, then third" and nothing
         # more. The trend word is the one the gap card already shows.
         year_of = {e.subject_code: e.year_level for d in gap_details for e in d["evidence"]}
-        progress_subjects = sorted(year_of, key=lambda c: (year_of[c] is None, year_of[c] or 0, c))
+        progress_subjects = sorted(year_of, key=lambda c: sequence.sort_key(c, year_of[c]))
         progress_rows = []
         for d in gap_details:
             by_subject = {e.subject_code: e.attainment_pct for e in d["evidence"]}
@@ -640,6 +653,17 @@ def create_app(
                 "run_info": run_info,
                 "rules": rules,
                 "threshold_rows": threshold_rows,
+                "ordering": {
+                    "sequence": sequence.declared,
+                    "sequence_env": run_info.environment.get("LJA_SUBJECT_SEQUENCE") if run_info else None,
+                    "band": config.TREND_STABLE_BAND,
+                    "band_env": run_info.environment.get("LJA_TREND_STABLE_BAND") if run_info else None,
+                    # Subjects in this run that the declared sequence does not
+                    # cover, so a reader knows which ones fell back to the digit.
+                    "undeclared": sorted(
+                        {r.subject_code for r in subject_rows} - set(sequence.declared)
+                    ),
+                },
                 "gap_summary": everyone["gap_summary"],
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {

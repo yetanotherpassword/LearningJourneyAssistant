@@ -156,9 +156,32 @@
         <span class="trend-badge {{ detail.trend|replace(' ', '-') }}">{{ detail.trend }}</span>
         {% if detail.trend == "insufficient evidence" %}
         <span style="color: var(--muted); font-size: 0.85rem;">
-          &mdash; fewer than two subjects with a known year level evidence this competency
+          &mdash; fewer than two orderable subjects evidence this competency
+        </span>
+        {% elif detail.trajectory.delta is not none %}
+        <span style="color: var(--muted); font-size: 0.85rem;">
+          &mdash; {{ "%+.1f"|format(detail.trajectory.delta) }} points first to last, stable within &plusmn;{{ "%g"|format(detail.trajectory.stable_band) }}
         </span>
         {% endif %}
+      </div>
+
+      {# Trajectory (IOLG-106): the competency's subjects in the intended
+         order. Taken ones carry the attainment from the table above; the
+         ones ahead are where this competency is assessed next. Order, not
+         time, and the basis says which rule ordered it. #}
+      <div class="trajectory">
+        <span class="trajectory-label">In sequence <a class="term-help" href="/glossary#trajectory" title="Definition in the glossary">?</a>:</span>
+        <ol class="subject-chain">
+          {% for p in detail.trajectory.points %}
+          <li class="chain-step {{ 'taken' if p.taken else 'ahead' }} {{ 'unknown-order' if p.source == 'unknown' }}" title="ordered by {{ p.source }}">
+            <a href="/subject/{{ p.subject_code }}">{{ p.subject_code }}</a>
+            {% if p.taken and p.attainment_pct is not none %}<span class="chain-value">{{ "%.1f"|format(p.attainment_pct) }}%</span>
+            {% elif p.taken %}<span class="chain-value muted">taken, no mark here</span>
+            {% else %}<span class="chain-ahead">ahead{% if gap.classification in ('persistent gap', 'isolated gap') %} &middot; prepare{% endif %}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        <span class="basis-detail">order: {{ detail.trajectory.basis }}{% if detail.trajectory.basis == 'none' %} (no subject here can be placed in sequence){% endif %}</span>
       </div>
 
       {% if detail.future_subjects is not none %}
@@ -167,6 +190,8 @@
           <strong>Flag for intervention</strong> if {{ summary.student_id }} takes
           {{ detail.future_subjects|join(", ") }} &mdash; {{ "it shares" if detail.future_subjects|length == 1 else "they share" }}
           this competency and {{ summary.student_id }} hasn't demonstrated it there yet.
+          {% if detail.future_subjects|length > 1 %}Listed in sequence order, so the first is where it comes up next.{% endif %}
+          A place to prepare before the subject starts, not a subject to avoid.
         </div>
         {% else %}
         <div class="future-subjects empty">

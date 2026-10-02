@@ -309,6 +309,18 @@ th.sortable-header[aria-sort="descending"]::after { content: "\2193"; opacity: 1
 
 .future-subjects strong { color: var(--status-isolated); }
 
+/* Trajectory (IOLG-106): the competency's subjects in sequence order on the gap card. */
+.trajectory { margin: 10px 0; font-size: 0.88rem; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.trajectory-label { color: var(--muted); }
+.subject-chain { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.chain-step { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); }
+.chain-step + .chain-step::before { content: "\2192"; color: var(--muted); margin-right: 4px; }
+.chain-step.ahead { border-style: dashed; border-color: var(--status-isolated); background: var(--status-isolated-bg); }
+.chain-step.unknown-order { opacity: 0.7; }
+.chain-value { font-variant-numeric: tabular-nums; }
+.chain-value.muted { color: var(--muted); }
+.chain-ahead { color: var(--status-isolated); font-weight: 600; font-size: 0.78rem; }
+
 .future-subjects.empty {
   border-color: var(--line);
   background: transparent;
