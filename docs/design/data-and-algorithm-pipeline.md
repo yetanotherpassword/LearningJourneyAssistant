@@ -15,15 +15,15 @@ Seven stages, one algorithmic core. Everything before gap detection is plumbing 
 
 *Figure 1: Sources, data layer, the `LjaDataset` interchange type, model layer, LLM layer, outputs and dashboard. Source: `docs/handover/diagrams/01-architecture.mmd`.*
 
-| Stage | Owning code | Input | Output | Status, 3 Oct 2026 |
-|---|---|---|---|---|
-| Sources | `data-fixtures/`, `devenv/`, `lja.data.handbook`, `lja.data.catalogue_generator` | The owner's workbook; a Moodle 5.2 database; the public La Trobe handbook; a subject catalogue | A workbook, or rubric fills, or a synthetic cohort with an answer key | Working. Moodle proven for one seeded subject with read-only enforcement observed (IOLG-111). The handbook crawl and the 100-subject, 5,000-student cohort are reproducible but not committed. |
-| Extraction | `lja.data.excel_loader`, `lja.data.moodle_loader` + `sql/`, `lja.data.loading` | Workbook sheets, or SQL Query 2 over the rubric tables plus a staff-edited criterion-to-SILO map | One `LjaDataset`: SILOs, assessments, result rows, student summaries | Working. Both loaders produce the same type; `--source excel` or `moodle` on every command. |
-| Clustering | `lja.model.silo_clustering`, `lja.llm` | SILO wording | Competency clusters with a label and rationale, cached as `silo_clustering.json` | Working with coverage validation and retry. Single-call clustering fails above about 50 SILOs; the embedding tagger in `lja.data.competency_tagger` is the staged answer (ADR 0002 trigger hit). |
-| Staff gate | `lja.review` | The cache | `.review.json` with pending / confirmed / rejected per cluster | Working, CLI only. A rejected cluster stops the pipeline; pending needs `--allow-unconfirmed`; the dashboard shows a banner. |
-| Gap detection | `lja.model.gap_detection`, `gap_evidence`, `trajectory` | Dataset plus confirmed clusters | `gap_report.csv`: attainment, classification, its basis, relative position; per-subject evidence; trend along the declared subject sequence | Working. Relative to the student's own profile (median and MAD) with absolute guards; every threshold is configuration and unratified (A-01). |
-| Generation | `lja.model.learning_plan`, `study_strategy`, `quiz`; `lja.llm.grounding` | This student's gaps, evidence, SILO wording, own scores and feedback | `learning_plan_<id>`, `study_strategy_<id>`, `quiz_<id>`, JSON and Markdown, written only after grounding passes | Working. Plans and strategies reliable; the quiz is a thin slice whose answer key cannot be verified, and it fails for students with many gaps on the local model (per-competency generation is the follow-up). |
-| Presentation and export | `lja.dashboard`, `lja.export` | Dataset, gaps, cache, generated files | Students, cohorts and priority groups; student page with gaps, strengths, progress, subject chain, plan, quiz; outcome quality, competencies, subjects, assessments, clusters; provenance; glossary. Three research CSVs and a manifest, pseudonymised | Working. The dashboard never calls a model on a page load; the opt-in Generate button (PR #55) runs the CLI as a subprocess. |
+| Stage | Owning code | Input → output | Status, 3 Oct 2026 |
+|------|--------|------------|----------------|
+| Sources | `data-fixtures/`, `devenv/`, `lja.data.handbook`, `lja.data.catalogue_generator` | The owner's workbook; a Moodle 5.2 database; the public La Trobe handbook; a subject catalogue → A workbook, or rubric fills, or a synthetic cohort with an answer key | Working. Moodle proven for one seeded subject with read-only enforcement observed (IOLG-111). The handbook crawl and the 100-subject, 5,000-student cohort are reproducible but not committed. |
+| Extraction | `lja.data.excel_loader`, `lja.data.moodle_loader` + `sql/`, `lja.data.loading` | Workbook sheets, or SQL Query 2 over the rubric tables plus a staff-edited criterion-to-SILO map → One `LjaDataset`: SILOs, assessments, result rows, student summaries | Working. Both loaders produce the same type; `--source excel` or `moodle` on every command. |
+| Clustering | `lja.model.silo_clustering`, `lja.llm` | SILO wording → Competency clusters with a label and rationale, cached as `silo_clustering.json` | Working with coverage validation and retry. Single-call clustering fails above about 50 SILOs; the embedding tagger in `lja.data.competency_tagger` is the staged answer (ADR 0002 trigger hit). |
+| Staff gate | `lja.review` | The cache → `.review.json` with pending / confirmed / rejected per cluster | Working, CLI only. A rejected cluster stops the pipeline; pending needs `--allow-unconfirmed`; the dashboard shows a banner. |
+| Gap detection | `lja.model.gap_detection`, `gap_evidence`, `trajectory` | Dataset plus confirmed clusters → `gap_report.csv`: attainment, classification, its basis, relative position; per-subject evidence; trend along the declared subject sequence | Working. Relative to the student's own profile (median and MAD) with absolute guards; every threshold is configuration and unratified (A-01). |
+| Generation | `lja.model.learning_plan`, `study_strategy`, `quiz`; `lja.llm.grounding` | This student's gaps, evidence, SILO wording, own scores and feedback → `learning_plan_<id>`, `study_strategy_<id>`, `quiz_<id>`, JSON and Markdown, written only after grounding passes | Working. Plans and strategies reliable; the quiz is a thin slice whose answer key cannot be verified, and it fails for students with many gaps on the local model (per-competency generation is the follow-up). |
+| Presentation and export | `lja.dashboard`, `lja.export` | Dataset, gaps, cache, generated files → Students, cohorts and priority groups; student page with gaps, strengths, progress, subject chain, plan, quiz; outcome quality, competencies, subjects, assessments, clusters; provenance; glossary. Three research CSVs and a manifest, pseudonymised | Working. The dashboard never calls a model on a page load; the opt-in Generate button (PR #55) runs the CLI as a subprocess. |
 
 ## What the gap engine does
 
@@ -38,7 +38,7 @@ The owner's primary signal is variability within a student's own profile, not ra
 Only the direct-SQL path can reach a rubric *filling*, the level a marker chose and their remark. Moodle's Web Services expose a rubric's definition but no function returns what was awarded. So the production path connects to PostgreSQL as the `lja_reader` role, which can only `SELECT`, and runs Query 2 in `sql/moodle_attainment_extraction.sql`. The loader joins those rows to a staff-editable `criterion_silo_map_<SUBJECT>.csv`; an unmapped criterion is a hard error, not a silent drop.
 
 | Moodle field | What it holds | Becomes |
-|---|---|---|
+|----------|------------|--------|
 | `gradingform_rubric_fillings.remark` | Marker's comment on this one criterion | `feedback_comment` |
 | `grading_instances.status` | Must equal 1 (active); 0, 2, 3 are stale, draft or superseded | filter only |
 | `grading_instances.itemid` | Not a user id: joins to `assign_grades.id`, the common wrong join in this schema | join key |
@@ -59,7 +59,7 @@ What was observed on 28 September 2026 (IOLG-111, `docs/security-evidence.md`): 
 ## What changed since the August page
 
 | August 2026 said | October 2026 |
-|---|---|
+|----------|----------|
 | Extraction "partial, loader not coded"; mapping "schema only" | Both loaders working; the criterion map is a CSV, not a table |
 | Gap detection "SQL drafted, not yet Python", two fixed thresholds 50/65 | Python, relative to the student's profile with seven configurable thresholds; SQL Query 6 kept as an annotated legacy |
 | LLM layer "planned" | Two providers behind one protocol; clustering, plans, strategies and quizzes all grounded by code |

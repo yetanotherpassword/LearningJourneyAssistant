@@ -15,7 +15,7 @@ One command turns a workbook, or a Moodle database, into competency clusters and
 *Figure 1: Load, cluster (cached), gate, classify. Source: `docs/handover/diagrams/04-seq-pipeline.mmd`.*
 
 | Step | Where | What happens | Exit |
-|---|---|---|---|
+|----|------|------------------|----|
 | Load | `lja.data.loading` | `--source excel` reads the three workbook sheets; `--source moodle` runs SQL Query 2 as `lja_reader` and joins the criterion-to-SILO CSV. Both return one `LjaDataset`. | 2 on a malformed workbook or an unmapped criterion |
 | Cluster, or read the cache | `lja.model.silo_clustering` | If `output/silo_clustering.json` (or `--clustering-cache`) exists and covers every SILO, no model call. Otherwise one structured call; the result must place every SILO in exactly one cluster, and a miss is quoted back into a retry, up to three attempts. | 1 if no attempt passes coverage |
 | Gate | `lja.review` | The review file beside the cache holds pending / confirmed / rejected per cluster. Any rejected cluster stops the run and prints the reviewer's note as rework instructions. Pending clusters stop it too unless `--allow-unconfirmed`. | 2 when blocked |
@@ -29,7 +29,7 @@ Every threshold is an environment variable with a CLI flag (`--absolute-floor`, 
 None of these re-clusters. Each reads the cache and the review file the pipeline left, and each is run deliberately, because the generating ones cost model calls.
 
 | Command | Produces | Model calls |
-|---|---|---|
+|--------|--------------|-----|
 | `python -m lja.review` | Confirm or reject clusters; a rejection needs a note | none |
 | `python -m lja.plan <xlsx> STUxxxx` | A learning plan: what to work on, with evidence and actions, grounded name by name | 1 per attempt, up to 3 |
 | `python -m lja.strategy <xlsx> STUxxxx` | A study strategy: how to study each gap, techniques from a closed evidence-based list, grounded per competency | 1 per attempt |

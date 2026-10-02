@@ -15,7 +15,7 @@ There is no sign-in. "Student" and "subject coordinator" are roles the data is d
 *Figure 1: Actors and use cases. Solid is built and on `main`; dashed is the planned follow-up. Source: `docs/handover/diagrams/02-use-cases.mmd`.*
 
 | Actor | Can | Cannot yet |
-|---|---|---|
+|----|--------------|----------|
 | Subject coordinator | Review the AI's grouping before it drives a report; see the cohort split into priority groups; audit outcome wording, competencies, subjects and assessments; check the provenance of every number; generate a plan or quiz for one student from the page when that is switched on | Confirm clusters in the browser (the review is a CLI); see a Moodle-sourced run on the dashboard |
 | Student | See understanding, strengths, gaps with evidence, progress along the subject sequence and where a weakness is assessed next; read a plan, a study strategy and a practice quiz once staff have reviewed them | Be shown an unreviewed quiz (by design); see "ahead" filtered to their own degree (needs the course map) |
 | Project owner or researcher | Export pseudonymised CSVs with a manifest; reproduce any run from the Provenance page | Nothing further is gated; the open decisions are thresholds, the at-risk rule and the course map |
@@ -50,7 +50,7 @@ Why grounding is a separate step and not just schema validation: a live run prod
 ## What changed since the August page
 
 | August 2026 | October 2026 |
-|---|---|
+|----------|----------|
 | Three use cases built, three planned (view gap report, learning plan, quiz) | Eighteen built; the planned column is course-map filtering, a Moodle-sourced dashboard and sign-in |
 | Two sequence diagrams: the CLI and the coverage failure | Four: the CLI, the artefact family, the dashboard button, plus the class view |
 | "Review SILO mapping" was a planned staff gate on the criterion map | The gate is on the clustering, built, and shown as a banner with a link to the clusters page |

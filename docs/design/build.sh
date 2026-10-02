@@ -20,7 +20,7 @@ fi
 build() {  # build <source.md> <output basename without extension>
   local src="$1" base="$2" tmp
   tmp="$(mktemp -d)"
-  pandoc "$HERE/$src" -o "$OUT/$base.docx" --toc --toc-depth=2 --resource-path="$HERE"
+  pandoc "$HERE/$src" -o "$OUT/$base.docx" --toc --toc-depth=2 --resource-path="$HERE" --reference-doc="$HERE/../handover/scripts/reference.docx"
   "$PY" "$HERE/../handover/scripts/fix_pandoc_docx.py" "$OUT/$base.docx"
   pandoc "$HERE/$src" -s --toc --toc-depth=2 --embed-resources \
       --css "$HERE/../handover/scripts/smd.css" --metadata title="$base" \

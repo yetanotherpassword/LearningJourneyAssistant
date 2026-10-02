@@ -10,7 +10,7 @@
 ## Functional requirements
 
 | ID | Requirement (abridged) | Status | Where, and what to know |
-|---|---|---|---|
+|---|----------|----|---------------|
 | FR-1.1 | Parse the workbook's three tabs into a normalised model | Met | `lja.data.excel_loader` → `LjaDataset`; a malformed workbook is an error |
 | FR-1.2 | Assessment to SILO is one-to-many | Met | `Assessment.silo_ids`; one score counts towards every SILO it covers (documented approximation) |
 | FR-1.3 | Idempotent, re-runnable ingestion | Met | Pure in-memory load; no database writes |
@@ -70,7 +70,7 @@
 ## Open questions from the August meeting, as of October
 
 | # | Question | Status |
-|---|---|---|
+|--|--------|------------|
 | 1 | The rule behind the at-risk band | Confirmed there is none; the dashboard defines no at-risk cohort and the thresholds remain unratified (A-01) |
 | 2 | A sanitised extract of bespoke feedback | Not supplied; feedback analysis not built |
 | 3 | Course maps for CS, IT and Cyber | Not supplied; `LJA_SUBJECT_SEQUENCE` is ready for them |
