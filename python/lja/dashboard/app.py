@@ -28,6 +28,7 @@ template that computes its own totals can only be checked by scraping HTML.
 from __future__ import annotations
 
 import json
+import shlex
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -49,6 +50,7 @@ from ..model.gap_detection import (
 )
 from ..model.gap_evidence import subject_breakdown
 from ..model.learning_plan import LearningPlan
+from ..model.quiz import QuizDocument
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
     assess_silos,
@@ -241,6 +243,7 @@ def create_app(
     thresholds: GapThresholds | None = None,
     run_info: RunInfo | None = None,
     plans_dir: Path | None = None,
+    quizzes_dir: Path | None = None,
 ) -> FastAPI:
     """`thresholds` must be the object compute_gaps() was given for `gaps`.
 
@@ -250,6 +253,8 @@ def create_app(
     to GapThresholds() because that is also compute_gaps()'s default.
     `run_info` is the provenance __main__.py collected; None (tests, or an
     embedding caller) leaves the /run page's command section out honestly.
+    `plans_dir` and `quizzes_dir` are where lja.plan and lja.quiz wrote
+    their JSON; None, or a missing file, gives the page's empty state.
     """
     thresholds = thresholds or GapThresholds()
     app = FastAPI(title="LJA Dashboard")
@@ -605,12 +610,22 @@ def create_app(
                     plan_path.read_text(encoding="utf-8")
                 )
 
+        # Practice quiz (tender R8): rendered only from the JSON lja.quiz
+        # wrote, never generated here. The page says what the grounding
+        # checks cover and what they do not (the answer key).
+        quiz = None
+        if quizzes_dir is not None:
+            quiz_path = quizzes_dir / f"quiz_{student_id}.json"
+            if quiz_path.exists():
+                quiz = QuizDocument.model_validate_json(quiz_path.read_text(encoding="utf-8"))
+
         return templates.TemplateResponse(
             request,
             "student.html",
             {
                 "summary": summary,
                 "plan": plan,
+                "quiz": quiz,
                 "strengths": strengths,
                 "gap_details": gap_details,
                 "progress_subjects": progress_subjects,
@@ -643,6 +658,30 @@ def create_app(
                     "changed": value != default,
                 }
             )
+        # The lja.cli invocation that reproduces this dashboard's numbers as
+        # files: same inputs, plus a flag for every threshold that differs
+        # from the code default. fallback_proficient has no flag, so it is
+        # passed as its environment variable. Paths come from run_info when
+        # the dashboard was started from the command line; an in-process app
+        # has none, and the command says so rather than inventing them.
+        if run_info:
+            parts = ["python", "-m", "lja.cli", shlex.quote(run_info.excel_path),
+                     "--clustering-cache", shlex.quote(run_info.clustering_cache)]
+            if run_info.review_file and run_info.review_file != str(
+                Path(run_info.clustering_cache).with_name(f"{Path(run_info.clustering_cache).stem}.review.json")
+            ):
+                parts += ["--review-file", shlex.quote(run_info.review_file)]
+            env_prefix = []
+            for r in threshold_rows:
+                if not r["changed"]:
+                    continue
+                if r["flag"]:
+                    parts += [r["flag"], f"{r['value']:g}"]
+                else:
+                    env_prefix.append(f"{r['env']}={r['value']:g}")
+            pipeline_command = " ".join(env_prefix + parts)
+        else:
+            pipeline_command = "python -m lja.cli <workbook.xlsx> --clustering-cache <cache.json>   # paths unknown: app created in-process"
         everyone = view_model(_COHORTS_BY_KEY["all"])
         n_clusters = len(clustering.clusters)
         n_silos_clustered = sum(len(c.members) for c in clustering.clusters)
@@ -664,6 +703,7 @@ def create_app(
                         {r.subject_code for r in subject_rows} - set(sequence.declared)
                     ),
                 },
+                "pipeline_command": pipeline_command,
                 "gap_summary": everyone["gap_summary"],
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {

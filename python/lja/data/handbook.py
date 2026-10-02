@@ -234,6 +234,7 @@ def to_catalogue_subject(subject: HandbookSubject, *, seed: int = 0) -> dict:
         "source": "handbook",
         "discipline": subject.code[:3],
         "credit_points": subject.credit_points,
+        "description": subject.description,
         "assessments_synthetic": True,
         "silos": [{"id": sid, "text": text, "competency": "untagged"} for sid, text in subject.silos],
         "assessments": synthetic_assessments(subject, seed=seed),

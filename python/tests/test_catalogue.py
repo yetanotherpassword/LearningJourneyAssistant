@@ -122,3 +122,33 @@ def test_round_trip_through_yaml(tmp_path: Path) -> None:
     out = tmp_path / "c.yaml"
     save_catalogue(catalogue, out)
     assert load_catalogue(out) == catalogue
+
+
+# --- subject description (handbook synopsis) ---------------------------------
+
+
+def test_subject_description_round_trips_and_defaults_empty(tmp_path) -> None:
+    from lja.data.catalogue import load_catalogue, save_catalogue
+
+    catalogue = load_catalogue("../data-fixtures/subject_catalogue.yaml")
+    by_code = {s.code: s for s in catalogue.subjects}
+    assert by_code["CSE1OOF"].description.startswith("The Object-Oriented (OO) paradigm")
+    assert by_code["CSE2ALG"].description and by_code["CSE3CAP"].description
+    assert all(s.description == "" for s in catalogue.subjects if s.source == "synthetic")
+
+    out = tmp_path / "catalogue.yaml"
+    save_catalogue(catalogue, out)
+    reloaded = load_catalogue(out)
+    assert {s.code: s.description for s in reloaded.subjects} == {s.code: s.description for s in catalogue.subjects}
+
+
+def test_handbook_subject_description_is_kept_in_the_catalogue_entry() -> None:
+    from lja.data.handbook import HandbookSubject, to_catalogue_subject
+
+    subject = HandbookSubject(
+        code="CSE2ALG", title="Algorithms And Data Structures", year_level=2, credit_points=15,
+        academic_org="SCEMS", school="Computing", description="This subject covers algorithms and data structures.",
+        silos=[("SILO1", "implement data structures"), ("SILO2", "analyse complexity")],
+    )
+    entry = to_catalogue_subject(subject)
+    assert entry["description"] == "This subject covers algorithms and data structures."

@@ -1,13 +1,21 @@
 {% extends "base.html" %}
-{% block title %}This run &mdash; LJA Dashboard{% endblock %}
+{% block title %}Provenance &mdash; LJA Dashboard{% endblock %}
 {% block content %}
-<h1>This run</h1>
+<h1>Provenance</h1>
 <p class="dek">
-  What produced the numbers on every other page: the command, the input files, the classification
-  rules and the values they were run with. Terms are defined in the <a href="/glossary">glossary</a>.
+  How the numbers on every other page were made: the input files, the classification rules and the values
+  they were run with, how this dashboard was started, and the pipeline command that reproduces the same
+  numbers as files. Terms are defined in the <a href="/glossary">glossary</a>.
 </p>
 
-<h2>Command</h2>
+<h2>To reproduce these numbers as files</h2>
+<p class="dek">
+  The same workbook, clustering cache, review file and parameter values as this dashboard, run through the pipeline.
+  It writes <code>output/gap_report.csv</code> and <code>output/clusters.csv</code>; keep this command with any figure you quote.
+</p>
+<pre class="command">{{ pipeline_command }}</pre>
+
+<h2>How this dashboard was started</h2>
 {% if run_info %}
 <pre class="command">{{ run_info.command }}</pre>
 <dl class="kv">
@@ -19,8 +27,8 @@
 </dl>
 <p class="chart-note">
   The dashboard classifies from the workbook and the clustering cache at start-up; it never calls the LLM.
-  The gap report the CLI wrote is not read here, so a CLI run with different flags is not what this page shows &mdash;
-  the values below are.
+  It does not read the gap report a previous CLI run wrote, so the command that produced <em>these</em> numbers is this one,
+  and the pipeline command above is its equivalent with the values below.
 </p>
 {% else %}
 <p class="empty-state">No command recorded: this app was created in-process rather than started with <code>python -m lja.dashboard</code>.</p>

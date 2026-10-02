@@ -23,6 +23,7 @@ review of the clustering is in `docs/cluster-review-sprint5.md` (Sui Lung, Sprin
 | `plans/learning_plan_STU0003.*` | Learning plan, persistent gap on the relative basis |
 | `plans/learning_plan_STU0004.*` | Learning plan, persistent gap below the absolute floor |
 | `plans/learning_plan_STU0022.*` | Learning plan, persistent gap on the relative basis at 71.5% |
+| `quizzes/quiz_STU0003.*` | Practice quiz (tender R8 thin slice), mixed policy, 2 written tasks per gap with model answers and marking points; `qwen/qwen3-vl-30b` via LM Studio, 2 Oct 2026. Second-marker review by the same model: every model answer meets its marking points (see `python/README.md` for the same-model caveat) |
 
 ## Using it
 

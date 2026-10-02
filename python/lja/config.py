@@ -208,6 +208,11 @@ DASHBOARD_EXCEL_PATH = os.environ.get(
 )
 DASHBOARD_CLUSTERING_CACHE = os.environ.get("LJA_DASHBOARD_CLUSTERING_CACHE", "output/silo_clustering.json")
 DASHBOARD_PLANS_DIR = os.environ.get("LJA_DASHBOARD_PLANS_DIR", "output/plans")
+DASHBOARD_QUIZZES_DIR = os.environ.get("LJA_DASHBOARD_QUIZZES_DIR", "output/quizzes")
+
+# Quiz (lja/quiz.py) -- the subject catalogue supplies titles and handbook
+# synopses for the quiz page. Optional: a missing file means codes only.
+QUIZ_CATALOGUE_PATH = os.environ.get("LJA_QUIZ_CATALOGUE", "../data-fixtures/subject_catalogue.yaml")
 
 # Export (lja/export.py) -- structured extract for the department's
 # longitudinal and A/B evaluation (tender requirement 7).

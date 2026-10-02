@@ -594,3 +594,28 @@ a.term-help {
 }
 a.term-help:hover { color: var(--accent); border-color: var(--accent); }
 
+
+/* --- practice quiz (student.html) --- */
+
+.quiz-subjects { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; }
+.quiz-subject { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 18px; }
+.quiz-subject-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.quiz-subject-title { color: var(--muted); }
+.quiz-synopsis { margin: 8px 0 0; font-size: 0.95rem; }
+
+.quiz-list { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 12px; }
+.quiz-item { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+.quiz-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.quiz-refs { margin: 0; font-size: 0.85rem; }
+.quiz-stem { margin: 0 0 8px; font-weight: 500; }
+.quiz-options { margin: 0 0 8px; padding-left: 28px; }
+.quiz-options li { margin: 2px 0; }
+.quiz-answer summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+.quiz-answer p { margin: 8px 0 0; }
+.quiz-educator { margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.quiz-educator summary { cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.9rem; }
+.quiz-educator-label { font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; font-size: 0.75rem; color: var(--muted); }
+.quiz-educator-body { padding: 8px 0 0 12px; border-left: 3px solid var(--line); margin-top: 8px; }
+.quiz-educator.disagree .quiz-educator-body { border-left-color: var(--status-persistent); }
+.quiz-kind { color: var(--muted); font-weight: 600; margin-right: 4px; }
+.quiz-marking { margin: 4px 0 8px; padding-left: 22px; }
