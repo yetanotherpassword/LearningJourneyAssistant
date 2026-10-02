@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.2 — for team review. Part A is complete. Parts B and C are filled from the code and a live run; items marked ⚠ *TO FILL* or ⚠ *TO CONFIRM* need a person. |
-| **Date** | 30 September 2026 |
-| **Describes** | `main` at `fc68c3e` (29 Sep 2026) plus the dashboard pages of open pull request #43 (IOLG-134), which are marked **(PR #43)** where they appear |
+| **Status** | DRAFT 0.3 — for team review. Part A is complete. Parts B and C are filled from the code and a live run; items marked ⚠ *TO FILL* or ⚠ *TO CONFIRM* need a person. |
+| **Date** | 2 October 2026 |
+| **Describes** | `main` at `cd98ce8` (2 Oct 2026). The practice quiz, which is in open pull request #52 (IOLG-136), is marked **(PR #52)** where it appears |
 | **Audience** | Subject coordinators and course staff who read the dashboard; the staff member who runs the pipeline for them; the project owner; anyone assessing what the numbers mean |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
 | **Project owner** | Dr Scott Mann |
@@ -257,7 +257,7 @@ The `.env` file holds the settings below. Nothing in it is needed to run the off
 
 | Setting | Default | When you need it |
 |---|---|---|
-| `LJA_LLM_PROVIDER` | `openai_compatible` | Which language model family to call. `openai_compatible` covers a local Ollama server; `anthropic` uses the Anthropic API. Needed for clustering, learning plans and study strategies. Never used by the dashboard or the export. |
+| `LJA_LLM_PROVIDER` | `openai_compatible` | Which language model family to call. `openai_compatible` covers a local Ollama server; `anthropic` uses the Anthropic API. Needed for clustering, learning plans, study strategies and quizzes. Never used by the dashboard or the export. |
 | `LJA_OPENAI_BASE_URL` | `http://localhost:11434/v1` | Where the local model answers (Ollama's default). |
 | `LJA_OPENAI_MODEL` | `qwen3-vl:30b` | The local model's name. The reference run was produced with this model. |
 | `LJA_OPENAI_TEMPERATURE` | `0.2` | Lower is more repeatable. Clustering has visible run-to-run variance even at 0.2, which is why the completeness check and retry exist (Part A, §2). |
@@ -265,6 +265,7 @@ The `.env` file holds the settings below. Nothing in it is needed to run the off
 | `ANTHROPIC_API_KEY`, `LJA_ANTHROPIC_MODEL` | empty, `claude-opus-4-8` | Only with `LJA_LLM_PROVIDER=anthropic`. |
 | `LJA_GAP_*` (seven values) | see Part A §3.2 | The classification thresholds. Set here to change them for every command at once; most also have a command-line flag. |
 | `LJA_DASHBOARD_EXCEL_PATH`, `LJA_DASHBOARD_CLUSTERING_CACHE`, `LJA_DASHBOARD_PLANS_DIR` | the supplied workbook, `output/silo_clustering.json`, `output/plans` | What the dashboard opens when started with no flags (Part C, §13). |
+| `LJA_DASHBOARD_QUIZZES_DIR`, `LJA_QUIZ_CATALOGUE` **(PR #52)** | `output/quizzes`, `../data-fixtures/subject_catalogue.yaml` | Where the dashboard looks for practice quizzes, and the catalogue the quiz command reads subject titles and handbook synopses from. |
 | `LJA_EXPORT_SALT` | empty | Secret used to pseudonymise student ids in the research export. Keep it in `.env`, never in a command line. |
 | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `LJA_MOODLE_TABLE_PREFIX` | `localhost`, `5432`, `moodle`, `lja_reader`, empty, `mdl_` | Only for `--source moodle`. The development Moodle uses prefix `m_`. |
 
@@ -358,28 +359,34 @@ With no `--cluster` on a terminal it prompts for id, state and note. `--clusteri
 
 **What a decision does.** A rejected group blocks the pipeline (`lja.cli` exits 2) and prints rework instructions. A pending group lets the pipeline run only with `--allow-unconfirmed`, and the dashboard then carries a red **AI review warning** on every page with the pending and rejected counts. Confirmed groups are silent.
 
-**Reviewing well.** Read the rationale against the member SILOs' wording, not against the label. Reject when members are the same skill in name only (the prompt's own counter-example is written reporting versus oral presentation), or when a group is one whole subject rather than one skill. Single-subject groups are legitimate when the rationale says no equivalent was found elsewhere. A flagged vague SILO is feedback for its coordinator, not a reason to reject the group it sits in. ⚠ *TO FILL: the agreed review procedure and who signs off, once IOLG-124's outcome is recorded (IOLG-133).*
+**Reviewing well.** Read the rationale against the member SILOs' wording, not against the label. Reject when members are the same skill in name only (the prompt's own counter-example is written reporting versus oral presentation), or when a group is one whole subject rather than one skill. Single-subject groups are legitimate when the rationale says no equivalent was found elsewhere. A flagged vague SILO is feedback for its coordinator, not a reason to reject the group it sits in.
 
-## 9. Learning plans and study strategies
+**The Sprint 5 review, as done.** Sui Lung reviewed the five reference-run groups on 26 September (`docs/cluster-review-sprint5.md`, landed 2 October under IOLG-133): four Agree, one Disagree (Object-Oriented Design and Implementation), and both SILOs the model flagged as vague were agreed vague. The verdicts are kept in a separate file, `data-fixtures/reference-run/silo_clustering.review.sui-lung.json`, so the all-confirmed reference run keeps working offline. That is the pattern to follow: a reviewer's decisions go in a review file of their own, named for them, and the pipeline is pointed at it with `--review-file` when their verdicts should drive a run. ⚠ *TO FILL: who signs off a review before it drives a report for staff, and whether the project owner confirms or overrules at the 4/5 October review.*
 
-Both commands call the language model for one student and check every reference in the answer against the data before writing anything. They need a confirmed clustering; pass the cache and review file explicitly when they are not in the default place.
+## 9. Learning plans, study strategies and practice quizzes
+
+All three commands call the language model for one student and check every reference in the answer against the data before writing anything. They need a confirmed clustering; pass the cache and review file explicitly when they are not in the default place. The quiz command is in open pull request #52 **(PR #52)**.
 
 ```bash
 R=../data-fixtures/reference-run
 python -m lja.plan     <workbook.xlsx> STU0003 --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json
 python -m lja.strategy <workbook.xlsx> STU0003 --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json
+python -m lja.quiz     <workbook.xlsx> STU0003 --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json   # PR #52
 ```
 
 | Command | Writes | What it contains |
 |---|---|---|
 | `lja.plan` | `output/plans/learning_plan_<id>.json` and `.md` | Priorities in order, each with the competency, actions to do, the evidence (subjects and marks) it rests on, and the assessments to revisit; plus strengths to build on. The dashboard shows this file under "Recommended next actions". |
 | `lja.strategy` | `output/strategies/study_strategy_<id>.json` and `.md` | One entry per gap competency. A persistent gap must name two or more subjects and include interleaving or spaced practice; an isolated gap gets subject-specific tactics. |
+| `lja.quiz` **(PR #52)** | `output/quizzes/quiz_<id>.json` and `.md` | Two questions per gap competency by default (`--items-per-gap`), each tied to one of the student's SILOs and one of their assessments, with the subject's handbook synopsis as background. A question is either multiple choice (3 or 4 options and a key) or a written task (a model answer and 2 to 5 marking points). Then a second, blind pass by the model answers each question without seeing the key and writes the explanation a tutor would give; the code compares and marks any disagreement. The dashboard shows the quiz on the student's page. |
 
 Shared options: `--out-dir`, `--max-attempts` (default 3, how many times to regenerate a plan that names something not in the data), `--extra-instructions`, `--source` and `--mapping`.
 
-**Exit codes.** `0` written, or for `strategy`, the student has no gap so nothing was generated. `1` the model could not produce a grounded answer in the allowed attempts; nothing is written. `2` bad input, or the student's competencies include a rejected group. A pending group gives a warning but proceeds.
+**Quiz options (PR #52).** `--format` is the educator's policy: `multiple_choice`, `written`, or `mixed` (the default), under which the model chooses per question but an outcome whose wording asks the student to *do* something (implement, design, analyse, explain, …) must get a written task. Written tasks are the better learning instrument where the outcome asks for doing; multiple choice is the only kind that marks itself. `--catalogue` names the subject catalogue for titles and synopses (skipped if the file is missing; the quiz then shows codes only). `--skip-educator-review` leaves out the blind second pass.
 
-> Both are AI-generated documents. The grounding check proves every competency, subject and assessment named exists and belongs to that student. It does not prove the advice is good. Nothing here is student-facing until staff have read it; the dashboard says so above every plan.
+**Exit codes.** `0` written, or for `strategy` and `quiz`, the student has no gap so nothing was generated. `1` the model could not produce a grounded answer in the allowed attempts; nothing is written. `2` bad input, or the student's competencies include a rejected group. A pending group gives a warning but proceeds.
+
+> All three are AI-generated documents. The grounding check proves every competency, subject and assessment named exists and belongs to that student. It does not prove the advice is good, and for a quiz it cannot prove the marked answer is correct: the only subject matter the model is given is the outcome wording, the assessment names, the marker's feedback and the handbook synopsis, so the question and its answer come from the model's general knowledge. The blind second pass catches a disagreement, not a shared blind spot (on the first live run the same model agreed confidently with a question a tutor could mark the other way). Nothing here is student-facing until staff have read it; the dashboard says so above every plan and every quiz.
 
 ## 10. Exporting for research: `python -m lja.export`
 
@@ -391,9 +398,9 @@ python -m lja.export <workbook.xlsx> --clustering-cache <cache> --out output/exp
 
 | Output | Rows |
 |---|---|
-| `students.csv` | one per student: totals, band, gap counts, priority, whether a plan exists (`in_plan`, read from `--plans-dir`) |
-| `competencies.csv` | one per student × competency, the gap report with the run's thresholds |
-| `cohort.csv` | the cohort statistics |
+| `students.csv` | one per student: performance band, average total, then one column per subject with the student's total (blank where not enrolled) |
+| `competencies.csv` | one per student × competency: the gap report's columns (attainment, classification, basis, relative position, subjects evidencing, observations) plus the trend across subjects and `in_plan`, which is true when the student's learning plan (read from `--plans-dir`) names this competency as a priority |
+| `cohort.csv` | one per competency, aggregated over the cohort: gap rate and proficient rate, with no student ids |
 | `manifest.json` | source, git commit, cache path, every threshold value, schema version |
 
 `--anonymise` replaces each student id with a 12-character pseudonym derived from `LJA_EXPORT_SALT`. The same salt gives the same pseudonym across runs, so two exports can be joined; a different or empty salt cannot be reversed to the id. Column definitions are in `docs/export-schema.md`.
@@ -458,7 +465,9 @@ python -m lja.cli --source moodle --mapping ../data-fixtures/criterion_silo_map_
 
 Connection settings are the `PG*` variables in §5.2. The development instance from `devenv/bootstrap.sh` and `devenv/seed.sh` uses prefix `m_` and answers on port 8081; its credentials are in `devenv/env.sh` and must never be reused elsewhere. The security evidence for the read-only role is in `docs/security-evidence.md`.
 
-⚠ *TO FILL: production connection procedure (who provisions `lja_reader`, which host, how the criterion map is maintained per subject), once the shared-instance step in IOLG-111 is done. The dashboard itself reads Excel only; a Moodle run is exported to a workbook shape first.* ⚠ *TO CONFIRM: whether that export step exists as a command or is a manual step.*
+The six security checks (role created, update refused, fixture readable, database unchanged by a run, web-service token scope, scanner results) were all observed on the development instance on 28 September; none has been run on a shared instance yet.
+
+**The dashboard reads Excel only.** `python -m lja.dashboard` has `--excel-path` and no `--source` option, and there is no command that writes a Moodle run back out as a workbook. So a Moodle-sourced run can be analysed (`lja.cli`, `lja.plan`, `lja.export` all take `--source moodle`) but not yet browsed. ⚠ *TO FILL: production connection procedure (who provisions `lja_reader`, which host, how the criterion map is maintained per subject), once the shared-instance step in IOLG-111 is done.*
 
 ---
 
@@ -466,7 +475,7 @@ Connection settings are the `PG*` variables in §5.2. The development instance f
 
 The dashboard is a read-only view over one run. It never calls the language model and never writes anything. It recomputes the classification from the workbook and the clustering cache when it starts, so what it shows is always consistent with the files named on its "This run" page, not with whatever `gap_report.csv` a different command produced.
 
-Pages marked **(PR #43)** are on the IOLG-134 branch, open for review at the time of writing, and are not yet on `main`.
+Everything in this part is on `main` except the practice quiz section of the student page, which is in open pull request #52 and marked **(PR #52)**.
 
 ## 13. Starting it and finding your way
 
@@ -474,13 +483,13 @@ Pages marked **(PR #43)** are on the IOLG-134 branch, open for review at the tim
 python -m lja.dashboard --excel-path <workbook.xlsx> --clustering-cache <cache.json> [--port 8000] [--host 127.0.0.1]
 ```
 
-With no flags it opens the workbook and cache named in `.env` (`LJA_DASHBOARD_EXCEL_PATH`, `LJA_DASHBOARD_CLUSTERING_CACHE`). The review file is always `<cache>.review.json` beside the cache; if it is missing every group counts as pending and the warning banner shows. Learning plans are read from `LJA_DASHBOARD_PLANS_DIR` (default `output/plans`). Only `--absolute-floor` and `--absolute-ceiling` can be changed on this command line; the other thresholds come from the `LJA_GAP_*` variables. The charts load Chart.js from a public CDN, so the browser needs internet access even though the data never leaves the machine.
+With no flags it opens the workbook and cache named in `.env` (`LJA_DASHBOARD_EXCEL_PATH`, `LJA_DASHBOARD_CLUSTERING_CACHE`). The review file is always `<cache>.review.json` beside the cache; if it is missing every group counts as pending and the warning banner shows. Learning plans are read from `LJA_DASHBOARD_PLANS_DIR` (default `output/plans`) and, with PR #52, practice quizzes from `LJA_DASHBOARD_QUIZZES_DIR` (default `output/quizzes`). Only `--absolute-floor` and `--absolute-ceiling` can be changed on this command line; the other thresholds come from the `LJA_GAP_*` variables. The charts load Chart.js from a public CDN, so the browser needs internet access even though the data never leaves the machine.
 
 **The header, on every page.** The title carries the tag "gap report · read-only · dev mode, no sign-in": there is no login yet, so run it on a machine you control. The navigation is **Students**, **Outcome quality**, **This run** and **Glossary**, and a **Student** picker on the right jumps straight to one student's page.
 
 **The AI review warning.** When any group in the run is pending or rejected, a red banner at the top of every page states how many of each. It disappears only when staff have confirmed every group (§8).
 
-**Controls you will meet everywhere (PR #43):**
+**Controls you will meet everywhere:**
 
 - **Every count is a link.** A tile that says "13 SILOs" opens the list of those 13. A statistic tile opens the glossary entry that defines it.
 - **Enlarge** on any chart opens it full screen with hover tooltips and a live readout of the pointer position. Esc or Close returns. Clicking a point opens the same page as in the small chart.
@@ -497,12 +506,12 @@ With no flags it opens the workbook and cache named in `.env` (`LJA_DASHBOARD_EX
 
 This is the triage page. Read it top to bottom.
 
-1. **Cohort tiles.** "150 students" and "24 with a persistent gap" open the matching cohort pages. Below them **(PR #43)** the three priority tiles in red, amber and blue: 1st priority below the 50% floor, 2nd priority persistent gap relative only, 3rd priority isolated gaps only. Their definitions are Part A §3. The counts, plus the unflagged remainder, sum to the cohort.
+1. **Cohort tiles.** "150 students" and "24 with a persistent gap" open the matching cohort pages. Below them the three priority tiles in red, amber and blue: 1st priority below the 50% floor, 2nd priority persistent gap relative only, 3rd priority isolated gaps only. Their definitions are Part A §3. The counts, plus the unflagged remainder, sum to the cohort.
 2. **Statistics.** Mean, median, standard deviation, variance, minimum, maximum, quartiles and interquartile range of each student's average total. These are population statistics, because the cohort is the whole group being described.
 3. **Distribution of average totals.** A histogram on fixed 0 to 100 bins of width 10, so two cohorts viewed one after another have the same axis and can be compared by eye.
 4. **Competency classifications.** The share of every student × competency pair in each of the four classes.
-5. **Where each flagged student sits (PR #43).** One point per student: average total against their lowest competency mark, coloured by priority group, unflagged students in grey. The two dashed lines are the floor and ceiling. A point far below the diagonal is a strong student with one deep gap. Hover for the student, click to open them.
-6. **Students by priority (PR #43).** Each group has its definition, its ten most severe students (lowest flagged mark first) and a link to the full cohort page.
+5. **Where each flagged student sits.** One point per student: average total against their lowest competency mark, coloured by priority group, unflagged students in grey. The two dashed lines are the floor and ceiling. A point far below the diagonal is a strong student with one deep gap. Hover for the student, click to open them.
+6. **Students by priority.** Each group has its definition, its ten most severe students (lowest flagged mark first) and a link to the full cohort page.
 7. **All students.** Every student, sortable, in a scroll box. Columns: student, average, band, **Priority**, **Below floor** (the lowest mark that breached it), **Lowest gap** (mark and its position in MAD), persistent gaps, isolated gaps, strengths. Default order is priority, then lowest flagged mark.
 
 **What to do with it.** Start with the 1st-priority list; those students have a mark under the floor in a competency and the case needs no statistics to make. The 2nd group is where the relative rule earns its keep: students doing well overall with one recurring soft spot. The 3rd group is for a subject coordinator rather than a course coordinator, since each flag comes from one subject.
@@ -513,7 +522,7 @@ This is the triage page. Read it top to bottom.
 
 *Figure 7: A cohort page restricted to the 13 first-priority students of the reference run.*
 
-The same body as the Students page, restricted to one cohort: `all`, `persistent-gap`, `priority-1`, `priority-2` or `priority-3` **(PR #43 for the last three)**. The page opens by stating the rule that put its students there, with the live threshold values, so a screenshot of it is self-explaining. There is deliberately no "at risk" cohort: the institution has no definition to match, and inventing one is the team's decision under action A-01, not a dashboard default.
+The same body as the Students page, restricted to one cohort: `all`, `persistent-gap`, `priority-1`, `priority-2` or `priority-3`. The page opens by stating the rule that put its students there, with the live threshold values, so a screenshot of it is self-explaining. There is deliberately no "at risk" cohort: the institution has no definition to match, and inventing one is the team's decision under action A-01, not a dashboard default.
 
 ## 16. A student's page (`/student/<id>`)
 
@@ -527,6 +536,7 @@ The header gives the id, the performance band, and the average across the subjec
 - **Recommended next actions.** The learning plan from `lja.plan` (§9) if one exists: a summary, then one card per priority with what to do, the evidence it rests on, and the assessments to revisit, plus strengths to build on. The page states that the plan was generated by a language model and checked for references, not for quality. Without a plan it prints the command that would make one.
 - **Strengths.** Every proficient competency, strongest first, each with its basis: how many MAD above the student's own median, or that it passed the fixed ceiling.
 - **Progress across subjects.** A line per competency across year levels, for competencies evidenced in two or more subjects, and a table with a trend word (stable, improving, declining, or insufficient evidence). Year order, not time order: the data carries no dates.
+- **Practice quiz (PR #52).** If `lja.quiz` has written one for this student (§9): an introduction, the subjects involved with their handbook synopses, then one question per card grouped by gap competency, each labelled with the outcome and assessment it practises. A multiple-choice question has a "Show answer" control; a written task has "Show model answer", which reveals the model answer and the marking points. Under each question a collapsed block, "For educator view only", holds the blind second pass: whether it agreed with the key (or, for a written task, whether the model answer meets its own marking points), its confidence, the explanation a tutor would give, and any concern it raised. A summary line names any question where the two passes disagreed; that is the one to check first. The page states that the answers have not been verified against course material and asks for staff review before a student uses the quiz. "For educator view only" is a label, not a login: anyone who can open the page can expand it.
 - **Competency gaps.** A card per competency, worst first. Open one to see the per-subject evidence (subject, year, attainment, number of observations), the basis of the classification (absolute floor, relative position with the MAD value, or insufficient data), the trend, and, for a gap, the future subjects in the dataset that draw on the same competency. That last line is what turns a flag into an intervention: it names where the student will meet this competency next.
 
 **Reading a card.** "Classified by: absolute floor" means the mark alone decided it. "Classified by: relative position, −1.53 MAD" means the mark was acceptable in isolation but well below this student's own median. Part A §4 walks three real cards.
@@ -549,7 +559,7 @@ This page is about the learning outcomes themselves, not about students. It answ
 
 ![](diagrams/14-page-outcome-list-vague.png){height=11cm}
 
-*Figure 10: One of the five outcome lists (PR #43). The sentence under the title states the filter; the charts are drawn from exactly the rows in the table.*
+*Figure 10: One of the five outcome lists. The sentence under the title states the filter; the charts are drawn from exactly the rows in the table.*
 
 Each list (`/silos/list/all`, `flagged`, `orphan`, `unassessed`, `vague`) opens with the filter stated in a sentence, links to the other lists with their counts, a histogram of mean attainment and a scatter of attainment against gap rate, then the SILO table in a scroll box.
 
@@ -559,7 +569,7 @@ Each list (`/silos/list/all`, `flagged`, `orphan`, `unassessed`, `vague`) opens 
 
 ![](diagrams/14-page-competencies.png){height=17cm}
 
-*Figure 11: The Competencies page (PR #43): every group, how it spreads across disciplines, and how each group's students are classified.*
+*Figure 11: The Competencies page: every group, how it spreads across disciplines, and how each group's students are classified.*
 
 The Competencies page lists every group with its label, member SILOs (each linking to its subject), subject count, the model's rationale, and the classification counts. Above the table, a competency × discipline map shows where each group's outcomes come from, multi-discipline groups first, and a stacked bar shows the classification shares per group, gap-heaviest first.
 
@@ -567,9 +577,9 @@ The Competencies page lists every group with its label, member SILOs (each linki
 
 *Figure 12: Data Structures and Algorithms in the reference run: the trace from competency to subjects to outcomes to assessments, then progression across the subjects that teach it.*
 
-A competency's page opens with its trace **(PR #43)**: the competency, the subjects whose outcomes were grouped into it, those outcomes (hover for the wording; a red outline means the model flagged it, amber means vague wording), and under it every path listed with the assessments that evidence each outcome. That chain, from a student's mark to their classification, is the answer to "why does the dashboard say this?". Below it, for a competency taught in two or more subjects, attainment and gap rate by subject with a trend badge, and the model's own explanation of why these outcomes were grouped.
+A competency's page opens with its trace: the competency, the subjects whose outcomes were grouped into it, those outcomes (hover for the wording; a red outline means the model flagged it, amber means vague wording), and under it every path listed with the assessments that evidence each outcome. That chain, from a student's mark to their classification, is the answer to "why does the dashboard say this?". Below it, for a competency taught in two or more subjects, attainment and gap rate by subject with a trend badge, and the model's own explanation of why these outcomes were grouped.
 
-## 19. Subjects, a subject, and assessments (PR #43)
+## 19. Subjects, a subject, and assessments
 
 ![](diagrams/14-page-subjects.png){height=12cm}
 
@@ -587,7 +597,7 @@ These three pages are the inputs seen from the curriculum side. **Subjects** ran
 
 **What to do with it.** A high-weight assessment with a low mean and many SILOs attached moves a lot of students' classifications at once; that is where to look first when a competency's gap rate looks wrong.
 
-## 20. This run (`/run`) (PR #43)
+## 20. This run (`/run`)
 
 ![](diagrams/14-page-this-run.png){height=22cm}
 
@@ -595,7 +605,7 @@ These three pages are the inputs seen from the curriculum side. **Subjects** ran
 
 Open this page before quoting any number from the dashboard. It shows the exact command that started it, when, the git version, the workbook, cache and review file; linked input counts; the classification rules as an ordered list with this run's values; a table with one row per threshold giving the value used, the code default, the environment variable, the CLI flag, and a mark on anything that differs from the default; a histogram of where the flagged marks sit; and, for a synthetic cohort, the generator's seed and parameters. When the thresholds are ratified under action A-01, this is where the ratified values will be visible.
 
-## 21. Glossary (`/glossary`) (PR #43)
+## 21. Glossary (`/glossary`)
 
 ![](diagrams/14-page-glossary.png){height=15cm}
 
@@ -612,7 +622,7 @@ Every term used on the dashboard, A to Z with a jump list, and MAD with a worked
 | Check that a flag is not an artefact of the settings | This run: confirm the thresholds, then the student's basis line (floor is settings-independent; relative depends on MAD) |
 | Prepare feedback for a subject coordinator | Outcome quality, the vague and never-assessed lists filtered to their subject |
 | Compare two cohorts | Open each in its own dashboard on different ports; the histogram bins are fixed so the shapes compare |
-| Find every student weak in one competency | The competency's page, then the Students table filtered by that competency's name ⚠ *TO CONFIRM: the table filter matches competency names in the gap columns* |
+| Find every student weak in one competency | Not possible on one page yet: the Students table's gap columns are counts, so its filter cannot match a competency name, and the competency's page shows classification counts rather than a student list. Use `python -m lja.export` (§10) and filter `competencies.csv` on the competency label and classification. A per-competency student list is a dashboard follow-up. |
 | Get the numbers into a spreadsheet | `python -m lja.export` (§10) |
 
 ## 23. What the dashboard does not do yet
@@ -622,6 +632,9 @@ Every term used on the dashboard, A to Z with a jump list, and MAD with a worked
 - No dates, so no true time series; "progress" is year-level order.
 - No editing: staff decisions on groups are made with `lja.review`, not in the browser.
 - The seven thresholds are unratified defaults (action A-01). Until then, quote the "This run" page with any number.
+- The AI review warning says how many groups were rejected but not which (finding UAT-02, 28 September). The pipeline names the rejected group when it stops; the banner does not yet.
+- After the quick start in §5.3, the bare `lja.plan`, `lja.strategy` and `lja.export` commands stop with "No clustering cache at output/silo_clustering.json" (finding UAT-01). Pass the same `--clustering-cache` to them, as §9 and §10 show.
+- Study strategies are written to files but not shown on the dashboard.
 - ⚠ *TO FILL: UAT outcomes and known defects from the 4/5 October review (IOLG-127, IOLG-129).*
 
 ---
@@ -630,7 +643,7 @@ Every term used on the dashboard, A to Z with a jump list, and MAD with a worked
 
 ## Appendix A. Sources and status of the numbers
 
-**Sources.** Chapter 2 follows the system prompt the clustering model runs under and the staff review states in the review tool; the example groups are the model's own output on the 3-subject fixture (CSE1OOF, CSE2ALG, CSE3CAP). Chapters 3 and 4 follow the classification routine and the priority rule in the dashboard; the three students are real rows from the 100-subject, 5,000-student synthetic catalogue run, with attainments and positions as computed there. Part B's options and defaults were read from each command's argument parser and `python/lja/config.py` on the IOLG-134 branch at `0d13e10`. Part C's screenshots were taken from that branch serving the reference run (`data-fixtures/reference-run/`) on 30 September 2026.
+**Sources.** Chapter 2 follows the system prompt the clustering model runs under and the staff review states in the review tool; the example groups are the model's own output on the 3-subject fixture (CSE1OOF, CSE2ALG, CSE3CAP). Chapters 3 and 4 follow the classification routine and the priority rule in the dashboard; the three students are real rows from the 100-subject, 5,000-student synthetic catalogue run, with attainments and positions as computed there. Part B's options and defaults were read from each command's argument parser and `python/lja/config.py` on `main` at `cd98ce8` (2 October 2026), and for the quiz from the PR #52 branch at `e203da7`. Part C's screenshots were taken from the IOLG-134 branch at `0d13e10`, which merged unchanged as PR #43 on 30 September, serving the reference run (`data-fixtures/reference-run/`); no screenshot of the quiz section is included yet.
 
 **Status of the numbers.** The seven thresholds in §3.2 are the code defaults, configurable per run and shown on the dashboard's "This run" page. They are proposals with measurements behind them, not ratified values; ratifying or replacing them is open action A-01. The formal definition of every metric, with its formula and where it is calculated and shown, is Appendix B of the System Maintenance Document.
 
@@ -640,11 +653,11 @@ Every term used on the dashboard, A to Z with a jump list, and MAD with a worked
 
 | Where | What is needed | Who |
 |---|---|---|
-| §8 | The agreed cluster-review procedure and sign-off, from the IOLG-124 review (recorded under IOLG-133) | Sui Lung, Istiaque |
-| §12 | Production Moodle connection procedure; whether a Moodle-to-workbook step exists for the dashboard | Ayesha |
-| §22 | Confirm the Students-table filter matches competency names | Allan |
+| §8 | Who signs off a cluster review before it drives a staff report; the owner's verdict on Sui Lung's review | Sui Lung, Scott |
+| §12 | Production Moodle connection procedure | Ayesha |
+| §16 | A screenshot of the quiz section once PR #52 merges | Allan |
 | §23 | UAT outcomes and known defects from the 4/5 October review (IOLG-127, IOLG-129) | Sui Lung, Ayesha, Anup |
-| Part C | Replace reference-run screenshots with the 100-subject cohort once PR #43 is merged, so the pages show a realistic scale | Allan |
+| Part C | Replace reference-run screenshots with the 100-subject cohort, so the pages show a realistic scale | Allan |
 | Whole | Read-through by someone who has not seen the dashboard | Scott |
 
 ## Appendix C. Change log
@@ -653,3 +666,4 @@ Every term used on the dashboard, A to Z with a jump list, and MAD with a worked
 |---|---|---|---|
 | 0.1 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | First draft: Chapters 1 to 4 from the "From SILOs to Priority Groups" explainer; walkthrough outlined. |
 | 0.2 | 30 Sep 2026 | Allan Campton (drafted with Claude Code) | Restructured into Parts A, B and C. Chapters 1 to 4 become Part A, Background. New Part B (producing the data: settings, pipeline, review, plans, export, synthetic cohorts, Moodle) and Part C (every dashboard page with screenshots, typical tasks, limits). Figures sized to stay on one page. Open items listed in Appendix B. |
+| 0.3 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8`: the IOLG-134 pages merged (PR #43), so their labels are gone. Practice quiz added to §5.2, §9 and §16, marked (PR #52). §8 records the Sprint 5 cluster review and how reviewer files are kept. §10 export table corrected to the real columns. §12 confirms the dashboard has no Moodle source and no workbook export step exists. §22 answers the filter question (it cannot match competency names). §23 adds findings UAT-01 and UAT-02. |
