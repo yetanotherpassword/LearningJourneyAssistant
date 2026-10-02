@@ -23,7 +23,7 @@ It has three parts.
 - **Part B, Producing the data** (Chapters 5 to 12) is for whoever runs the commands: the workbook format, the pipeline and its settings, confirming the AI-proposed competency groups, learning plans, the research export, synthetic cohorts, and Moodle.
 - **Part C, Using the dashboard** (Chapters 13 to 23) walks every page with a screenshot from the reference run, says what each control does, and ends with a table of typical tasks and a list of what the dashboard does not do yet.
 
-Every threshold quoted here is the code default in force on the date above. They are proposals with measurements behind them, not ratified values; the open decision is action A-01 in `docs/meetings/actions.md`. The dashboard's "This run" page prints the values a particular run actually used.
+Every threshold quoted here is the code default in force on the date above. They are proposals with measurements behind them, not ratified values; the open decision is action A-01 in `docs/meetings/actions.md`. The dashboard's Provenance page prints the values a particular run actually used.
 
 ---
 
@@ -285,7 +285,7 @@ The `.env` file holds the settings below. Nothing in it is needed to run the off
 | `ANTHROPIC_API_KEY`, `LJA_ANTHROPIC_MODEL` | empty, `claude-opus-4-8` | Only with `LJA_LLM_PROVIDER=anthropic`. |
 | `LJA_GAP_*` (seven values) | see Part A §3.2 | The classification thresholds. Set here to change them for every command at once; most also have a command-line flag. |
 | `LJA_SUBJECT_SEQUENCE` **(IOLG-106)** | `CSE1OOF,CSE2ALG,CSE3CAP` | The order the degree intends the subjects to be taken, comma-separated. This is what "progress" and "trend" are measured along, and where a course map from the project owner goes. A subject not listed is placed by the digit in its code (`CSE2ALG` is year 2), and the student's page says when that happened. |
-| `LJA_TREND_STABLE_BAND` **(IOLG-106)** | `5.0` | How many points a competency's attainment must move between the first and last subject before the trend is called improving or declining rather than stable. Shown on "This run". |
+| `LJA_TREND_STABLE_BAND` **(IOLG-106)** | `5.0` | How many points a competency's attainment must move between the first and last subject before the trend is called improving or declining rather than stable. Shown on Provenance. |
 | `LJA_DASHBOARD_EXCEL_PATH`, `LJA_DASHBOARD_CLUSTERING_CACHE`, `LJA_DASHBOARD_PLANS_DIR` | the supplied workbook, `output/silo_clustering.json`, `output/plans` | What the dashboard opens when started with no flags (Part C, §13). |
 | `LJA_DASHBOARD_QUIZZES_DIR`, `LJA_QUIZ_CATALOGUE` **(PR #52)** | `output/quizzes`, `../data-fixtures/subject_catalogue.yaml` | Where the dashboard looks for practice quizzes, and the catalogue the quiz command reads subject titles and handbook synopses from. |
 | `LJA_EXPORT_SALT` | empty | Secret used to pseudonymise student ids in the research export. Keep it in `.env`, never in a command line. |
@@ -319,7 +319,7 @@ The Excel path expects one workbook with three sheets. The supplied workbook and
 
 Two facts about this shape drive everything downstream:
 
-- **A mark counts towards every SILO its assessment lists.** An assignment mapped to SILO2, SILO3 and SILO4 puts the same score into three outcomes, and from there into whichever competencies those outcomes belong to. The dashboard's "This run" page calls this the flagged approximation, and the SMD documents it.
+- **A mark counts towards every SILO its assessment lists.** An assignment mapped to SILO2, SILO3 and SILO4 puts the same score into three outcomes, and from there into whichever competencies those outcomes belong to. The dashboard's Provenance page calls this the flagged approximation, and the SMD documents it.
 - **Nothing carries a date.** "Progress across subjects" on the student page is ordered by the intended subject sequence (`LJA_SUBJECT_SEQUENCE`, §5.2), falling back to the year level in the subject code, not by time. **(IOLG-106)**
 
 ## 7. Running the pipeline: `python -m lja.cli`
@@ -361,7 +361,7 @@ python -m lja.cli <workbook.xlsx> [options]
 | You want to know | Do this |
 |---|---|
 | What the product says about this cohort, as configured | Run with defaults against a confirmed clustering. Read `gap_report.csv` or open the dashboard. |
-| How sensitive the flags are to the floor | Re-run with `--absolute-floor 45` and again with `55`, keeping the same cache. The "This run" page marks changed values. Compare the 1st-priority counts. Do not change the cache between runs. |
+| How sensitive the flags are to the floor | Re-run with `--absolute-floor 45` and again with `55`, keeping the same cache. The Provenance page marks changed values. Compare the 1st-priority counts. Do not change the cache between runs. |
 | Whether the model groups the outcomes differently on another attempt | `--refresh-clustering` into a **different** `--clustering-cache` path, then `python -m lja.review --clustering-cache <new>` to compare. Never refresh over a cache that carries staff decisions. |
 | Whether a prompt change helps | `--refresh-clustering --extra-instructions "..."` into a new cache, as above. |
 | Why almost everyone is flagged | Nothing to change: that is the relative rule (Part A §3.2, "the catch"). Look at the priority groups instead of the persistent-gap count. |
@@ -438,7 +438,7 @@ python -m lja.data.catalogue_generator ../data-fixtures/subject_catalogue.yaml \
     --students 500 --seed 42 --out ../data-fixtures/CSE_results_catalogue_500_synthetic.xlsx
 ```
 
-It writes the workbook and, beside it, three truth files: `<stem>.truth.json` (every student's hidden abilities, which students carry a planted gap and where), `<stem>.clustering.json` (the catalogue's own competency grouping in the cache format) and `<stem>.clustering.review.json` (all confirmed). Run the pipeline with `--clustering-cache <stem>.clustering.json` and the dashboard's "This run" page will show the generator's seed and parameters, never the answer key.
+It writes the workbook and, beside it, three truth files: `<stem>.truth.json` (every student's hidden abilities, which students carry a planted gap and where), `<stem>.clustering.json` (the catalogue's own competency grouping in the cache format) and `<stem>.clustering.review.json` (all confirmed). Run the pipeline with `--clustering-cache <stem>.clustering.json` and the dashboard's Provenance page will show the generator's seed and parameters, never the answer key.
 
 | Setting | Default | What it changes in what you see |
 |---|---|---|
@@ -495,7 +495,7 @@ The six security checks (role created, update refused, fixture readable, databas
 
 # Part C. Using the dashboard
 
-The dashboard is a read-only view over one run. It never calls the language model and never writes anything. It recomputes the classification from the workbook and the clustering cache when it starts, so what it shows is always consistent with the files named on its "This run" page, not with whatever `gap_report.csv` a different command produced.
+The dashboard is a read-only view over one run. It never calls the language model and never writes anything. It recomputes the classification from the workbook and the clustering cache when it starts, so what it shows is always consistent with the files named on its Provenance page, not with whatever `gap_report.csv` a different command produced.
 
 Everything in this part is on `main` except the practice quiz section of the student page, which is in open pull request #52 and marked **(PR #52)**.
 
@@ -657,7 +657,7 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 - No dates, so no true time series; "progress" is the declared subject order (IOLG-106), falling back to year level. The default sequence is the three supplied subjects; a real course map from the project owner has not been supplied, so on a larger cohort most subjects are ordered by their year digit and the card says so.
 - The subjects "ahead" of a student are inferred from the competency's subjects they have no results in, not from enrolment records or a course map, so on a large cohort they include subjects from other degrees (Part A §4.5). Reading next semester's enrolments from Moodle, or a course map per degree, would make it a fact; neither is built.
 - No editing: staff decisions on groups are made with `lja.review`, not in the browser.
-- The seven thresholds are unratified defaults (action A-01). Until then, quote the "This run" page with any number.
+- The seven thresholds are unratified defaults (action A-01). Until then, quote the Provenance page with any number.
 - The AI review warning says how many groups were rejected but not which (finding UAT-02, 28 September). The pipeline names the rejected group when it stops; the banner does not yet.
 - After the quick start in §5.3, the bare `lja.plan`, `lja.strategy` and `lja.export` commands stop with "No clustering cache at output/silo_clustering.json" (finding UAT-01). Pass the same `--clustering-cache` to them, as §9 and §10 show.
 - Study strategies are written to files but not shown on the dashboard.
@@ -671,7 +671,7 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 
 **Sources.** Chapter 2 follows the system prompt the clustering model runs under and the staff review states in the review tool; the example groups are the model's own output on the 3-subject fixture (CSE1OOF, CSE2ALG, CSE3CAP). Chapters 3 and 4 follow the classification routine and the priority rule in the dashboard; the three students are real rows from the 100-subject, 5,000-student synthetic catalogue run, with attainments and positions as computed there. Part B's options and defaults were read from each command's argument parser and `python/lja/config.py` on `main` at `cd98ce8` (2 October 2026), and for the quiz from the PR #52 branch at `e203da7`; the subject sequence, the chain and the trend band are from the IOLG-106 branch. Part C's screenshots were taken from the IOLG-134 branch at `0d13e10`, which merged unchanged as PR #43 on 30 September, serving the reference run (`data-fixtures/reference-run/`); no screenshot of the quiz section is included yet.
 
-**Status of the numbers.** The seven thresholds in §3.2 are the code defaults, configurable per run and shown on the dashboard's "This run" page. They are proposals with measurements behind them, not ratified values; ratifying or replacing them is open action A-01. The formal definition of every metric, with its formula and where it is calculated and shown, is Appendix B of the System Maintenance Document.
+**Status of the numbers.** The seven thresholds in §3.2 are the code defaults, configurable per run and shown on the dashboard's Provenance page. They are proposals with measurements behind them, not ratified values; ratifying or replacing them is open action A-01. The formal definition of every metric, with its formula and where it is calculated and shown, is Appendix B of the System Maintenance Document.
 
 **Figures.** Figures 1 to 5 are rendered from the explainer page "From SILOs to Priority Groups" (29 Sep 2026); Figures 6 to 17 are dashboard screenshots. All are under `docs/handover/diagrams/` as files 11 to 14.
 
