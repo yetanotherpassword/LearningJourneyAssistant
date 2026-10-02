@@ -125,6 +125,9 @@ class Subject(BaseModel):
     code: str
     title: str
     year_level: int = Field(ge=1, le=6)
+    # Handbook synopsis (first part), where the source had one. Shown as topic
+    # background on the quiz page; never used by the generator or the clustering.
+    description: str = ""
     # "supplied" for the three real subjects, "handbook" for La Trobe handbook
     # subjects (real SILOs, synthetic assessments), "synthetic" otherwise.
     source: str = "synthetic"
