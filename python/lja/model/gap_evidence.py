@@ -37,12 +37,9 @@ TREND_STABLE = "stable"
 TREND_DECLINING = "declining"
 TREND_INSUFFICIENT = "insufficient evidence"
 
-# Below this many percentage points of difference between the earliest and
-# latest year-level subject, call it "stable" rather than a direction --
-# not a measured threshold, a reasoned starting point (same spirit as
-# OPENAI_TEMPERATURE's default in config.py). Revisit once there's a real
-# multi-cohort dataset to tune it against.
-_STABLE_BAND_PCT = 5.0
+# The stable band and the subject order both live in config / trajectory.py
+# since IOLG-106: LJA_TREND_STABLE_BAND replaces the literal that used to be
+# here, and LJA_SUBJECT_SEQUENCE takes precedence over the year digit below.
 
 # "CSE1OOF" -> 1, "CSE2ALG" -> 2, "CSE3CAP" -> 3. This is reading a real
 # digit out of the subject code, not guessing -- but it assumes a
@@ -111,22 +108,18 @@ def subject_breakdown(
     return evidence
 
 
-def describe_trend(evidence: list[SubjectEvidence], *, stable_band: float = _STABLE_BAND_PCT) -> str:
-    """Compares only the subjects with a real year_level -- see the module
-    docstring for why an assessment-name ordering isn't used instead.
-    Fewer than two such subjects means there's nothing to compare, which is
-    the common case for a single-subject competency (it can never be a
-    "persistent gap" either, by compute_gaps()'s own definition).
+def describe_trend(evidence: list[SubjectEvidence], *, stable_band: float | None = None) -> str:
+    """The trend word across the subjects the student has sat, in the
+    declared sequence (LJA_SUBJECT_SEQUENCE) with the year digit as the
+    fallback -- see trajectory.py. Fewer than two orderable subjects means
+    there's nothing to compare, which is the common case for a
+    single-subject competency (it can never be a "persistent gap" either,
+    by compute_gaps()'s own definition). Kept here so the dashboard, the
+    plan context and the export keep one call and one ordering.
     """
-    ordered = sorted((e for e in evidence if e.year_level is not None), key=lambda e: e.year_level)
-    if len(ordered) < 2:
-        return TREND_INSUFFICIENT
-    delta = ordered[-1].attainment_pct - ordered[0].attainment_pct
-    if delta > stable_band:
-        return TREND_IMPROVING
-    if delta < -stable_band:
-        return TREND_DECLINING
-    return TREND_STABLE
+    from .trajectory import describe_trend as _describe  # local: trajectory imports this module
+
+    return _describe(evidence, stable_band=stable_band)
 
 
 def future_subjects_sharing_competency(

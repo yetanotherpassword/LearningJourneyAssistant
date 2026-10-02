@@ -180,7 +180,14 @@ first, up to eight lines; the table always has every row. This is order, not
 time: the workbook carries no dates, so the section says so and never claims a
 time series. The year level is read from the subject code, as
 `gap_evidence.py` documents, and a code that does not follow that pattern sorts
-last with no trend. The 5-point stable band is unratified (action A-01).
+last with no trend. Since IOLG-106 the order is the **declared subject sequence**
+(`LJA_SUBJECT_SEQUENCE`, default `CSE1OOF,CSE2ALG,CSE3CAP`; the place for the project
+owner's course map), with the year digit as the fallback for any subject not listed, and
+each gap card carries a **subject chain** in that order: subjects the student has sat with
+their attainment there, subjects still ahead marked "ahead · prepare", and an "order:"
+note saying which rule placed them. The stable band is `LJA_TREND_STABLE_BAND` (default 5
+points), shown on `/run` with the gap thresholds; unratified (action A-01). See
+`lja/model/trajectory.py`: order, not time, and never enrolment advice.
 
 **Priority groups.** Below the statistics and charts, flagged students are
 split into three groups that combine classifications the pipeline already

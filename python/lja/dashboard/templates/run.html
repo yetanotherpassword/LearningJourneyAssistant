@@ -104,6 +104,31 @@
   </tbody>
 </table>
 
+<h2 id="ordering">Subject order for progress and trends</h2>
+<p class="dek">
+  The workbook carries no dates, so "progress" on a student's page means position in the intended subject sequence, nothing more.
+  A subject in the declared sequence is ordered by its place in the list; any other subject falls back to the year digit in its code, and each
+  student's page says which rule ordered it.
+</p>
+<table class="compact params">
+  <thead><tr><th>Parameter</th><th>This run</th><th>Environment variable</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>subject_sequence</code></td>
+      <td class="val">{% if ordering.sequence %}{{ ordering.sequence|join(" &rarr; ")|safe }}{% else %}<span class="muted">none declared</span>{% endif %}</td>
+      <td><code>LJA_SUBJECT_SEQUENCE</code>{% if ordering.sequence_env is not none %} <span class="muted">= {{ ordering.sequence_env }}</span>{% endif %}</td>
+      <td class="wording">The declared order of subjects. Where the project owner's course map goes when supplied.
+        {% if ordering.undeclared %}Not declared in this run, so ordered by year digit: {{ ordering.undeclared|length }} subject{{ 's' if ordering.undeclared|length != 1 }}{% if ordering.undeclared|length <= 12 %} ({{ ordering.undeclared|join(", ") }}){% endif %}.{% endif %}</td>
+    </tr>
+    <tr>
+      <td><code>stable_band</code></td>
+      <td class="val">&plusmn;{{ "%g"|format(ordering.band) }} points</td>
+      <td><code>LJA_TREND_STABLE_BAND</code>{% if ordering.band_env is not none %} <span class="muted">= {{ ordering.band_env }}</span>{% endif %}</td>
+      <td class="wording">First-to-last difference inside which a competency's trend is "stable" rather than improving or declining. Unratified (A-01).</td>
+    </tr>
+  </tbody>
+</table>
+
 <div class="chart-card">
   <h3>Where the flagged marks sit</h3>
   <p class="chart-note">Attainment of every flagged competency in this run, 5-point bins. Red bins are below the {{ "%g"|format(rules.absolute_floor) }}% floor; nothing at or above the {{ "%g"|format(rules.absolute_ceiling) }}% ceiling can be flagged.</p>
