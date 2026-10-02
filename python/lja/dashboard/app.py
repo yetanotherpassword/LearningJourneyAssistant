@@ -28,6 +28,7 @@ template that computes its own totals can only be checked by scraping HTML.
 from __future__ import annotations
 
 import json
+import shlex
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -644,6 +645,30 @@ def create_app(
                     "changed": value != default,
                 }
             )
+        # The lja.cli invocation that reproduces this dashboard's numbers as
+        # files: same inputs, plus a flag for every threshold that differs
+        # from the code default. fallback_proficient has no flag, so it is
+        # passed as its environment variable. Paths come from run_info when
+        # the dashboard was started from the command line; an in-process app
+        # has none, and the command says so rather than inventing them.
+        if run_info:
+            parts = ["python", "-m", "lja.cli", shlex.quote(run_info.excel_path),
+                     "--clustering-cache", shlex.quote(run_info.clustering_cache)]
+            if run_info.review_file and run_info.review_file != str(
+                Path(run_info.clustering_cache).with_name(f"{Path(run_info.clustering_cache).stem}.review.json")
+            ):
+                parts += ["--review-file", shlex.quote(run_info.review_file)]
+            env_prefix = []
+            for r in threshold_rows:
+                if not r["changed"]:
+                    continue
+                if r["flag"]:
+                    parts += [r["flag"], f"{r['value']:g}"]
+                else:
+                    env_prefix.append(f"{r['env']}={r['value']:g}")
+            pipeline_command = " ".join(env_prefix + parts)
+        else:
+            pipeline_command = "python -m lja.cli <workbook.xlsx> --clustering-cache <cache.json>   # paths unknown: app created in-process"
         everyone = view_model(_COHORTS_BY_KEY["all"])
         n_clusters = len(clustering.clusters)
         n_silos_clustered = sum(len(c.members) for c in clustering.clusters)
@@ -654,6 +679,7 @@ def create_app(
                 "run_info": run_info,
                 "rules": rules,
                 "threshold_rows": threshold_rows,
+                "pipeline_command": pipeline_command,
                 "gap_summary": everyone["gap_summary"],
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {
