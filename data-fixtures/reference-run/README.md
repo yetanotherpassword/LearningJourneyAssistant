@@ -23,6 +23,7 @@ review of the clustering is in `docs/cluster-review-sprint5.md` (Sui Lung, Sprin
 | `plans/learning_plan_STU0003.*` | Learning plan, persistent gap on the relative basis |
 | `plans/learning_plan_STU0004.*` | Learning plan, persistent gap below the absolute floor |
 | `plans/learning_plan_STU0022.*` | Learning plan, persistent gap on the relative basis at 71.5% |
+| `quizzes/quiz_STU0003.*` | Practice quiz (tender R8 thin slice), mixed policy, 2 written tasks per gap with model answers and marking points; `qwen/qwen3-vl-30b` via LM Studio, 2 Oct 2026. Second-marker review by the same model: every model answer meets its marking points (see `python/README.md` for the same-model caveat) |
 
 ## Using it
 
@@ -54,3 +55,14 @@ python -m lja.review --cluster <id> --state confirmed   # for each of the 5 clus
 python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx
 python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003   # also STU0004, STU0022
 ```
+
+### Demo Sprint 5 staff review
+
+From `python/`:
+
+```bash
+mkdir -p output/demo && cp ../data-fixtures/reference-run/silo_clustering.json output/demo/ && cp ../data-fixtures/reference-run/silo_clustering.review.sui-lung.json output/demo/silo_clustering.review.json
+LJA_DASHBOARD_CLUSTERING_CACHE=output/demo/silo_clustering.json python -m lja.dashboard
+```
+
+The demo copy contains the staff-review verdicts while the committed default review file remains all-confirmed for the offline reference run.

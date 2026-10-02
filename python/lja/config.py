@@ -183,6 +183,22 @@ GAP_MIN_SPREAD = float(os.environ.get("LJA_GAP_MIN_SPREAD", "1.0"))
 # the previous behaviour rather than inventing a third set of semantics.
 GAP_FALLBACK_PROFICIENT = float(os.environ.get("LJA_GAP_FALLBACK_PROFICIENT", "65.0"))
 
+# Trajectory (lja/model/trajectory.py, IOLG-106) -- progress across the
+# intended subject sequence. ORDER, NOT TIME: the workbook has no dates.
+#
+# The declared order of subjects, comma-separated. A subject listed here is
+# ordered by its place in the list; one that is not falls back to the year
+# digit in its code (CSE2ALG -> 2) and the page says so. This is where the
+# project owner's course map (FR-1.7) goes when one is supplied; the
+# default is the three supplied subjects in their known order.
+SUBJECT_SEQUENCE = os.environ.get("LJA_SUBJECT_SEQUENCE", "CSE1OOF,CSE2ALG,CSE3CAP")
+
+# Below this many percentage points of difference between the first and
+# last subject in sequence, a competency's trend is "stable" rather than a
+# direction. A reasoned starting point, not a measured threshold (action
+# A-01 with the gap thresholds); revisit against a real multi-year dataset.
+TREND_STABLE_BAND = float(os.environ.get("LJA_TREND_STABLE_BAND", "5.0"))
+
 # Dashboard (lja/dashboard/) -- read-only against an already-computed
 # pipeline run; it never calls the LLM itself (see the module docstring), so
 # these just need to point at whatever `python -m lja.cli` was last run
@@ -192,6 +208,11 @@ DASHBOARD_EXCEL_PATH = os.environ.get(
 )
 DASHBOARD_CLUSTERING_CACHE = os.environ.get("LJA_DASHBOARD_CLUSTERING_CACHE", "output/silo_clustering.json")
 DASHBOARD_PLANS_DIR = os.environ.get("LJA_DASHBOARD_PLANS_DIR", "output/plans")
+DASHBOARD_QUIZZES_DIR = os.environ.get("LJA_DASHBOARD_QUIZZES_DIR", "output/quizzes")
+
+# Quiz (lja/quiz.py) -- the subject catalogue supplies titles and handbook
+# synopses for the quiz page. Optional: a missing file means codes only.
+QUIZ_CATALOGUE_PATH = os.environ.get("LJA_QUIZ_CATALOGUE", "../data-fixtures/subject_catalogue.yaml")
 
 # Export (lja/export.py) -- structured extract for the department's
 # longitudinal and A/B evaluation (tender requirement 7).

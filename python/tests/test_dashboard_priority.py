@@ -222,3 +222,32 @@ def test_severity_chart_draws_the_floor_and_ceiling_in_force() -> None:
     dataset, gaps = _four_students_one_per_priority()
     body = _client(dataset, gaps, thresholds=GapThresholds(absolute_floor=45.0, absolute_ceiling=80.0)).get("/").text
     assert 'const severityLines = {"floor": 45.0, "ceiling": 80.0};' in body
+
+
+def test_provenance_page_gives_the_pipeline_command_that_reproduces_the_numbers() -> None:
+    """The dashboard classifies at start-up and never reads the CLI's gap
+    report, so the page reconstructs the equivalent lja.cli command from the
+    inputs it does know, with a flag for every threshold that differs from
+    the default and an env prefix for the one that has no flag."""
+    dataset, gaps = _four_students_one_per_priority()
+    info = RunInfo(
+        command="python -m lja.dashboard --excel-path x.xlsx --absolute-floor 45",
+        started_at="2026-10-02 18:20 AEST",
+        excel_path="../data/cohort.xlsx",
+        clustering_cache="x.clustering.json",
+        review_file="x.clustering.review.json",
+        code_version="abc1234",
+        generator=None,
+        environment={},
+    )
+    thresholds = GapThresholds(absolute_floor=45.0, fallback_proficient=60.0)
+    body = _client(dataset, gaps, thresholds=thresholds, run_info=info).get("/run").text
+    assert "Provenance" in body
+    assert "LJA_GAP_FALLBACK_PROFICIENT=60 python -m lja.cli ../data/cohort.xlsx --clustering-cache x.clustering.json --absolute-floor 45" in body
+    assert "--review-file" not in body  # the default review path beside the cache is not repeated
+
+
+def test_provenance_page_without_run_info_does_not_invent_paths() -> None:
+    dataset, gaps = _four_students_one_per_priority()
+    body = _client(dataset, gaps).get("/run").text
+    assert "paths unknown" in body

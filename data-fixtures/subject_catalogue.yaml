@@ -87,6 +87,12 @@ subjects:
     title: Object-Oriented Programming Fundamentals
     year_level: 1
     source: supplied
+    # Handbook synopsis from data-fixtures/handbook/cache/2026/CSE1OOF.html (La Trobe handbook 2026).
+    description: >-
+      The Object-Oriented (OO) paradigm is a significant influence in software development in the computer
+      industry. It divides a system into objects that exist in the model of the application domain. In
+      this subject, students will be introduced to OO concepts, terminologies, syntax and programming
+      using Java.
     silos:
       - id: SILO1
         text: analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour
@@ -123,6 +129,13 @@ subjects:
     title: Algorithms and Data Structures
     year_level: 2
     source: supplied
+    # Handbook synopsis from data-fixtures/handbook/cache/2026/CSE2ALG.html (La Trobe handbook 2026).
+    description: >-
+      This subject covers a range of important algorithms and data structures. Data structures for
+      implementing containers are covered and include linear structures, tree structures and hash tables.
+      Algorithms for insertion and deletion of elements, and algorithms for searching and sorting on these
+      structures are covered where appropriate. Graphs and graph algorithms are also covered. Students
+      will learn the construction and workings of the data structures and algorithms covered.
     silos:
       - id: SILO1
         text: overall objectives of Algorithms and Data Structures
@@ -158,6 +171,12 @@ subjects:
     title: Capstone Project
     year_level: 3
     source: supplied
+    # Handbook synopsis from data-fixtures/handbook/cache/2026/CSE3CAP.html (La Trobe handbook 2026).
+    description: >-
+      This subject enables you to develop your skills to implement a small or medium-sized project in a
+      team. You will address a real-life problem in software engineering or cybersecurity. The subject
+      covers the skills to manage, implement and report on the delivery of a substantive project to
+      appropriate stakeholders. You will make milestone presentations with your team.
     silos:
       - id: SILO1
         text: advanced project management during substantive development implementation

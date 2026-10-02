@@ -38,6 +38,7 @@
   <li><a href="#standard-deviation">Standard deviation</a></li>
   <li><a href="#subject">Subject</a></li>
   <li><a href="#synthetic">Synthetic cohort</a></li>
+  <li><a href="#trajectory">Trajectory and subject sequence</a></li>
   <li><a href="#variance">Variance</a></li>
 </ol>
 
@@ -135,6 +136,9 @@
 
   <div id="synthetic"><dt>Synthetic cohort</dt>
     <dd>Students generated from a subject catalogue rather than exported from Moodle. When the generator's record sits beside the workbook, <a href="/run#generator">this run</a> shows its seed and parameters. A synthetic cohort has real subjects and SILOs but invented marks.</dd></div>
+
+  <div id="trajectory"><dt>Trajectory and subject sequence</dt>
+    <dd>A student's attainment in one competency, subject by subject, in the order the degree intends the subjects to be taken, with the subjects not yet sat shown ahead. Order, not time: the data carries no dates. The order comes from the declared sequence{% if rules.subject_sequence %} (<code>{{ rules.subject_sequence }}</code> in this run){% endif %}, or from the year digit in a subject's code when it is not declared, and each card says which. The trend compares the first and last subjects sat: more than {{ "%g"|format(rules.stable_band) }} points up is improving, more than {{ "%g"|format(rules.stable_band) }} down is declining, otherwise stable; fewer than two orderable subjects is insufficient evidence. A subject ahead is where the competency is assessed next and a reason to prepare, never a subject to avoid.</dd></div>
 
   <div id="variance"><dt>Variance</dt>
     <dd>The mean of the squared distances from the mean. In squared percentage points, so the standard deviation is the readable version of the same spread.</dd></div>

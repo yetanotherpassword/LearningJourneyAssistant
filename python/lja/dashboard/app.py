@@ -28,6 +28,7 @@ template that computes its own totals can only be checked by scraping HTML.
 from __future__ import annotations
 
 import json
+import shlex
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -37,6 +38,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from .. import config
 from ..data.excel_loader import LjaDataset, StudentSummary
 from ..model.gap_detection import (
     BASIS_CEILING,
@@ -46,8 +48,9 @@ from ..model.gap_detection import (
     CompetencyGap,
     GapThresholds,
 )
-from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
+from ..model.gap_evidence import subject_breakdown
 from ..model.learning_plan import LearningPlan
+from ..model.quiz import QuizDocument
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
     assess_silos,
@@ -60,6 +63,7 @@ from ..model.silo_quality import (
     summarise_subjects,
     term_weights,
 )
+from ..model.trajectory import SubjectSequence, compute_trajectory
 from ..review import cluster_id
 from .run_info import RunInfo
 from .stats import histogram, summarise
@@ -241,6 +245,7 @@ def create_app(
     thresholds: GapThresholds | None = None,
     run_info: RunInfo | None = None,
     plans_dir: Path | None = None,
+    quizzes_dir: Path | None = None,
 ) -> FastAPI:
     """`thresholds` must be the object compute_gaps() was given for `gaps`.
 
@@ -250,6 +255,8 @@ def create_app(
     to GapThresholds() because that is also compute_gaps()'s default.
     `run_info` is the provenance __main__.py collected; None (tests, or an
     embedding caller) leaves the /run page's command section out honestly.
+    `plans_dir` and `quizzes_dir` are where lja.plan and lja.quiz wrote
+    their JSON; None, or a missing file, gives the page's empty state.
     """
     thresholds = thresholds or GapThresholds()
     app = FastAPI(title="LJA Dashboard")
@@ -327,7 +334,12 @@ def create_app(
         "min_spread": thresholds.min_spread,
         "fallback_proficient": thresholds.fallback_proficient,
         "persistent_min_subjects": PERSISTENT_MIN_SUBJECTS,
+        # Trajectory (IOLG-106): order, not time. The sequence and the band
+        # are configuration like the thresholds above, and /run shows them.
+        "subject_sequence": config.SUBJECT_SEQUENCE,
+        "stable_band": config.TREND_STABLE_BAND,
     }
+    sequence = SubjectSequence.from_config()
 
     def members(cohort: _Cohort) -> list[StudentSummary]:
         return [
@@ -546,18 +558,24 @@ def create_app(
             }
         )
 
-        # Evidence/trend/future-subjects per gap -- see gap_evidence.py for
-        # what's grounded here vs deliberately not claimed (no LLM call).
+        # Evidence/trend/future-subjects per gap -- see gap_evidence.py and
+        # trajectory.py for what's grounded here vs deliberately not claimed
+        # (no LLM call). The trajectory orders the competency's subjects by
+        # the declared sequence (IOLG-106); the trend word is its label, and
+        # the subjects ahead are shown only for a gap, because "prepare for"
+        # is advice about a weakness, not a remark to make about a strength.
         gap_details = []
         for gap in student_gaps:
             evidence = subject_breakdown(dataset, clustering, student_id, gap.competency_label)
+            trajectory = compute_trajectory(dataset, clustering, student_id, gap.competency_label, sequence=sequence)
             gap_details.append(
                 {
                     "gap": gap,
                     "evidence": evidence,
-                    "trend": describe_trend(evidence),
+                    "trend": trajectory.label,
+                    "trajectory": trajectory,
                     "future_subjects": (
-                        future_subjects_sharing_competency(dataset, clustering, student_id, gap.competency_label)
+                        [p.subject_code for p in trajectory.ahead]
                         if gap.classification in _AT_RISK_CLASSIFICATIONS
                         else None
                     ),
@@ -570,7 +588,7 @@ def create_app(
         # this is "first-year subject, then second, then third" and nothing
         # more. The trend word is the one the gap card already shows.
         year_of = {e.subject_code: e.year_level for d in gap_details for e in d["evidence"]}
-        progress_subjects = sorted(year_of, key=lambda c: (year_of[c] is None, year_of[c] or 0, c))
+        progress_subjects = sorted(year_of, key=lambda c: sequence.sort_key(c, year_of[c]))
         progress_rows = []
         for d in gap_details:
             by_subject = {e.subject_code: e.attainment_pct for e in d["evidence"]}
@@ -604,12 +622,22 @@ def create_app(
                     plan_path.read_text(encoding="utf-8")
                 )
 
+        # Practice quiz (tender R8): rendered only from the JSON lja.quiz
+        # wrote, never generated here. The page says what the grounding
+        # checks cover and what they do not (the answer key).
+        quiz = None
+        if quizzes_dir is not None:
+            quiz_path = quizzes_dir / f"quiz_{student_id}.json"
+            if quiz_path.exists():
+                quiz = QuizDocument.model_validate_json(quiz_path.read_text(encoding="utf-8"))
+
         return templates.TemplateResponse(
             request,
             "student.html",
             {
                 "summary": summary,
                 "plan": plan,
+                "quiz": quiz,
                 "strengths": strengths,
                 "gap_details": gap_details,
                 "progress_subjects": progress_subjects,
@@ -642,6 +670,30 @@ def create_app(
                     "changed": value != default,
                 }
             )
+        # The lja.cli invocation that reproduces this dashboard's numbers as
+        # files: same inputs, plus a flag for every threshold that differs
+        # from the code default. fallback_proficient has no flag, so it is
+        # passed as its environment variable. Paths come from run_info when
+        # the dashboard was started from the command line; an in-process app
+        # has none, and the command says so rather than inventing them.
+        if run_info:
+            parts = ["python", "-m", "lja.cli", shlex.quote(run_info.excel_path),
+                     "--clustering-cache", shlex.quote(run_info.clustering_cache)]
+            if run_info.review_file and run_info.review_file != str(
+                Path(run_info.clustering_cache).with_name(f"{Path(run_info.clustering_cache).stem}.review.json")
+            ):
+                parts += ["--review-file", shlex.quote(run_info.review_file)]
+            env_prefix = []
+            for r in threshold_rows:
+                if not r["changed"]:
+                    continue
+                if r["flag"]:
+                    parts += [r["flag"], f"{r['value']:g}"]
+                else:
+                    env_prefix.append(f"{r['env']}={r['value']:g}")
+            pipeline_command = " ".join(env_prefix + parts)
+        else:
+            pipeline_command = "python -m lja.cli <workbook.xlsx> --clustering-cache <cache.json>   # paths unknown: app created in-process"
         everyone = view_model(_COHORTS_BY_KEY["all"])
         n_clusters = len(clustering.clusters)
         n_silos_clustered = sum(len(c.members) for c in clustering.clusters)
@@ -652,6 +704,18 @@ def create_app(
                 "run_info": run_info,
                 "rules": rules,
                 "threshold_rows": threshold_rows,
+                "ordering": {
+                    "sequence": sequence.declared,
+                    "sequence_env": run_info.environment.get("LJA_SUBJECT_SEQUENCE") if run_info else None,
+                    "band": config.TREND_STABLE_BAND,
+                    "band_env": run_info.environment.get("LJA_TREND_STABLE_BAND") if run_info else None,
+                    # Subjects in this run that the declared sequence does not
+                    # cover, so a reader knows which ones fell back to the digit.
+                    "undeclared": sorted(
+                        {r.subject_code for r in subject_rows} - set(sequence.declared)
+                    ),
+                },
+                "pipeline_command": pipeline_command,
                 "gap_summary": everyone["gap_summary"],
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {

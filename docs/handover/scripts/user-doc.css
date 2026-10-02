@@ -1,0 +1,8 @@
+/* User Document additions on top of smd.css: keep every figure on one page. */
+p:has(> img) { break-inside: avoid; page-break-inside: avoid; text-align: center; margin: 0.8em 0 0.3em; }
+p:has(> img) + p { break-before: avoid; page-break-before: avoid; }
+img { max-width: 100%; max-height: 23.5cm; width: auto; height: auto; }
+/* Part headings (level 1) start a new page; chapter headings (level 2) flow on. */
+h1 { page-break-before: always; font-size: 20pt; }
+h1:first-of-type { page-break-before: auto; }
+h2 { page-break-before: auto; }

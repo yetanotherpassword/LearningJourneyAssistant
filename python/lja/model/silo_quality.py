@@ -33,9 +33,10 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from statistics import fmean
 
+from .. import config
 from ..data.excel_loader import LjaDataset
 from .gap_detection import CompetencyGap, build_silo_to_competency_map
-from .gap_evidence import _STABLE_BAND_PCT, _parse_year_level
+from .gap_evidence import _parse_year_level
 from .silo_clustering import SiloClusteringResult
 
 _GAP_CLASSIFICATIONS = frozenset({"persistent gap", "isolated gap"})
@@ -216,9 +217,10 @@ class CompetencyProgression:
         delta = self.delta
         if delta is None:
             return "insufficient evidence"
-        if delta > _STABLE_BAND_PCT:
+        # The same band the student page's trend uses (LJA_TREND_STABLE_BAND, IOLG-106).
+        if delta > config.TREND_STABLE_BAND:
             return "improving"
-        if delta < -_STABLE_BAND_PCT:
+        if delta < -config.TREND_STABLE_BAND:
             return "declining"
         return "stable"
 

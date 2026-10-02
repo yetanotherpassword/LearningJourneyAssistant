@@ -1,0 +1,143 @@
+{
+  "student_id": "STU0003",
+  "introduction": "This quiz is practice, not assessment. It covers two competencies marked as gaps: 'Object-Oriented Design and Implementation' and 'Data Structures and Algorithms'. Each competency has two questions to help you check your understanding and close the gap.",
+  "items": [
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "gap_kind": "isolated gap",
+      "subject_code": "CSE1OOF",
+      "silo_key": "CSE1OOF:SILO1",
+      "assessment_key": "CSE1OOF:Test",
+      "kind": "written",
+      "stem": "Compare and contrast object-oriented modelling using objects that combine data structure and behaviour with a procedural approach. Explain how this difference supports analysis, design, and implementation in a real-life problem context.",
+      "options": [],
+      "correct_index": null,
+      "model_answer": "Object-oriented modelling combines data and behaviour within objects, promoting modularity and encapsulation. In contrast, procedural programming separates data and functions, often leading to tightly coupled code. For example, in a library system, an object-oriented approach uses a Book object with attributes like title and methods like borrow(), making the design more intuitive and easier to maintain. This supports analysis by aligning the model with real-world entities, design by enabling modular components, and implementation by reducing dependencies and improving code reuse.",
+      "marking_points": [
+        "Clearly contrasts object-oriented and procedural approaches",
+        "Explains how combining data and behaviour supports analysis",
+        "Explains how combining data and behaviour supports design",
+        "Explains how combining data and behaviour supports implementation",
+        "Provides a relevant real-life example"
+      ],
+      "explanation": "This question targets SILO CSE1OOF:SILO1, which requires analysis/design/implementation compared with object-oriented modelling using objects that combine data structure and behaviour. The feedback from CSE1OOF:Test noted a need for stronger evidence in explaining design decisions, so this written task prompts the student to articulate the conceptual difference and its practical impact. A strong answer will clearly contrast the two paradigms and link them to real-life problem-solving."
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "gap_kind": "isolated gap",
+      "subject_code": "CSE1OOF",
+      "silo_key": "CSE1OOF:SILO3",
+      "assessment_key": "CSE1OOF:Assignment",
+      "kind": "written",
+      "stem": "Design a Java class that demonstrates code sharing and reuse through object-oriented techniques. Explain how your design reduces development time and supports maintainability.",
+      "options": [],
+      "correct_index": null,
+      "model_answer": "A Java class like 'Vehicle' with common attributes (e.g., speed, fuelLevel) and methods (e.g., start(), stop()) can be extended by subclasses like 'Car' and 'Bike'. This reuse reduces development time because common functionality is defined once. It also improves maintainability because changes to shared code (e.g., fuel consumption logic) are applied in one place, reducing the risk of inconsistencies across the system.",
+      "marking_points": [
+        "Designs a class that enables code sharing and reuse",
+        "Explains how the design reduces development time",
+        "Explains how the design supports maintainability",
+        "Uses appropriate object-oriented techniques (e.g., inheritance)",
+        "Provides a clear and practical example"
+      ],
+      "explanation": "This question targets SILO CSE1OOF:SILO3, which focuses on code sharing and reuse through object-oriented techniques to reduce development time. The feedback from CSE1OOF:Assignment emphasized the need for clearer reasoning and technical precision, so this task requires the student to design a reusable class and justify its benefits. A strong answer will show a practical example of reuse and link it to development efficiency."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "gap_kind": "persistent gap",
+      "subject_code": "CSE2ALG",
+      "silo_key": "CSE2ALG:SILO2",
+      "assessment_key": "CSE2ALG:Test",
+      "kind": "written",
+      "stem": "Identify a data structure and a sorting algorithm suitable for managing a large list of student records that must be frequently searched and sorted by name. Justify your choices based on performance and use case.",
+      "options": [],
+      "correct_index": null,
+      "model_answer": "A hash table with a hash function based on student name is ideal for fast lookups, providing O(1) average-case search time. For sorting, merge sort is suitable because it guarantees O(n log n) time complexity and is stable, preserving order for equal keys. This combination ensures efficient searching and consistent sorting performance, which is critical for a large student database.",
+      "marking_points": [
+        "Identifies a suitable data structure (e.g., hash table)",
+        "Identifies a suitable sorting algorithm (e.g., merge sort)",
+        "Justifies the data structure choice based on performance",
+        "Justifies the sorting algorithm choice based on performance",
+        "Links choices to the specific use case (e.g., frequent searches and sorting)"
+      ],
+      "explanation": "This question targets SILO CSE2ALG:SILO2, which requires identifying data structures and searching and sorting algorithms in computing contexts. The feedback from CSE2ALG:Test noted a need for clearer reasoning, so this task prompts the student to justify their choices. A strong answer will link the data structure and algorithm to the specific requirements of the use case."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "gap_kind": "persistent gap",
+      "subject_code": "CSE2ALG",
+      "silo_key": "CSE2ALG:SILO5",
+      "assessment_key": "CSE2ALG:Assignment",
+      "kind": "written",
+      "stem": "Design a Java solution to process a stream of incoming sensor readings. Evaluate your solution using appropriate performance measures (e.g., time complexity, space complexity) and explain how you would improve it if performance were inadequate.",
+      "options": [],
+      "correct_index": null,
+      "model_answer": "Use a circular buffer (array-based queue) to store sensor readings, allowing O(1) insertion and O(1) retrieval. The time complexity is O(n) for processing n readings, and space complexity is O(n) for storing the buffer. If performance were inadequate, I would use a more efficient data structure like a heap for priority-based processing or implement batch processing to reduce overhead.",
+      "marking_points": [
+        "Designs a Java solution for processing sensor readings",
+        "Evaluates the solution using appropriate performance measures (e.g., time and space complexity)",
+        "Explains the evaluation clearly",
+        "Proposes a realistic improvement strategy",
+        "Links the improvement to the performance issue"
+      ],
+      "explanation": "This question targets SILO CSE2ALG:SILO5, which requires designing, implementing, and evaluating Java solutions using performance measures. The feedback from CSE2ALG:Assignment emphasized the need for more complete testing and reflection, so this task prompts the student to evaluate their solution and propose improvements. A strong answer will include a clear design, performance analysis, and a realistic improvement strategy."
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSE1OOF",
+      "title": "Object-Oriented Programming Fundamentals",
+      "year_level": 1,
+      "synopsis": "The Object-Oriented (OO) paradigm is a significant influence in software development in the computer industry. It divides a system into objects that exist in the model of the application domain. In this subject, students will be introduced to OO concepts, terminologies, syntax and programming using Java."
+    },
+    {
+      "code": "CSE2ALG",
+      "title": "Algorithms and Data Structures",
+      "year_level": 2,
+      "synopsis": "This subject covers a range of important algorithms and data structures. Data structures for implementing containers are covered and include linear structures, tree structures and hash tables. Algorithms for insertion and deletion of elements, and algorithms for searching and sorting on these structures are covered where appropriate. Graphs and graph algorithms are also covered. Students will learn the construction and workings of the data structures and algorithms covered."
+    },
+    {
+      "code": "CSE3CAP",
+      "title": "Capstone Project",
+      "year_level": 3,
+      "synopsis": "This subject enables you to develop your skills to implement a small or medium-sized project in a team. You will address a real-life problem in software engineering or cybersecurity. The subject covers the skills to manage, implement and report on the delivery of a substantive project to appropriate stakeholders. You will make milestone presentations with your team."
+    }
+  ],
+  "educator_review": {
+    "notes": [
+      {
+        "question_index": 0,
+        "chosen_index": null,
+        "marking_verdict": "meets",
+        "confidence": "high",
+        "teaching_explanation": "The model answer correctly contrasts object-oriented and procedural programming by highlighting encapsulation and modularity in OO, versus data-function separation in procedural approaches. It explains how combining data and behaviour supports analysis by aligning the model with real-world entities, design by enabling modular components, and implementation by reducing dependencies and improving reuse. The library system example is relevant and clearly illustrates these concepts. All marking points are addressed, and the explanation is clear and concise, demonstrating understanding of SILO1: analysis/design/implementation in object-oriented modelling.",
+        "concerns": ""
+      },
+      {
+        "question_index": 1,
+        "chosen_index": null,
+        "marking_verdict": "meets",
+        "confidence": "high",
+        "teaching_explanation": "The model answer effectively designs a Java class ('Vehicle') that demonstrates code reuse through inheritance, with subclasses like 'Car' and 'Bike'. It explains how this reduces development time by avoiding redundant code and supports maintainability by centralizing shared functionality. The use of inheritance is appropriate and clearly linked to the goal of code sharing. The example is practical and relevant, satisfying all marking points. This response aligns well with SILO3: code sharing and reuse through object-oriented techniques.",
+        "concerns": ""
+      },
+      {
+        "question_index": 2,
+        "chosen_index": null,
+        "marking_verdict": "meets",
+        "confidence": "high",
+        "teaching_explanation": "The model answer correctly identifies a hash table for fast lookups and merge sort for stable, efficient sorting, both suitable for managing student records. It justifies the hash table with O(1) average search time and merge sort with O(n log n) guaranteed performance, linking these choices to the need for frequent searches and sorting. The explanation is clear and directly addresses the use case. All marking points are met, and the response demonstrates strong understanding of SILO2: identifying data structures and algorithms in computing contexts.",
+        "concerns": ""
+      },
+      {
+        "question_index": 3,
+        "chosen_index": null,
+        "marking_verdict": "meets",
+        "confidence": "high",
+        "teaching_explanation": "The model answer designs a circular buffer for sensor data processing, evaluating it with O(1) insertion/retrieval and O(n) time complexity for processing n readings, along with O(n) space complexity. It explains the evaluation clearly and proposes realistic improvements like using a heap for priority processing or batch processing to reduce overhead. The solution is appropriate for a stream of sensor readings, and the performance measures are correctly applied. The response satisfies all marking points and demonstrates competence in SILO5: designing, implementing, and evaluating Java solutions with performance measures.",
+        "concerns": ""
+      }
+    ],
+    "reviewer": "provider=openai_compatible model=qwen/qwen3-vl-30b base_url=http://localhost:1234/v1/ temperature=0.2 max_tokens=16000"
+  }
+}

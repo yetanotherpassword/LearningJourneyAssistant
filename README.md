@@ -22,9 +22,10 @@ and open http://127.0.0.1:8000/ — see [python/README.md](python/README.md#dash
 Extraction through gap-detection now runs end-to-end against a real supplied
 Extraction through gap-detection now runs end-to-end against a real supplied
 dataset, and a read-only dashboard (above) presents the results. The first
-generation feature — a per-student learning plan, grounding-validated against
-its input — also runs on top of the gap data. The other generation features
-(quizzes, study strategies) don't exist yet.
+generation features — a per-student learning plan, study strategies and a
+practice quiz, each grounding-validated against its input — also run on top of
+the gap data. The quiz is a thin slice: the checks ground every reference but
+cannot check the answer key (see `python/README.md`, "Practice quiz").
 
 | Bundle | Contents | Status |
 | --- | --- | --- |
@@ -91,9 +92,11 @@ Planned in order (must-haves from the project proposal, sequenced by dependency)
    **Learning plans: first slice done** (`python -m lja.plan`, see
    `python/README.md`'s "Learning plans" section) — every name in the output
    is validated against the input and the build fails if one isn't there.
-   Study-strategy recommendations not started.
+   **Study strategies: done** (`python -m lja.strategy`, IOLG-123).
 5. **Adaptive quiz generation** aligned to identified gaps — last must-have,
-   first descope candidate if the schedule slips.
+   first descope candidate if the schedule slips, and cut as pre-agreed.
+   **A thin slice exists** (`python -m lja.quiz`): grounded references, staff
+   review of the answers still required; see `python/README.md`.
 6. Stretch: custom Moodle plugin exposing rubric fills as a web service;
    longitudinal cross-subject tracking; the production Moodle-DB path wired
    up as an alternative to the Excel loader.
