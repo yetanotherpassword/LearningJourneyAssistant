@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.5 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
+| **Status** | DRAFT 0.6 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
 | **Date** | 2 October 2026 |
 | **Describes** | `main` at `cd98ce8` (2 Oct 2026, after PR #49) plus the open code pull requests #25 (clusters page), #52 (practice quiz) and the IOLG-106 trajectory branch this revision ships on, labelled where they matter. PR #48 holds the previous revision of this document. |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
@@ -47,7 +47,8 @@ The problem it addresses, from the tender: students "lack a reliable way to unde
 | Dashboard: cohort list, statistics, cohort drill-down, per-student gaps with evidence, unreviewed-AI banner | Working |
 | Dashboard: strengths view and student picker | Working (IOLG-112, PR #23) |
 | Dashboard: progress across subjects; recommended next actions from the learning plan | Working (IOLG-107, PR #33; IOLG-122, PR #35) |
-| Trajectory: declared subject sequence, subject chain on every gap card, configurable stable band | Built on the IOLG-106 branch (§3.11) |
+| Trajectory: declared subject sequence, subject chain on every gap card, configurable stable band | Working (IOLG-106, PR #53) |
+| Generate or regenerate a plan or quiz from the student page, opt-in, with the command's own progress | Built on the IOLG-137 branch (D20) |
 | Dashboard: priority groups, `/run` provenance page, `/glossary`, every count tile links to its list, chart enlarge, bounded scroll boxes | Working (IOLG-134, PR #43) |
 | Dashboard: outcome quality (`/silos`), competencies, subjects and assessments pages, competency traceability diagram | Working (IOLG-132, PR #28; PR #43) |
 | Dashboard: competency clusters page linked from the banner | Open PR #25 |
@@ -232,7 +233,9 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 
 **D8. Relative gap detection with median and MAD (ADR 0001).** The owner's primary signal is "variability within a discipline, not raw failure". Position = (attainment − student's median) / MAD. Median and MAD rather than mean and SD because a student carries roughly 4–8 competencies and at that n one catastrophic result drags the mean far enough to hide everything else. Absolute floor (50) and ceiling (75) are checked first so a uniformly weak student still gets gaps and a uniformly strong one gets none. Fallbacks (too few competencies, flat profile) are recorded in `classification_basis`. **Every threshold is an environment variable and every default is a documented proposal, not a ratified value**: the owner confirmed there is no institutional at-risk number. *Usability for the student; limitation is that the supplied dataset is nearly flat (§3.9).*
 
-**D9. Dashboard is read-only and never calls the LLM.** A page load must never trigger a billed API call. The app is a `create_app(dataset, gaps, clustering, review_warning)` factory; everything is computed at start-up from the cache. Statistics are population statistics computed in `stats.py`; sorting is progressive enhancement in 83 lines of vanilla JS. *Usability, cost control.* Limitation: no auto-reload, no auth, Excel source only.
+**D9. Dashboard is read-only and never calls the LLM on a page load.** A page load must never trigger a billed API call. The app is a `create_app(dataset, gaps, clustering, review_warning)` factory; everything is computed at start-up from the cache. Statistics are population statistics computed in `stats.py`; sorting is progressive enhancement in 83 lines of vanilla JS. *Usability, cost control.* Limitation: no auto-reload, no auth, Excel source only. D20 adds the one deliberate exception.
+
+**D20. Generation from the student page is a button, opt-in, and a subprocess of the same command** (IOLG-137). Where a plan or quiz is missing the page used to print the command to type; the project owner's reviewer asked for a button. The button exists only when the dashboard is started with `--allow-generate` (or `LJA_DASHBOARD_GENERATE=1`), because the dashboard has no login and a control that spends LLM calls must be an operator's choice; the Provenance page says whether it is on. A press is an explicit `POST`, never a page load, and it runs `python -m lja.plan` or `lja.quiz` for that one student with the workbook, cache and review file the dashboard was started from, into the directories it reads. There is no second code path to a model, so the gate, the grounding and the fail-closed rule are the CLI's own. The page polls the job and shows the command's output lines (each grounding attempt), then re-renders from the file; the CLI writes only after grounding passes, so a failed run leaves the previous file untouched. One job per student and artefact at a time. *Usability for staff; D9's cost rule kept.* Limitation: no queue, no cancel, and anyone who can reach the port can press the button, which is why it is off by default and the dashboard binds to localhost.
 
 **D10. Generated artefacts are separate commands.** `lja.plan` is not part of `lja.cli` so that re-running the pipeline never silently re-spends plan calls. *Cost control.*
 
@@ -269,6 +272,7 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 | Threat (STRIDE) | Where | Control in place | Gap / recommendation |
 |---|---|---|---|
 | **Spoofing** a viewer | Dashboard | Bound to `127.0.0.1` by default; no accounts | No authentication. Never bind `--host 0.0.0.0` on a shared network with real data. Auth is future work. |
+| **Denial of service** or cost by pressing Generate | Student page (IOLG-137) | Off unless `--allow-generate`; one job per student and artefact; Provenance page states it is on; the CLI's own gate and attempt limit | With it on, anyone reaching the port can start LLM calls. Keep it off on anything but localhost; add auth before exposing it. |
 | **Tampering** with the review file | `output/*.review.json` | Separate from the cache; state machine forbids flipping confirmed→rejected directly | File is plain JSON with no signature. Keep `output/` on an operator-only path; consider a hash in the file. |
 | **Tampering** with Moodle | Postgres | Role `lja_reader` is `SELECT`-only; nothing in the code issues a write; fixtures mark via `assign::save_grade()` | **Observed on the dev instance, 28 Sep (IOLG-111):** role created from the `sql/README.md` DDL; `UPDATE m_user` as `lja_reader` returned `permission denied`; a `pg_dump --data-only` checksum was identical before and after `lja.cli --source moodle` (21,554 data lines byte-identical). Not yet applied on a shared or production instance. |
 | **Repudiation** of a staff decision | Review file | `note` field; git history if committed | No reviewer identity or timestamp is stored. Add `reviewed_by` and `reviewed_at`. |
@@ -494,6 +498,7 @@ All configuration is environment variables, read in exactly one place: `python/l
 | `LJA_DASHBOARD_CLUSTERING_CACHE` | `output/silo_clustering.json` | Dashboard cache |
 | `LJA_DASHBOARD_PLANS_DIR` | `output/plans` | Where the dashboard looks for `learning_plan_<id>.json` (D7) |
 | `LJA_DASHBOARD_QUIZZES_DIR` | `output/quizzes` | Where the dashboard looks for `quiz_<id>.json` (PR #52) |
+| `LJA_DASHBOARD_GENERATE` | unset (off) | `1` shows Generate buttons on the student page (D20); same as `--allow-generate` |
 | `LJA_QUIZ_CATALOGUE` | `../data-fixtures/subject_catalogue.yaml` | Subject titles and handbook synopses for the quiz; skipped if missing (PR #52) |
 | `LJA_EMBED_MODEL` | `nomic-embed-text` | Embedding model for the catalogue competency tagger, always via the OpenAI-compatible endpoint (`ollama pull nomic-embed-text`) |
 | `LJA_EXPORT_SALT` | empty | Key for `lja.export --anonymise`. No default on purpose; empty refuses the run. Keep it out of git |
@@ -512,7 +517,7 @@ Run everything from `python/` with the `lja` environment active.
 | `python -m lja.quiz [xlsx] STUxxxx` (PR #52) | Grounded practice quiz per gap, with a blind educator review | Same as `lja.plan`, plus `--catalogue`, `--items-per-gap`, `--format multiple_choice\|written\|mixed`, `--skip-educator-review` | 0 ok or no gap; 1 never grounded; 2 precondition |
 | `python -m lja.export [xlsx] --out DIR` | Three research CSVs and a manifest from the cached run; no LLM | `--source`, `--clustering-cache`, `--anonymise` | 0 ok; 2 no cache or empty salt |
 | `python -m lja.grounding_audit` | The IOLG-121 audit: plans for a fixed ten students with every attempt recorded, plus evidence pairs | | |
-| `python -m lja.dashboard` | Serve the dashboard | `--excel-path`, `--clustering-cache`, `--host`, `--port`, `--absolute-floor`, `--absolute-ceiling`; `LJA_DASHBOARD_PLANS_DIR` for plans | 1 if cache missing |
+| `python -m lja.dashboard` | Serve the dashboard | `--excel-path`, `--clustering-cache`, `--host`, `--port`, `--absolute-floor`, `--absolute-ceiling`, `--allow-generate` (D20); `LJA_DASHBOARD_PLANS_DIR`, `LJA_DASHBOARD_QUIZZES_DIR` | 1 if cache missing |
 | `python -m lja.data.synth_generator src.xlsx --add N --out f.xlsx` | Add synthetic students to the supplied workbook, with planted gaps | `--planted-gap-silos`, `--seed`, `--no-llm-feedback` | |
 | `python -m lja.data.catalogue_generator catalogue.yaml --students N --out f.xlsx` | Generate a cohort with per-competency ability, programs and ground truth; optional Moodle fixtures | `--seed`, `--competency-sd`, `--planted-gap-*`, `--program-selection`, `--latent-share`, `--moodle-out` | |
 | `python -m lja.data.catalogue_verify truth.json --gaps gap_report.csv` | Score a run against ground truth | `--clustering`, `--min-recall` | 1 if below recall |
@@ -568,8 +573,8 @@ LearningJourneyAssistant/
 │   │   │                        handbook.py (crawl) · competency_tagger.py (embeddings + k-means)
 │   │   ├── model/               silo_clustering.py · gap_detection.py · gap_evidence.py · trajectory.py (IOLG-106) · learning_plan.py · study_strategy.py (379)
 │   │   │                        silo_quality.py (532) · quiz.py (732, PR #52)
-│   │   └── dashboard/           app.py (routes, 1,032) · run_info.py · stats.py · __main__.py · templates/ (21 files; _macros.html holds the tile and scrollbox macros)
-│   │                            static/{style.css, sort.js, scrollbox.js, chartzoom.js}
+│   │   └── dashboard/           app.py (routes) · run_info.py · generate.py (IOLG-137 jobs) · stats.py · __main__.py · templates/ (21 files; _macros.html holds the tile and scrollbox macros)
+│   │                            static/{style.css, sort.js, scrollbox.js, chartzoom.js, generate.js}
 │   ├── tests/                   30 files, 273 test functions, all offline; tests/validation/cases.csv is the IOLG-110 worksheet
 │   └── output/                  gitignored: caches, review file, CSVs, plans, strategies, quizzes, export
 ├── sql/                         moodle_attainment_extraction.sql (Queries 1–6), lja_reader DDL, README with the join gotchas
@@ -637,6 +642,8 @@ To change protection rules you need repository admin; the settings and the reaso
 
 **Add a generated artefact.** Follow `learning_plan.py`, or better `study_strategy.py` and `quiz.py` (PR #52), which are the two later copies of the same pattern: a Pydantic schema with `extra="forbid"`; a `*Context` dataclass whose `known_*` properties define the vocabulary; a list of `ReferenceCheck`s including a regex scan of every prose field, filed per competency where the artefact is per gap; a generate loop that quotes grounding errors back and fails closed; its own `python -m lja.<name>` command built on `build_plan_context()` that respects the review gate and exits 0 without an LLM call when the student has nothing to act on. If the dashboard shows it, the page reads the JSON from a directory setting and never generates. The tender says quizzes are "most likely to look plausible while quietly not being grounded", which is why this discipline is not optional, and §3.10 records the limit grounding cannot cross.
 
+**Add a generated artefact to the Generate button.** One entry in `ARTEFACTS` in `dashboard/generate.py` (module, output file name, label) and a `generate_box` call in `student.html` beside the section that renders it; the job runner, routes and polling script are shared. Study strategies are the obvious candidate once the page shows them.
+
 **Add a dashboard view.** A route in `app.py` returning a template that extends `base.html` (so the review banner appears); compute from `dataset`, `gaps` and `clustering` passed to `create_app`, never from the LLM; a `TestClient` test in `test_dashboard.py`. Every count is a `tile` that links to a list page, membership is decided in `app.py` and a test in `test_dashboard_lists.py` proves the list holds what the tile counted. Long tables go in the `scrollbox` macro; charts come before lists and plot the same rows. The subject, assessment and `/run` pages in PR #43 are the worked examples. Cohorts are registered in `_COHORTS` (five today: `all`, `persistent-gap`, `priority-1`, `-2`, `-3`).
 
 **Change a threshold.** Change the default in `config.py` and the comment in `.env.example`, and update ADR 0001's status from "Proposed" only when the owner has ratified the number on data with ground truth (`catalogue_verify` gives recall against planted gaps). `test_thresholds_are_configuration_not_constants` will catch a hardcoded literal.
@@ -657,6 +664,8 @@ To change protection rules you need repository admin; the settings and the reaso
 | `lja.export --anonymise` exits 2 | `LJA_EXPORT_SALT` is empty | Set a salt in `.env`; never commit it |
 | `lja.strategy` or `lja.quiz` prints one line and writes nothing | The student has no isolated or persistent gap | Nothing to fix; exit 0 is correct |
 | Quiz written without educator notes | The review pass never grounded; it is a warning | Re-run, or review the questions by hand; `--skip-educator-review` to skip the call deliberately |
+| No Generate button on the student page; `POST …/generate/plan` returns 403 | Generation is off by default (D20) | Start with `--allow-generate`; the Provenance page confirms it is on |
+| Generate shows "Failed" with the command's output | The CLI exited non-zero: no model reachable, the gate blocked (exit 2), or no attempt grounded (exit 1) | Read the output lines; the previous file, if any, is untouched |
 | Dashboard exits 1 at start | No clustering cache | Run `lja.cli` first, or point `--clustering-cache` at the reference run (PR #22) |
 | Dashboard charts blank | No internet for the CDN | Vendor Chart.js and d3 (A-20) or connect |
 | Banner says a cluster was rejected but not which | Known gap (UAT-02) | Run `lja.cli`; the CLI names the rejected cluster and prints the rework note |
@@ -761,6 +770,7 @@ Suite size on 2 Oct 2026: 30 files, 273 test functions, 261 pass, 1 skipped (liv
 | **D4** Strengths | `…lists_proficient_competencies_under_strengths`, `…ordered_strongest_relative_position_first`, `…index_strength_count_matches_proficient_competencies` | `TestClient` | UAT D4 | Yes |
 | **D5** Gaps with evidence | `…shows_per_subject_evidence_and_trend`, `…flags_future_subjects_for_an_at_risk_gap`, `…honest_empty_state…`, `…never_flags_future_subjects_for_a_non_gap` | `TestClient` | UAT D5 | Yes |
 | **D6** Progress | `…shows_progress_across_subjects_in_year_order`, `…marks_single_subject_competency_as_insufficient`, `…progress_empty_state_without_evidence` | `TestClient` | UAT D6 | Yes |
+| **D13** Generate from the page | `test_dashboard_generate.py` (8), fake runner: no button and the real workbook path when off, 403; button and labels; the command is the real CLI invocation with this run's inputs; a job runs and the page then shows the plan and Regenerate; a failure keeps the old file; a second press is 409; unknown artefact or student is 404; Provenance states on/off | `TestClient` | — | Yes, on the branch |
 | **D12** Trajectory | `test_trajectory.py` (17): parsing, fallback, boundaries, skipped subject, basis values; `test_dashboard.py`: `…subject_chain_in_sequence_order_with_the_ahead_subject_marked`, `…order_came_from_the_year_digit_when_nothing_is_declared`, `…only_offered_for_a_gap_not_a_strength`, `…run_page_shows_the_declared_sequence…`, `…glossary_defines_trajectory` | `TestClient` | — | Yes, on the branch |
 | **D7** Next actions | `…renders_generated_learning_plan`, `…shows_plan_empty_state_when_file_is_missing`, `…without_plans_directory_is_safe` | `TestClient` over a plan JSON in `tmp_path` | UAT D7 | Yes |
 | **D8** Student picker | `…header_picker_lists_every_student_on_every_page` | `TestClient` | UAT D8 | Yes |
@@ -1208,3 +1218,4 @@ Unplanted flags are not automatically false positives: every generated student h
 | 0.3 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | Companion-document row and Appendix B now point at the User Document, which holds the explanation and worked examples behind the classification rules. |
 | 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8` (24 pull requests merged since 0.1's baseline) plus open PRs #25 and #52. New §3.10 on the generated-artefact family and the practice quiz; decisions D14–D18; threat model, limitations, configuration, commands, repository map, troubleshooting, debt register and test tables updated; §6.5 now records the Sprint 5 validation results and what is still open; §7.3 pre-filled with the team's preliminary UAT results; §8 and Appendix B reconciled with what is merged; Appendix C lists the Sprint 5 evidence files. The §3 diagrams were not re-rendered (debt item 22). |
 | 0.5 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-106 trajectory model: new §3.11 with Figure 5c and the unfiltered-ahead finding, decision D19, story D12, configuration rows, repository map, debt items 7 and 8 resolved to configuration, §8.2 and Appendix B reconciled. Ships on the IOLG-106 branch. |
+| 0.6 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-137: Generate and Regenerate buttons on the student page, opt-in. Decision D20, threat-model row, configuration and command rows, repository map, §5.5 recipe, troubleshooting rows, test row D13. IOLG-106 marked merged (PR #53). Ships on the IOLG-137 branch. |

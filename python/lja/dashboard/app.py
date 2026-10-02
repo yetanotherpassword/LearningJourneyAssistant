@@ -7,9 +7,13 @@ so tests can hand it small in-memory fixtures with no real dataset, no
 clustering cache, and no LLM involved -- see tests/test_dashboard.py. The
 actual "load real data and serve it" wiring lives in __main__.py.
 
-This app never calls an LLM and never writes anything -- it only reads what
-`python -m lja.cli` already computed. See __main__.py for what happens if
-the clustering cache doesn't exist yet.
+This app never calls an LLM and never writes anything on a page load -- it
+only reads what `python -m lja.cli` already computed. See __main__.py for
+what happens if the clustering cache doesn't exist yet. The one exception is
+opt-in and explicit: with a Generator configured (--allow-generate), a
+button on the student page POSTs to run the same `lja.plan` / `lja.quiz`
+command a person would type, as a subprocess, and the page re-reads the
+file it wrote. See generate.py.
 
 Cohorts and the stat strip
 --------------------------
@@ -35,6 +39,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -64,6 +69,7 @@ from ..model.silo_quality import (
     term_weights,
 )
 from ..model.trajectory import SubjectSequence, compute_trajectory
+from .generate import ARTEFACTS, RUNNING, Generator
 from .run_info import RunInfo
 from .stats import histogram, summarise
 
@@ -244,6 +250,7 @@ def create_app(
     run_info: RunInfo | None = None,
     plans_dir: Path | None = None,
     quizzes_dir: Path | None = None,
+    generator: Generator | None = None,
 ) -> FastAPI:
     """`thresholds` must be the object compute_gaps() was given for `gaps`.
 
@@ -253,6 +260,8 @@ def create_app(
     to GapThresholds() because that is also compute_gaps()'s default.
     `run_info` is the provenance __main__.py collected; None (tests, or an
     embedding caller) leaves the /run page's command section out honestly.
+    `generator`, when given, turns on the Generate buttons (IOLG-137); None
+    is the default and the page then only prints the command to run.
     `plans_dir` and `quizzes_dir` are where lja.plan and lja.quiz wrote
     their JSON; None, or a missing file, gives the page's empty state.
     """
@@ -619,6 +628,19 @@ def create_app(
             if quiz_path.exists():
                 quiz = QuizDocument.model_validate_json(quiz_path.read_text(encoding="utf-8"))
 
+        # Generate buttons (IOLG-137): only with a Generator, and the page
+        # knows whether a job is already running so a reload keeps polling.
+        generate = None
+        if generator is not None:
+            generate = {
+                kind: {
+                    "label": spec["label"],
+                    "running": (job := generator.status(kind, student_id)) is not None and job.state == RUNNING,
+                }
+                for kind, spec in ARTEFACTS.items()
+            }
+        workbook = run_info.excel_path if run_info else "<workbook.xlsx>"
+
         return templates.TemplateResponse(
             request,
             "student.html",
@@ -626,6 +648,8 @@ def create_app(
                 "summary": summary,
                 "plan": plan,
                 "quiz": quiz,
+                "generate": generate,
+                "workbook": workbook,
                 "strengths": strengths,
                 "gap_details": gap_details,
                 "progress_subjects": progress_subjects,
@@ -636,6 +660,32 @@ def create_app(
                 "student_ids": student_ids,
             },
         )
+
+    @app.post("/student/{student_id}/generate/{kind}", status_code=202)
+    def generate_artefact(student_id: str, kind: str):
+        """Run lja.plan / lja.quiz for one student, as a subprocess, with this
+        dashboard's inputs. 403 when generation is off, 404 for an unknown
+        student or artefact, 409 while a job for the pair is still running."""
+        if generator is None:
+            raise HTTPException(status_code=403, detail="Generation is off: start the dashboard with --allow-generate")
+        if kind not in ARTEFACTS:
+            raise HTTPException(status_code=404, detail=f"No such artefact {kind!r}")
+        if student_id not in students_by_id:
+            raise HTTPException(status_code=404, detail=f"No student {student_id!r} in this dataset")
+        try:
+            job = generator.start(kind, student_id)
+        except RuntimeError:
+            raise HTTPException(status_code=409, detail="Already running for this student") from None
+        return JSONResponse(job.as_dict(), status_code=202)
+
+    @app.get("/student/{student_id}/generate/{kind}/status")
+    def generate_status(student_id: str, kind: str):
+        if generator is None:
+            raise HTTPException(status_code=403, detail="Generation is off")
+        job = generator.status(kind, student_id) if kind in ARTEFACTS else None
+        if job is None:
+            raise HTTPException(status_code=404, detail="No job for this student and artefact")
+        return job.as_dict()
 
     @app.get("/run")
     def run_details(request: Request):
@@ -704,6 +754,7 @@ def create_app(
                     ),
                 },
                 "pipeline_command": pipeline_command,
+                "generate_enabled": generator is not None,
                 "gap_summary": everyone["gap_summary"],
                 "gap_marks_data": everyone["gap_marks_data"],
                 "inputs": {

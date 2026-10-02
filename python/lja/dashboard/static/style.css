@@ -222,6 +222,17 @@ th.sortable-header[aria-sort="descending"]::after { content: "\2193"; opacity: 1
 
 .empty-state { color: var(--muted); padding: 24px; text-align: center; }
 
+/* Generate / Regenerate a plan or quiz from the student page (IOLG-137). */
+.generate-box { display: grid; gap: 8px; margin: 4px 0 20px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+button.generate { justify-self: start; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+button.generate:disabled { opacity: 0.55; cursor: progress; }
+.generate-note { color: var(--muted); font-size: 0.85rem; }
+.generate-status { font-size: 0.88rem; }
+.generate-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.generate-bar > div { width: 35%; height: 100%; background: var(--accent); border-radius: 3px; animation: generate-slide 1.4s ease-in-out infinite; }
+@keyframes generate-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+.generate-log { max-height: 180px; overflow: auto; margin: 0; padding: 8px 10px; font-size: 0.78rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; }
+
 /* --- per-competency evidence cards (student.html) --- */
 
 .gap-list { display: flex; flex-direction: column; gap: 12px; }

@@ -209,6 +209,10 @@ DASHBOARD_EXCEL_PATH = os.environ.get(
 DASHBOARD_CLUSTERING_CACHE = os.environ.get("LJA_DASHBOARD_CLUSTERING_CACHE", "output/silo_clustering.json")
 DASHBOARD_PLANS_DIR = os.environ.get("LJA_DASHBOARD_PLANS_DIR", "output/plans")
 DASHBOARD_QUIZZES_DIR = os.environ.get("LJA_DASHBOARD_QUIZZES_DIR", "output/quizzes")
+# Generate plans and quizzes from the student page (IOLG-137). Off by
+# default: the dashboard has no login, and a button that spends LLM calls
+# must be a deliberate operator choice (--allow-generate does the same).
+DASHBOARD_GENERATE = os.environ.get("LJA_DASHBOARD_GENERATE", "").strip().lower() in ("1", "true", "yes", "on")
 
 # Quiz (lja/quiz.py) -- the subject catalogue supplies titles and handbook
 # synopses for the quiz page. Optional: a missing file means codes only.
