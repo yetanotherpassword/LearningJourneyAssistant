@@ -60,6 +60,9 @@ def main(argv: list[str] | None = None) -> int:
     review_path = default_review_path(cache_path)
     pending_count = 0
     rejected_count = 0
+    # Per-cluster state for /clusters; every cluster starts pending, so a
+    # missing review file means all pending, not "unknown".
+    review_states = {cluster_id(cluster): "pending" for cluster in clustering.clusters}
 
     if review_path.exists():
         review_store = ReviewStore.model_validate_json(
@@ -67,6 +70,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         for cluster in clustering.clusters:
             review = review_store.reviews.get(cluster_id(cluster))
+            if review is not None:
+                review_states[cluster_id(cluster)] = review.state
             if review is None or review.state == "pending":
                 pending_count += 1
             elif review.state == "rejected":
@@ -96,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
         gaps,
         clustering,
         review_warning=review_warning,
+        review_states=review_states,
         thresholds=thresholds,
         run_info=collect_run_info(
             excel_path=args.excel_path,

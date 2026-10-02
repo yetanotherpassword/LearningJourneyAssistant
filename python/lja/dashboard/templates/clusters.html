@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Competency clusters &mdash; LJA Dashboard{% endblock %}
+{% block content %}
+<h1>Competency clusters</h1>
+<p class="dek">
+  Which SILOs each competency groups, across subjects. Every gap on the student pages is computed
+  over one of these groups, so a wrong grouping means a wrong gap. The same tables
+  <code>python -m lja.cli</code> prints, with the staff review state of each cluster.
+</p>
+
+<div class="stat-strip">
+  <div class="stat"><div class="num">{{ clusters|length }}</div><div class="label">competencies</div></div>
+  <div class="stat"><div class="num">{{ silo_rows|length }}</div><div class="label">SILOs</div></div>
+  <div class="stat"><div class="num">{{ n_subjects }}</div><div class="label">subjects</div></div>
+  <div class="stat"><div class="num">{{ flagged|length }}</div><div class="label">SILOs flagged as poorly worded</div></div>
+  {% if review_counts is not none %}
+  <div class="stat"><div class="num">{{ review_counts.get("confirmed", 0) }} / {{ clusters|length }}</div><div class="label">clusters confirmed by staff</div></div>
+  {% endif %}
+</div>
+
+{% if unclustered %}
+<div class="future-subjects">
+  <strong>{{ unclustered|length }} SILO{{ "s" if unclustered|length != 1 }} in no cluster:</strong>
+  {{ unclustered|map(attribute="key")|join(", ") }}. Their results count towards no competency.
+</div>
+{% endif %}
+
+<h2>Competencies</h2>
+<p class="chart-note">
+  Each competency opens into the subjects and SILOs it groups. The bar is the number of SILOs,
+  relative to the largest competency; the gap rate is the share of the students measured on
+  that competency who have a persistent or isolated gap in it.
+</p>
+<input type="search" id="cluster-filter" class="cluster-filter"
+       placeholder="Filter by competency, subject code or SILO wording&hellip;" aria-label="Filter competencies">
+
+{% if clusters %}
+<div class="gap-list" id="cluster-list">
+  {% for c in clusters %}
+  <details class="gap-card cluster-card" id="{{ c.anchor }}" {% if clusters|length <= 6 %}open{% endif %}
+           data-search="{{ c.search }}">
+    <summary>
+      <span class="size-bar" title="{{ c.n_silos }} SILOs"><span style="width: {{ c.size_pct }}%"></span></span>
+      <span class="competency-name">{{ c.label }}</span>
+      <span class="attainment">{{ c.n_silos }} SILO{{ "s" if c.n_silos != 1 }} &middot; {{ c.subjects|length }} subject{{ "s" if c.subjects|length != 1 }}</span>
+      {% if c.gap_pct is not none %}<span class="attainment">{{ "%.0f"|format(c.gap_pct) }}% gap rate</span>{% endif %}
+      {% if c.n_flagged %}<span class="badge isolated-gap">{{ c.n_flagged }} flagged</span>{% endif %}
+      {% if c.review_state %}<span class="badge review-{{ c.review_state }}">{{ c.review_state }}</span>{% endif %}
+    </summary>
+    <div class="gap-card-body">
+      <p class="cluster-rationale"><span class="basis-badge">Rationale</span> {{ c.rationale }}</p>
+      <ul class="silo-tree">
+        {% for subject in c.subjects %}
+        <li>
+          <span class="tree-subject">{{ subject.code }}</span>
+          <ul>
+            {% for silo in subject.silos %}
+            <li>
+              <span class="tree-silo-id">{{ silo.id }}</span>
+              {% if silo.text %}{{ silo.text }}{% else %}<span class="muted">(not in the loaded dataset)</span>{% endif %}
+              {% if silo.flag_reason %}<span class="badge isolated-gap" title="{{ silo.flag_reason }}">flagged</span>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if c.n_measured %}
+      <p class="chart-note">{{ c.n_gapped }} of {{ c.n_measured }} students measured on this competency have a gap in it.</p>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+<p class="empty-state" id="cluster-filter-empty" hidden>No competency matches that filter.</p>
+{% else %}
+<p class="empty-state">The clustering has no competencies.</p>
+{% endif %}
+
+<h2>Flagged SILOs</h2>
+{% if flagged %}
+<p class="chart-note">Wording the LLM judged vague or not assessable. This is feedback for the subject coordinator, not a judgement on any student.</p>
+<table class="evidence-table">
+  <thead><tr><th>SILO</th><th>Wording</th><th>Reason</th></tr></thead>
+  <tbody>
+    {% for f in flagged %}
+    <tr><td>{{ f.key }}</td><td>{{ f.text }}</td><td>{{ f.flag_reason }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-state">No SILO was flagged as poorly worded.</p>
+{% endif %}
+
+<h2>SILO definitions</h2>
+<details class="gap-card">
+  <summary><span class="competency-name">All {{ silo_rows|length }} SILOs, as loaded from the Assessment Map</span></summary>
+  <div class="gap-card-body">
+    <table class="evidence-table">
+      <thead><tr><th>SILO</th><th>Definition</th><th>Competency</th></tr></thead>
+      <tbody>
+        {% for s in silo_rows %}
+        <tr>
+          <td>{{ s.key }}</td>
+          <td>{{ s.text }}</td>
+          <td>{% if s.anchor %}<a href="#{{ s.anchor }}">{{ s.competency }}</a>{% else %}<span class="muted">none</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<script>
+  // Progressive enhancement: without it every competency is still listed.
+  (function () {
+    const input = document.getElementById("cluster-filter");
+    const cards = Array.from(document.querySelectorAll("#cluster-list .cluster-card"));
+    const empty = document.getElementById("cluster-filter-empty");
+    if (!input || !cards.length) return;
+    input.addEventListener("input", function () {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      for (const card of cards) {
+        const match = !q || card.dataset.search.includes(q);
+        card.hidden = !match;
+        if (match) shown += 1;
+        if (q && match) card.open = true;
+      }
+      empty.hidden = shown !== 0;
+    });
+    // A link from the SILO table (#competency-n) opens its card.
+    function openTarget() {
+      const target = location.hash && document.querySelector(location.hash);
+      if (target && target.tagName === "DETAILS") target.open = true;
+    }
+    window.addEventListener("hashchange", openTarget);
+    openTarget();
+  })();
+</script>
+{% endblock %}
