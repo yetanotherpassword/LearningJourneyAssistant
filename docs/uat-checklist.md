@@ -1,8 +1,9 @@
-# System and CLI acceptance checklist — IOLG-130
+# UAT checklist — system (IOLG-130) and dashboard (IOLG-127)
 
 Prepared 28 September 2026 for Anup (T4), Sui Lung (T5), and Ayesha (T2,
-IOLG-129). These are the six system rows, in the order required by the
-Sprint 5 brief. Sui Lung's dashboard rows can be added to the same document.
+IOLG-129). The six system rows (S1–S6, Anup) come first, in the order
+required by the Sprint 5 brief, followed by the ten dashboard rows
+(D1–D10, Sui Lung).
 
 **Result and Tester below are reserved for the live sprint review.** Local
 checks are preliminary evidence, not a claim that Anup attended or
@@ -24,6 +25,25 @@ configured LLM; the reference cache removes the clustering call only.
 | S4 | Export the results | Run `python -m lja.export <xlsx> --out output/export`; for S1's reference run, add `--clustering-cache ../data-fixtures/reference-run/silo_clustering.json`. Open/run `docs/export-sample.ipynb` from `docs/`. | `students.csv`, `competencies.csv`, `cohort.csv`, and `manifest.json` are written; the sample notebook reads its export and renders the chart. | Not run at live review | Pending | Export is available on this revision. The literal command exits 2 after S1; with the explicit cache it passes (150/750/5 CSV rows). All three notebook cells executed and the chart rendered. See UAT-01. |
 | S5 | Staff review changes the warning | Have Istiaque start the dashboard on the demo cache and its adjacent review JSON after Sui Lung's decisions; reload the page. Record the rejected labels. Do not modify the all-confirmed reference fixture. | The AI-review banner appears and names the rejected clusters. | Not run at live review | Pending | Local disposable fixture showed the banner, but only a count: `1 AI-generated SILO cluster(s) have been rejected by staff.` It did not name Data Structures and Algorithms. Full expected behavior fails; see UAT-02. Repeat with the real demo review file. |
 | S6 | Tests pass | Run `python -m pytest -q`. | Tests report passed with zero failures; report skips separately. | Not run at live review | Pending | Local full run: 258 passed, 1 skipped, 1 warning. Includes the seven IOLG-110 validation profiles. Live Moodle test is skipped unless explicitly enabled; this does not establish S2. |
+
+## Dashboard rows — IOLG-127
+
+Written by Sui Lung (T5). Result, Tester and Notes are filled in live at the
+review. If a feature is still not built on the day, record "not built" as
+the Result.
+
+| # | User story | Steps (what a person clicks) | Expected (what they should see) | Result | Tester | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| D1 | See the whole cohort | Open the dashboard home page | Every student listed; counts of persistent gaps and strengths per row; columns sort on click | | | |
+| D2 | Drill into a cohort | Click the "persistent gap" tile | Only those students; a sentence says what put them there | | | |
+| D3 | See one student's understanding | Open a student | Attainment chart at the top, one bar per competency, colours match the badges | | | |
+| D4 | See strengths | Same page | "Strengths" table above the gaps, with the basis for each | | | |
+| D5 | See gaps with evidence | Same page | Each gap card shows per-subject evidence and a basis, not just a label | | | |
+| D6 | See progress | Same page | "Progress across subjects" chart and table, with the sentence that the data has no dates | | | |
+| D7 | See next actions | Same page (a student with a plan) | "Recommended next actions" section from the learning plan, with the LLM notice | | | |
+| D8 | Switch student quickly | Header picker | Choosing a student opens that student | | | |
+| D9 | Know when the AI is unreviewed | Any page after a cluster is rejected | The AI-review warning banner is visible, says how many clusters, and clicking it opens the Competency clusters page | | | |
+| D10 | Traceability | Pick any number on the student page | You can name the source record (subject, assessment) it came from | | | |
 
 ## Preliminary execution record
 
@@ -66,6 +86,6 @@ the team explicitly changes the acceptance criterion.
 ## Live-review completion
 
 Have Anup perform S1–S6 at the review, recording actual results and artifact
-paths. Keep S2/S3 blocked until their runtime prerequisites exist. Combine
-these rows with Sui Lung's dashboard cases and record defects before
-submitting the combined IOLG-129 document for non-author review.
+paths. Keep S2/S3 blocked until their runtime prerequisites exist. Sui Lung
+and Anup fill in Result for D1–D10 together. Record defects found in either
+half as findings below.
