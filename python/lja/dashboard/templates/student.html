@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block head %}{% if generate %}<script src="/static/generate.js" defer></script>{% endif %}{% endblock %}
 {% block title %}{{ summary.student_id }} &mdash; LJA Dashboard{% endblock %}
 {% from "_macros.html" import scrollbox %}
 {% block content %}
@@ -12,6 +13,19 @@
 <div class="chart-card">
   <canvas id="attainment-chart" height="90"></canvas>
 </div>
+
+{# Generate / Regenerate (IOLG-137): only rendered when the dashboard was
+   started with --allow-generate. The button runs the CLI for this student;
+   static/generate.js polls the job and reloads the page when the file exists. #}
+{% macro generate_box(kind, exists) %}
+<div class="generate-box" data-kind="{{ kind }}" data-student="{{ summary.student_id }}" data-running="{{ 'true' if generate[kind].running else 'false' }}">
+  <button type="button" class="generate" data-retry-label="Try again">{{ 'Regenerate' if exists else 'Generate' }} {{ generate[kind].label }}</button>
+  <span class="generate-note">Runs <code>python -m lja.{{ kind }} {{ workbook }} {{ summary.student_id }}</code> with this dashboard's clustering cache: one language-model call per attempt{% if kind == 'quiz' %}, plus one for the educator review{% endif %}.</span>
+  <div class="generate-bar" hidden><div></div></div>
+  <div class="generate-status" aria-live="polite"></div>
+  <pre class="generate-log" hidden></pre>
+</div>
+{% endmacro %}
 
 <h2>Recommended next actions</h2>
 {% if plan %}
@@ -43,9 +57,10 @@
 {% else %}
 <p class="empty-state">
   No learning plan has been generated for this student yet
-  (<code>python -m lja.plan &lt;xlsx&gt; {{ summary.student_id }}</code>).
+  (<code>python -m lja.plan {{ workbook }} {{ summary.student_id }}</code>).
 </p>
 {% endif %}
+{% if generate %}{{ generate_box('plan', plan is not none) }}{% endif %}
 
 <h2>Practice quiz</h2>
 {% if quiz %}
@@ -153,9 +168,10 @@
 {% else %}
 <p class="empty-state">
   No practice quiz has been generated for this student yet
-  (<code>python -m lja.quiz &lt;xlsx&gt; {{ summary.student_id }}</code>).
+  (<code>python -m lja.quiz {{ workbook }} {{ summary.student_id }}</code>).
 </p>
 {% endif %}
+{% if generate %}{{ generate_box('quiz', quiz is not none) }}{% endif %}
 
 <h2>Strengths</h2>
 {% if strengths %}

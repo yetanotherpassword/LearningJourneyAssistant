@@ -33,6 +33,11 @@
 {% else %}
 <p class="empty-state">No command recorded: this app was created in-process rather than started with <code>python -m lja.dashboard</code>.</p>
 {% endif %}
+<p class="chart-note">
+  Generation from the student page is <strong>{{ 'on' if generate_enabled else 'off' }}</strong>{% if generate_enabled %}: a Generate button runs
+  <code>lja.plan</code> or <code>lja.quiz</code> for one student with the inputs above (language-model calls). Started with <code>--allow-generate</code>{% else %};
+  the student page prints the command to run instead. Start with <code>--allow-generate</code> to turn it on{% endif %}.
+</p>
 
 <h2>Inputs</h2>
 <p class="dek">Each count links to the list it counts.</p>

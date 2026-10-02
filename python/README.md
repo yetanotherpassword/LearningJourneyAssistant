@@ -150,6 +150,16 @@ LJA_DASHBOARD_PLANS_DIR=../data-fixtures/reference-run/plans python -m lja.dashb
 `learning_plan_<student_id>.json` files. If it is not set, the default is
 `output/plans`.
 
+**Generate from the page (IOLG-137).** Start with `--allow-generate` (or
+`LJA_DASHBOARD_GENERATE=1`) and each student page gets a Generate / Regenerate
+button for the learning plan and the practice quiz. A press runs the same
+`python -m lja.plan` / `lja.quiz` command you would type, as a subprocess, with
+this dashboard's workbook, clustering cache and review file, and the page polls
+the job, shows the command's output (one line per grounding attempt) and
+redraws when the file exists. Off by default: the dashboard has no login, and a
+button that spends LLM calls has to be the operator's choice. A page load still
+never calls a model.
+
 Then open http://127.0.0.1:8000/ — a student list (with persistent- and
 isolated-gap counts per row) linking to a per-student page: an attainment
 chart plus a classification-badged gap table, both colored from the same

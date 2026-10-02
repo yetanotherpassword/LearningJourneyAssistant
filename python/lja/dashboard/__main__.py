@@ -26,6 +26,7 @@ from ..model.gap_detection import GapThresholds, compute_gaps
 from ..model.silo_clustering import SiloClusteringResult
 from ..review import ReviewStore, cluster_id, default_review_path
 from .app import create_app
+from .generate import GenerateConfig, Generator
 from .run_info import collect_run_info
 
 
@@ -40,6 +41,13 @@ def main(argv: list[str] | None = None) -> int:
     _defaults = GapThresholds()
     parser.add_argument("--absolute-floor", type=float, default=_defaults.absolute_floor)
     parser.add_argument("--absolute-ceiling", type=float, default=_defaults.absolute_ceiling)
+    parser.add_argument(
+        "--allow-generate",
+        action="store_true",
+        default=config.DASHBOARD_GENERATE,
+        help="Show Generate buttons for plans and quizzes on the student page; each press runs the CLI for that student "
+        "(LLM calls). Off by default because the dashboard has no login. Also LJA_DASHBOARD_GENERATE=1.",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
@@ -105,7 +113,23 @@ def main(argv: list[str] | None = None) -> int:
         ),
         plans_dir=Path(config.DASHBOARD_PLANS_DIR),
         quizzes_dir=Path(config.DASHBOARD_QUIZZES_DIR),
+        generator=(
+            Generator(
+                GenerateConfig(
+                    excel_path=args.excel_path,
+                    clustering_cache=str(cache_path),
+                    review_file=str(review_path) if review_path.exists() else None,
+                    plans_dir=Path(config.DASHBOARD_PLANS_DIR),
+                    quizzes_dir=Path(config.DASHBOARD_QUIZZES_DIR),
+                )
+            )
+            if args.allow_generate
+            else None
+        ),
     )
+    if args.allow_generate:
+        print("Generate buttons are ON: a press runs lja.plan / lja.quiz for one student (LLM calls). "
+              f"Keep --host at 127.0.0.1 (now {args.host}).")
     uvicorn.run(app, host=args.host, port=args.port)
     return 0
 
