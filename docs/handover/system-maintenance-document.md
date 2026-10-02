@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.2 — for team review. Sections marked ⚠ *TO FILL* depend on Sprint 5/6 evidence that does not exist yet. |
-| **Date** | 27 September 2026 |
-| **Describes** | `main` at `ac75a8e` (23 Sep 2026) plus the four open pull requests #22–#25, which are labelled where they matter |
+| **Status** | DRAFT 0.4 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
+| **Date** | 2 October 2026 |
+| **Describes** | `main` at `cd98ce8` (2 Oct 2026, after PR #49) plus the two open code pull requests, #25 (clusters page) and #52 (practice quiz), which are labelled where they matter. PR #48 is this document's own branch. |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
 | **Project owner** | Dr Scott Mann |
 | **Team** | Allan Campton (architecture, data model, gap engine), Ayesha Mosaddeque (CI, security scanning, Moodle extraction), Istiaque Bhuiyan (LLM layer, grounding, generation), Anup Tumbalam Gooty (QA, acceptance verification), Sui Lung Tang (risk, dashboard views) |
 | **Repository** | https://github.com/yetanotherpassword/LearningJourneyAssistant |
-| **Companion documents** | Repository `README.md` (quick start), the User Document (end-user walkthrough of the dashboard and CLI), the two ADRs under `docs/adr/`, the tender (`Tender Document.docx`) |
+| **Companion documents** | Repository `README.md` (quick start), the User Document (`docs/handover/user-document.md`: how the numbers are made, with worked examples, and the dashboard walkthrough), the two ADRs under `docs/adr/`, the tender (`Tender Document.docx`), and the Sprint 5 evidence set under `docs/` (Appendix C lists each file) |
 
 ---
 
@@ -37,23 +37,29 @@ The problem it addresses, from the tender: students "lack a reliable way to unde
 
 ### 1.2 What exists today
 
-| Capability | State on `main` (23 Sep 2026) |
+| Capability | State on `main` (2 Oct 2026) |
 |---|---|
 | Load results from the project owner's Excel workbook | Working |
-| Load results from a Moodle 5.2 database (rubric fills, read-only role) | Working for one seeded subject (CSE1IOI) |
-| Semantic clustering of SILOs into cross-subject competencies via an LLM, with coverage validation and retry | Working |
+| Load results from a Moodle 5.2 database (rubric fills, read-only role) | Working for one seeded subject (CSE1IOI); read-only enforcement observed on the dev instance (IOLG-111, §6.5) |
+| Semantic clustering of SILOs into cross-subject competencies via an LLM, with coverage validation and retry | Working; staff review of the five reference-run clusters recorded (IOLG-124, §6.5) |
 | Staff confirmation gate on the clustering (pending / confirmed / rejected) | Working (CLI) |
-| Relative gap detection (median/MAD within each student's profile, with absolute guards) | Working; threshold values documented but not ratified |
+| Relative gap detection (median/MAD within each student's profile, with absolute guards) | Working; thresholds still unratified, but a sensitivity curve now exists (§3.9) |
 | Dashboard: cohort list, statistics, cohort drill-down, per-student gaps with evidence, unreviewed-AI banner | Working |
-| Dashboard: strengths view and student picker | Open PR #23 |
-| Dashboard: competency clusters page | Open PR #25 |
-| Dashboard: progress view, recommended next actions | Not built |
-| Grounded learning plan for one student (fails closed on any invented name) | Working |
-| Study-strategy recommendations, adaptive quizzes | Not built (quizzes descoped) |
-| Longitudinal / A-B research export | Not built (Sprint 5 work) |
-| Synthetic cohort generator from a YAML subject catalogue, with ground truth | Open PR #24 |
-| Committed reference run so the pipeline and dashboard work offline | Open PR #22 |
-| CI: lint, tests, secret scan, dependency audit; branch protection on `main` | Working |
+| Dashboard: strengths view and student picker | Working (IOLG-112, PR #23) |
+| Dashboard: progress across subjects; recommended next actions from the learning plan | Working (IOLG-107, PR #33; IOLG-122, PR #35) |
+| Dashboard: priority groups, `/run` provenance page, `/glossary`, every count tile links to its list, chart enlarge, bounded scroll boxes | Working (IOLG-134, PR #43) |
+| Dashboard: outcome quality (`/silos`), competencies, subjects and assessments pages, competency traceability diagram | Working (IOLG-132, PR #28; PR #43) |
+| Dashboard: competency clusters page linked from the banner | Open PR #25 |
+| Grounded learning plan for one student (fails closed on any invented name) | Working; ten-plan audit passed the machine checks 10/10, human review pending (IOLG-121) |
+| Study-strategy recommendations per gap | Working (IOLG-123, PR #26) |
+| Practice quiz per gap (multiple choice or written task, blind educator review) | Open PR #52 (IOLG-136), a thin slice; see §3.10 |
+| Longitudinal / A-B research export with pseudonymised ids | Working (IOLG-120, PR #32) |
+| Synthetic cohort generator from a YAML subject catalogue, with ground truth | Working (IOLG-113, PR #24) |
+| Handbook crawl of real La Trobe SILOs and the embedding competency tagger | Working, code only (PR #29); crawled data stays out of git pending the owner |
+| Committed reference run so the pipeline and dashboard work offline | Working (PR #22) |
+| CI: lint, tests, secret scan, dependency audit; branch protection on `main` | Working; 261 tests pass |
+| Sprint 5 evidence: validation worksheet, grounding audit, security evidence, compliance checklist, risk register, UAT checklist | Recorded under `docs/` (§6.5) |
+| Clean-machine rebuild by a non-author | Not performed; four preflight findings recorded (IOLG-118) |
 
 ### 1.3 Guardrails the system is built around
 
@@ -81,21 +87,24 @@ The stories below are the ones the team agreed for the Sprint 5 user acceptance 
 | **S1** | team member | to run the pipeline on the supplied workbook | a gap report is produced from a clean clone | R11 | IOLG-78, IOLG-118 | Done |
 | **S2** | team member | to run the pipeline on a live Moodle database | the production data path is proven | R1 | IOLG-104, IOLG-105, IOLG-56 | Done for one subject |
 | **S3** | student / staff | to generate one student's learning plan | the student gets grounded next-step advice | R6 | IOLG-108, IOLG-119 | Done |
-| **S4** | researcher | to export results as CSV with a manifest | longitudinal and A/B evaluation is possible | R7 | IOLG-120 | Not built |
+| **S4** | researcher | to export results as CSV with a manifest | longitudinal and A/B evaluation is possible | R7 | IOLG-120 | Done |
 | **S5** | staff | a rejected cluster to change what the dashboard shows | reviewers can see that a review had effect | R3 | IOLG-116 | Done |
 | **S6** | maintainer | the test suite to pass | I know the install is healthy | R11 | IOLG-80 | Done |
+| **S7** | student | a study strategy per gap, built from techniques with evidence behind them and tied to my own assessments | I know how to study, not just what | R6 | IOLG-123 | Done (added in 0.4; not in the UAT checklist) |
+| **S8** | student | a practice quiz per gap whose every question names one of my SILOs and one of my assessments, reviewed by staff before I see it | I can check whether a gap is closing | R8 | IOLG-136 | Open PR #52, thin slice (added in 0.4; not in the UAT checklist) |
 | **D1** | staff | to see the whole cohort with gap counts and sortable columns | I can find who needs attention | R5 | IOLG-83 | Done |
 | **D2** | staff | to drill into a cohort and be told what put each student there | every figure is traceable | R5 | IOLG-83 | Done |
 | **D3** | student | to see my understanding per competency as a chart | I know where I stand | R5 | IOLG-83 | Done |
-| **D4** | student | to see my strengths with their basis | I know what to build on | R5 | IOLG-112 | Open PR #23 |
+| **D4** | student | to see my strengths with their basis | I know what to build on | R5 | IOLG-112 | Done |
 | **D5** | student | to see each gap with per-subject evidence | the gap is explained, not just labelled | R5 | IOLG-83 | Done |
-| **D6** | student | to see progress across subjects | I can see whether a gap is closing | R5 | IOLG-107 | Not built |
-| **D7** | student | recommended next actions from my learning plan on the dashboard | the plan is where I look | R5, R6 | IOLG-122 | Not built |
-| **D8** | any user | to switch student from the header | navigation is quick | R5 | IOLG-112 | Open PR #23 |
+| **D6** | student | to see progress across subjects | I can see whether a gap is closing | R5 | IOLG-107 | Done |
+| **D7** | student | recommended next actions from my learning plan on the dashboard | the plan is where I look | R5, R6 | IOLG-122 | Done |
+| **D8** | any user | to switch student from the header | navigation is quick | R5 | IOLG-112 | Done |
 | **D9** | any user | to know when the AI grouping is unreviewed, and click through to see which clusters | I do not trust an unreviewed report | R6 | IOLG-116, IOLG-131 | Done; click-through in PR #25 branch |
 | **D10** | staff | to name the source record behind any number | the dashboard is auditable | R5 | IOLG-83 | Done |
+| **D11** | staff | flagged students split into priority groups by rules the pipeline already applies, with the run's provenance and a glossary on the dashboard | a tile never says a number without saying why | R5 | IOLG-134 | Done (added in 0.4; not in the UAT checklist) |
 
-Descoped and never started: adaptive quiz generation (R8). See §8.
+Adaptive quiz generation (R8) was descoped by plan and then built as a thin slice late in Sprint 5 (S8, PR #52). It is deliberately not a complete R8: see §3.10 and §8.1.
 
 ---
 
@@ -108,6 +117,8 @@ LJA is a Python 3.12 package (`python/lja/`) that runs in place, not pip-install
 ![LJA architecture: sources, data layer, LjaDataset, model layer, LLM layer, outputs, dashboard](diagrams/01-architecture.png)
 
 *Figure 1: LJA architecture: sources, data layer, LjaDataset, model layer, LLM layer, outputs, dashboard. Source: `docs/handover/diagrams/01-architecture.mmd`.*
+
+Figure 1 was drawn at 0.1 and shows one generated artefact. Since then three more commands sit where `lja.plan` sits, all reading the same `LjaDataset` and the same gap output and none of them re-clustering: `lja.strategy` (study strategies), `lja.quiz` (practice quiz, PR #52) and `lja.export` (research CSVs, no LLM at all). The dashboard renders plans and quizzes from the JSON those commands wrote; it never calls the LLM. The diagram source has not been re-rendered for 0.4.
 
 Two things about this picture matter more than the rest:
 
@@ -125,7 +136,8 @@ Two things about this picture matter more than the rest:
 | LLM, cloud | Anthropic SDK, model `claude-opus-4-8` | anthropic 0.121.0 | Native structured output enforced server-side |
 | LLM, local | Any OpenAI-compatible server (Ollama, LM Studio, llama.cpp), default model `qwen3-vl:30b` | openai 2.53.0 | Zero-cost default; a fresh clone works without an API key |
 | Web dashboard | FastAPI + Jinja2 + uvicorn | 0.141.1 / 3.1.6 / 0.52.1 | Small, read-only, server-rendered; no build step, no JS framework to maintain |
-| Charts | Chart.js 4 from the jsDelivr CDN | 4.x | Adequate for bar and doughnut charts; **not vendored, so charts need internet** (§5.7) |
+| Charts | Chart.js 4, plus d3 7 and d3-cloud 1 on the outcome-quality page, all from the jsDelivr CDN | 4.x / 7.x / 1.x | Chart.js for every bar, line, scatter and bubble chart (with the Enlarge modal in `chartzoom.js`); d3 only for the word cloud and chord figure on `/silos`. **Not vendored, so charts need internet** (§5.7) |
+| Catalogue and export extras | PyYAML; matplotlib and Jupyter (developer environment only) | 6.0.3 | The subject catalogue is YAML; `docs/export-sample.ipynb` charts an export. Neither matplotlib nor Jupyter is in `requirements.txt`, so CI and a pip install do not need them |
 | Dev Moodle | `moodlehq/moodle-docker`, Moodle 5.2, PostgreSQL | 5.2.2 verified | Official tooling; local-first per the owner |
 | Environment | conda (`python/environment.yml`) or pip (`requirements.txt`) | — | conda for developers; pinned pip for CI reproducibility |
 | Lint / test | ruff 0.16.4, pytest 9.1.1, pytest-cov | pinned | ruff pinned so a new rule cannot redden an unrelated PR |
@@ -134,7 +146,7 @@ Two things about this picture matter more than the rest:
 
 ### 3.3 Use case diagram
 
-Actors and use cases as they stand today. Dashed use cases are planned or in an open PR.
+Actors and use cases as drawn at 0.1. Dashed use cases were planned or in an open PR at the time; of those, strengths, progress, next actions, study strategies and the export are now on `main`, the clusters page is still PR #25, and the quiz (PR #52) and the priority-group, subject, assessment, `/run` and `/glossary` pages are not drawn at all. The source has not been re-rendered for 0.4.
 
 ![Use case diagram: actors and use cases, dashed = planned](diagrams/02-use-cases.png)
 
@@ -190,7 +202,11 @@ The classes below are the ones a maintainer will touch. Field lists are abbrevia
 | `silo_clustering.review.json` | `lja.review` / `lja.cli` | `ReviewStore` JSON | **Staff decisions. Not regenerable.** Cluster ids are the first 12 hex chars of SHA-256 over the sorted member keys, so a re-clustering that produces the same membership keeps its decision. |
 | `clusters.csv` | `lja.cli` | CSV | Cluster table plus SILO definitions |
 | `gap_report.csv` | `lja.cli` | CSV | `student_id, competency_label, attainment_pct, subjects_evidencing, n_observations, classification, classification_basis, relative_position` |
-| `plans/learning_plan_<id>.json`, `.md` | `lja.plan` | `LearningPlan` JSON, Markdown | Only written after grounding passes |
+| `plans/learning_plan_<id>.json`, `.md` | `lja.plan` | `LearningPlan` JSON, Markdown | Only written after grounding passes. The dashboard reads the JSON from `LJA_DASHBOARD_PLANS_DIR` for the next-actions section (D7) |
+| `strategies/study_strategy_<id>.json`, `.md` | `lja.strategy` | `StudyStrategy` JSON, Markdown | One entry per gap; techniques from a closed list (§3.10). Only written after grounding passes |
+| `quizzes/quiz_<id>.json`, `.md` | `lja.quiz` (PR #52) | `QuizDocument` JSON, Markdown | Questions plus the blind educator review (§3.10). The dashboard reads the JSON from `LJA_DASHBOARD_QUIZZES_DIR` |
+| `export/students.csv`, `competencies.csv`, `cohort.csv`, `manifest.json` | `lja.export` | CSV, JSON; schema 1.0 in `docs/export-schema.md` | A projection of a run, never a re-decision. `--anonymise` pseudonymises ids with an HMAC keyed on `LJA_EXPORT_SALT` |
+| `<workbook>.truth.json`, `.clustering.json`, `.clustering.review.json` | `lja.data.catalogue_generator` | JSON | Beside a generated workbook: the answer key, the catalogue's competency tags in cache shape, and an all-confirmed review file. `/run` reads the seed and parameters from the truth file and deliberately never the answer key |
 
 **Classification vocabulary** (`gap_detection.py`): `classification` ∈ {persistent gap, isolated gap, developing, proficient}; `classification_basis` ∈ {relative position, absolute floor, absolute ceiling, insufficient data}. Persistent means evidenced in two or more subjects. The basis column exists for traceability (R5): every label says which rule produced it.
 
@@ -224,9 +240,19 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 
 **D13. Assessment score counts as full evidence for every SILO it addresses.** Weighted only by the assessment's weight. This is an approximation, flagged for the owner, because the workbook does not carry per-SILO marks within an assessment. The Moodle path's per-criterion rubric fills are the way past it. *Limitation.*
 
+**D14. Priority groups combine classifications the pipeline already made; they add no threshold** (IOLG-134). On a cohort with real per-competency spread the relative rule flags most students (4,195 of 5,000 on the 100-subject cohort, but only 1,145 with anything under the 50% floor), so a single "persistent gap" tile misleads. The dashboard splits flagged students into 1st (at least one competency below the absolute floor), 2nd (no floor breach but a persistent gap) and 3rd (isolated gaps only), ordered within each group by the student's lowest flagged mark. Splitting further would need a cut-off nobody has ratified, which is action A-01, not a dashboard default. The ordering is computed from the classifier's outputs alone; the dashboard never reads a generator's answer key, and on the synthetic cohort no such ordering surfaces the planted gaps (62 of 371 in the top 371), which is a finding about the method rather than something the page can fix. *Usability for staff; honesty about what a count means.*
+
+**D15. Every count on the dashboard is a link to the list it counts, and every page states its own provenance.** The `tile` macro is the only way a count is rendered, each list page decides membership in `app.py` and a test asserts the list holds exactly what the tile counted. `/run` shows the command, git hash, inputs and every threshold with its value, default, variable and flag; `/glossary` defines each term once with this run's values. *Traceability (R5).* Limitation: `/run` can only describe the run it is serving, because `create_app()` takes the same `GapThresholds` that `compute_gaps()` was given.
+
+**D16. Generated artefacts are a family with one pattern, and the dashboard only ever renders them.** `lja.plan`, `lja.strategy` and `lja.quiz` share `build_plan_context()`, the same `--source`, cache and review-file options, the same staff gate (rejected cluster exits 2, pending warns) and the same fail-closed loop (never grounds, exit 1, nothing written). Strategies and quizzes ground *per competency*, stricter than plans: an entry's subjects, assessments and SILOs must belong to the competency it is filed under. The dashboard reads their JSON and never generates. *Cost control, and one discipline to maintain instead of three.* §3.10 describes each.
+
+**D17. The export pseudonymises with a keyed HMAC and refuses to run without a key.** `--anonymise` maps each student id to an HMAC-SHA256 pseudonym keyed on `LJA_EXPORT_SALT`, so the same student lines up across exports taken with the same salt while the mapping cannot be reversed without it. An empty salt exits 2 rather than keying on `""`, which would be stable but guessable. `manifest.json` records source, git commit, cache and the seven thresholds so two exports can be diffed knowing they came from the same pipeline. *Privacy (owner NFR-2); research use (R7).* Limitation: the export has no staff-gate check of its own (compliance item SE-5).
+
+**D18. Embeddings are used for the catalogue's competency tags, not yet for the pipeline's clustering.** The 52-SILO failure (§3.9) hit ADR 0002's review trigger. The answer built in IOLG-113 is `competency_tagger.py`: embed every SILO (`nomic-embed-text` through the OpenAI-compatible endpoint), spherical k-means, and ask the chat model only to label each cluster in batches of 20. It tagged 1,436 real SILOs in 64 seconds. It produces the generator's ground truth; `cluster_silos()` in the pipeline is still a single LLM call. Swapping the pipeline over is the deferred decision in §8.2. *Scalability, deliberately staged.*
+
 ### 3.8 Threat model
 
-⚠ *DRAFT.* No threat model exists in the repository yet; this section is a first pass for the team to review and for Sprint 5's security evidence task (IOLG-111) to confirm. It uses STRIDE over the system's trust boundaries.
+⚠ *DRAFT.* This section is the team's first STRIDE pass over the system's trust boundaries. Since 0.3 the six security checks of IOLG-111 have been run and recorded in `docs/security-evidence.md` (28 Sep 2026, dev instance), and the risk register has been re-scored (`docs/risk-register.md`); the table below reflects both.
 
 **Assets.** (1) Student assessment data, synthetic today but real if the system is deployed. (2) The Moodle database credential and web-service token. (3) The LLM API key. (4) The staff review file, because a tampered review file silently opens the gate. (5) Generated plans, which students act on. (6) The repository and CI, because a compromised dependency runs in every developer's environment.
 
@@ -240,28 +266,63 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 |---|---|---|---|
 | **Spoofing** a viewer | Dashboard | Bound to `127.0.0.1` by default; no accounts | No authentication. Never bind `--host 0.0.0.0` on a shared network with real data. Auth is future work. |
 | **Tampering** with the review file | `output/*.review.json` | Separate from the cache; state machine forbids flipping confirmed→rejected directly | File is plain JSON with no signature. Keep `output/` on an operator-only path; consider a hash in the file. |
-| **Tampering** with Moodle | Postgres | Role `lja_reader` is `SELECT`-only; nothing in the code issues a write; fixtures mark via `assign::save_grade()` | Role creation is documented but "never applied or proven" on a shared instance. IOLG-111 records the `UPDATE … permission denied` test and a `pg_dump` checksum before/after a run. |
+| **Tampering** with Moodle | Postgres | Role `lja_reader` is `SELECT`-only; nothing in the code issues a write; fixtures mark via `assign::save_grade()` | **Observed on the dev instance, 28 Sep (IOLG-111):** role created from the `sql/README.md` DDL; `UPDATE m_user` as `lja_reader` returned `permission denied`; a `pg_dump --data-only` checksum was identical before and after `lja.cli --source moodle` (21,554 data lines byte-identical). Not yet applied on a shared or production instance. |
 | **Repudiation** of a staff decision | Review file | `note` field; git history if committed | No reviewer identity or timestamp is stored. Add `reviewed_by` and `reviewed_at`. |
-| **Information disclosure** to the LLM provider | Anthropic path | Prompts carry SILO text and gap classifications, never raw feedback or names beyond `STU0001`-style ids | With real data, ids plus per-subject scores are re-identifiable. Pseudonymise at ingest before any cloud provider is used (owner NFR-2, FR-1.5). Prefer the local provider for real data. |
+| **Information disclosure** to the LLM provider | Anthropic path | Prompts carry SILO text, gap classifications, assessment names and marker feedback, never names beyond `STU0001`-style ids | With real data, ids plus per-subject scores are re-identifiable. Pseudonymise at ingest before any cloud provider is used (owner NFR-2, FR-1.5). Prefer the local provider for real data. Note the plans, strategies and quizzes send the student's own marker feedback to the model; with real data that is bespoke text. |
+| **Information disclosure** in the research export | `lja.export` | `--anonymise` HMAC pseudonyms keyed on `LJA_EXPORT_SALT`; empty salt refused; `cohort.csv` carries no ids | The salt must stay out of git and out of tickets: whoever holds it can re-identify every export. `students.csv` still carries per-subject totals, which are quasi-identifiers on a small cohort. |
 | **Information disclosure** via secrets | `.env`, CI | `.env` gitignored; gitleaks over full history, blocking; workflow permissions `contents: read` | Rotate any token that was ever pasted into chat or a ticket. |
 | **Information disclosure** via logs | CLI output | Usage summaries print token counts, not content | Plans print to stdout in `.md`; do not pipe to shared logs with real data. |
 | **Denial of service** by a hung LLM server | OpenAI-compatible client | Three `response_format` strategies each with a 600 s timeout | A hung server can burn 30 minutes and misreport as a JSON error (action A-30). Add `LJA_OPENAI_TIMEOUT`. |
 | **Elevation of privilege** via dependencies | `requirements.txt` | Pinned versions; `pip-audit` in CI | `pip-audit` is non-blocking. Triage and flip `continue-on-error` to `false` (§5.4). |
 | **Supply chain** via the CDN | `base.html` | None | Chart.js is fetched unpinned from jsDelivr at page load. Vendor it under `static/` and pin the version (A-20). |
-| **Misuse** of threshold flags as a grade-changing tool | CLI `--absolute-floor` etc. | Output says which basis produced each label | If thresholds become viewer-adjustable (A-27), label it as sensitivity exploration, not policy. |
+| **Misuse** of threshold flags as a grade-changing tool | CLI `--absolute-floor` etc. | Output says which basis produced each label; `/run` shows every threshold used, with changed values marked | If thresholds become viewer-adjustable (A-27), label it as sensitivity exploration, not policy. |
+| **Unverified content** reaching a student | `lja.quiz` (PR #52) | Grounding checks every reference; a blind second pass answers each question without the key and the code compares; the page says the key is unchecked and asks for staff review | Nothing in the pipeline can check that a marked answer is correct (§3.10). "For educator view only" is a label, not an access control: the dashboard has no logins. Do not show quizzes to real students before a person has reviewed them. |
+| **Web Services token** scope | `moodle_probe.py` | Four functions needed | IOLG-111 check 5: the dev token (`moodle_mobile_app` service) authorises 429 functions. The production path does not use Web Services, but if one is ever adopted, define a purpose-built service limited to those four. |
 
 ### 3.9 Known limitations
 
-1. **The supplied dataset is nearly flat.** Measured MAD across the 150 profiles: min 0.00, median 0.90, max 3.80. Each synthetic student is one baseline plus independent noise with no per-competency ability term, so relative detection has little to find. This is probably an artefact of how the workbook was generated, not a fact about students. **Do not tune `LJA_GAP_MIN_SPREAD` down to make more gaps appear.** PR #24 adds a generator with per-competency ability precisely so the detector can be evaluated.
-2. **The relative detector flags almost everyone once profiles have real variance.** On 500 generated students at the default −1.0 MAD cutoff, 448 had a persistent gap and 32 of 33 planted gaps were recovered. Accurate, but a lot of flags. The cutoff needs ratifying with the owner on data with known ground truth.
+1. **The supplied dataset is nearly flat.** Measured MAD across the 150 profiles: min 0.00, median 0.90, max 3.80. Each synthetic student is one baseline plus independent noise with no per-competency ability term, so relative detection has little to find. This is probably an artefact of how the workbook was generated, not a fact about students. **Do not tune `LJA_GAP_MIN_SPREAD` down to make more gaps appear.** The catalogue generator (IOLG-113) adds per-competency ability precisely so the detector can be evaluated.
+2. **The relative detector flags almost everyone once profiles have real variance, and the cutoff now has a measured sensitivity curve.** On 500 generated students at the default −1.0 MAD cutoff, 448 had a persistent gap and 32 of 33 planted gaps were recovered. On the 3,000-student handbook cohort (314 subjects, 1,436 real SILOs) the same run gave 227 of 245 planted gaps found (93%) with 2,240 students flagged at −1.0; 220 (90%) and 1,833 at −1.5; 207 (84%) and 1,420 at −2.0, and in each case over 90% of the unplanted flags were in the student's genuinely weakest third. The detector is accurate about *which* competency is weak; the cutoff trades a little recall for far fewer flags. That table is the input action A-01 was missing. The priority groups (D14) are the dashboard's answer in the meantime.
 3. **Local LLM quality is the biggest single risk.** An 8B model grouped SILOs by subject (semantically useless). A 30B model did genuine cross-subject grouping but dropped SILOs on some runs, which is why coverage validation and retry exist. Run-to-run variance means clustering is not reproducible; the cache and the review file are what make a run stable.
-4. **Single-call clustering does not scale.** At 52 SILOs (a realistic multi-subject catalogue) the 30B model failed coverage on all three attempts and was aborted after 7m43s. Options: a stronger model, chunking by year level or subject pair with a merge pass, a repair pass, or revisiting embeddings (ADR 0002's review trigger).
+4. **Single-call clustering does not scale.** At 52 SILOs (a realistic multi-subject catalogue) the 30B model failed coverage on all three attempts and was aborted after 7m43s. The embedding tagger (D18) shows the alternative works at 1,436 SILOs, but it is wired to the catalogue, not to `cluster_silos()`. Options for the pipeline remain: a stronger model, chunking by year level or subject pair with a merge pass, a repair pass, or the embedding pre-pass (ADR 0002's review trigger).
 5. **Rubric fills need database access** (D3). Only the Moodle path is affected.
 6. **Moodle loading is proven for one subject** (CSE1IOI, 5 students × 3 criteria), and the loader hardcodes assessment weight 1.0 and no early/hurdle flags.
 7. **No timestamps in the workbook**, so "progress" means position in the declared subject sequence, not time; `future_subjects` is always empty on the three-subject fixture.
 8. **Charts need internet** (CDN). **No auth.** **No confirmation UI** (review is CLI-only). **Dashboard reads Excel only** (no `--source moodle` there yet).
 9. **Feedback text is templated**: 45 unique strings across 1,650 rows. Feedback analysis features were not built for that reason; the owner flagged that bespoke feedback carries re-identification risk.
 10. **Docs drift.** Parts of `python/README.md` predate the review gate and the plan command's review awareness (§5.9 lists what to fix).
+11. **The quiz's answer key cannot be checked** (PR #52). The only subject matter in the input is the SILO wording, assessment names, marker feedback and handbook synopsis; the question, key and distractors come from the model's general knowledge. The blind second pass catches disagreement, not shared blind spots: on the first live run the same model agreed at high confidence with a composition-versus-aggregation question a tutor could reasonably mark the other way. See §3.10.
+12. **The review banner names a count, not the cluster** (UAT-02). With a rejected cluster the dashboard says "1 AI-generated SILO cluster(s) have been rejected by staff" while the CLI names it. The S5 acceptance criterion fails on the dashboard path until the banner is amended or the criterion revised.
+13. **The quick start leaves the default cache path empty** (UAT-01). Step 3 reads the committed reference cache with `--clustering-cache` but writes nothing to `output/silo_clustering.json`, so the bare `lja.plan` and `lja.export` examples exit 2 until the same flag is carried through. A documentation fix, routed to IOLG-114.
+14. **Prose in generated plans can misattribute.** The ten-plan audit passed every structured check, but the assisted pre-review found prose concerns in eight plans: feedback attributed to the wrong assessment, a summary counting two persistent gaps where there is one, "steady progress" with no measured improvement. Grounding checks names, not claims. Human sign-off is pending (IOLG-121).
+
+### 3.10 Generated artefacts: plans, strategies and the practice quiz
+
+Three commands generate something for one student. They are one family (D16): same inputs, same gate, same fail-closed loop, and the dashboard only renders what they wrote. What differs is what each one is for and what its grounding rules add.
+
+| | `lja.plan` (IOLG-108) | `lja.strategy` (IOLG-123) | `lja.quiz` (IOLG-136, PR #52) |
+|---|---|---|---|
+| Answers | *What* to work on | *How* to study it | *Whether* the gap is closing |
+| Output | `LearningPlan`: priorities with evidence and actions | `StudyStrategy`: one entry per gap | `QuizDocument`: questions per gap, plus the educator review |
+| Extra input | — | — | The subject catalogue, for titles and handbook synopses (`--catalogue`; optional) |
+| Grounding beyond the plan's | — | Per competency: subjects, assessments and SILOs must belong to the competency the entry is filed under; exactly one entry per gap, none for a strength; `gap_kind` matches the engine | Per competency as for strategies; every gap gets exactly `--items-per-gap` questions; options 3 or 4, distinct, valid key; written tasks carry 2 to 5 marking points; no invented code in any prose field |
+| Structural rule checked in code | — | Persistent gap: name two or more evidencing subjects and use interleaving or spaced practice. Isolated gap: include feedback review of the named assessment | A SILO whose wording contains a doing verb (implement, design, analyse, …) must get a written task under the default `mixed` policy |
+| No gap | A plan is still written | One line, exit 0, no LLM call | One line, exit 0, no LLM call |
+| Shown on the dashboard | Next actions on the student page (D7) | Not yet | Student page, with synopses and collapsed educator notes (PR #52) |
+| Tests | `test_learning_plan.py` (17), `test_plan_cli.py` | `test_study_strategy.py` (19), `test_strategy_cli.py` (6) | `test_quiz.py`, `test_quiz_cli.py` (74 tests on the branch) |
+
+**Study strategies.** Techniques are a closed list (`STUDY_TECHNIQUES`): the six strategies in Weinstein, Madan and Sumeracki (2018), *Teaching the science of learning* (spaced practice, retrieval practice, interleaving, elaboration, concrete examples, dual coding), plus worked examples and feedback review. The schema rejects any other name, so the model cannot recommend something plausible with no evidence behind it. First live run on 27 Sep (`qwen3-vl:30b`): three students, every strategy grounded on the first attempt, 20 to 97 seconds each.
+
+**The practice quiz, and why it is a thin slice.** The tender listed the adaptive quiz last and named it the first descope candidate, because a quiz is the artefact "most likely to look plausible while quietly not being grounded". The binding plan cut it, and the slice in PR #52 was built late in Sprint 5 so the next team starts from a grounded, tested baseline rather than nothing. It does four things:
+
+1. **Two kinds of question, and the educator decides the policy.** A `multiple_choice` item has 3 or 4 options and a key; a `written` task has a stem asking the student to produce something, a `model_answer` a tutor would accept, and 2 to 5 `marking_points`. Retrieval practice works best when the student generates the answer, so written tasks are the better instrument where the SILO asks for doing; multiple choice is the only kind that self-marks. `--format` is `multiple_choice`, `written` or `mixed` (default). Under `mixed` the model chooses per question inside one rule the code also checks (`requires_written()`): a doing-verb SILO must get a written task. The prompt tags those SILOs "(written task required)" so the model and the validator read the same rule.
+2. **A blind educator review as a second pass.** After the quiz grounds, one more call (skip with `--skip-educator-review`) gives the model every question with its options, SILO wording, assessment and synopsis but **not** the key, and asks it to choose, state a confidence, write the explanation a tutor would give and flag concerns. The code, never the model, compares the choice with the key. For a written task the pass acts as a second marker against the model answer and marking points (`meets`, `partly`, `fails`). The result is stored as `educator_review` and rendered under each question in a collapsed block labelled "For educator view only", with a summary line naming any disagreement. A disagreement does not prove either side wrong; it says which question to check first. A review that never grounds is a warning, not a failure: the quiz is still written, without notes.
+3. **Handbook synopses.** The crawl always parsed each subject's handbook description; it now lands in the catalogue as `Subject.description`. The three supplied subjects have theirs from the cached 2026 pages; synthetic subjects have none and the page says so rather than inventing one.
+4. **It says what it cannot check.** The page and the Markdown both state that the answer key is unverified and ask for staff review before a student sees the quiz.
+
+First live runs, 2 Oct 2026, `qwen/qwen3-vl-30b` via LM Studio on the reference run, STU0003 (one persistent gap, one isolated): multiple choice only grounded on the first attempt in 17 s, four questions; the mixed policy produced four written tasks (every gap SILO for this student is a doing SILO) with five marking points each, grounded on the second attempt because the first omitted the required `kind` field; the second-marker pass found every model answer meets its marking points. Both review calls were under 10 s. The limit showed up immediately: a question marking "composition" for a car and its wheels, with "aggregation" as the tempting distractor, which a tutor could reasonably mark the other way, and the blind review by the same model agreed with it at high confidence. A model reviewing its own questions shares its own blind spots, so point the reviewer at a different model family where one is available.
+
+**Closing the gap** means one of two things, neither built: feed real course material (lecture notes, tutorial questions, rubric criteria text) so a question can be checked against a source, or run the blind pass on an independent model and reject on disagreement. Until then the quiz is a staff tool, not a student one.
 
 ---
 
@@ -290,7 +351,7 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 
 ### 4.3 Installation from a clean clone (Linux)
 
-⚠ *The clean-machine rebuild by a non-author (IOLG-118) has not yet been performed. Until it is, treat these steps as the author's account, and log every deviation on IOLG-114.*
+⚠ *The clean-machine rebuild by a non-author (IOLG-118) has still not been performed; `docs/rebuild-check.md` (28 Sep) records why and four preflight findings: the Ubuntu conda prerequisite is implicit, the quick start's cache path does not match the later bare commands (UAT-01, §3.9 item 13), the Python README's setup and dashboard examples silently require a model, and a pip install needs `libpq-dev`. Treat these steps as the author's account, and log every deviation on IOLG-114.*
 
 ```bash
 # 1. Clone
@@ -333,9 +394,15 @@ python -m lja.cli ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx
 # 8. Dashboard (D1–D10)
 python -m lja.dashboard                  # http://127.0.0.1:8000
 
-# 9. One learning plan (S3)
+# 9. One learning plan (S3), then a study strategy (S7) and the research export (S4)
 python -m lja.plan ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
 #    writes output/plans/learning_plan_STU0003.{json,md}
+python -m lja.strategy ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+#    writes output/strategies/study_strategy_STU0003.{json,md}
+python -m lja.export ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx --out output/export
+#    writes students.csv, competencies.csv, cohort.csv, manifest.json; no LLM call
+# If step 6 used --clustering-cache ../data-fixtures/reference-run/silo_clustering.json instead of
+# calling the LLM, pass the same flag to plan, strategy and export, or they exit 2 (UAT-01).
 ```
 
 **macOS (Apple Silicon).** The root `README.md` has a verified walkthrough: Docker Desktop and Miniforge via Homebrew, `conda init zsh`, then the same steps. **Windows.** Use WSL2 with Ubuntu and follow the Linux steps; Docker Desktop with the WSL2 backend for Moodle.
@@ -393,6 +460,11 @@ All configuration is environment variables, read in exactly one place: `python/l
 | `MOODLE_URL` / `MOODLE_TOKEN` | — | `moodle_probe.py` only |
 | `LJA_DASHBOARD_EXCEL_PATH` | `../data-fixtures/CSE_results_150_students_3_Subjects.xlsx` | Dashboard data |
 | `LJA_DASHBOARD_CLUSTERING_CACHE` | `output/silo_clustering.json` | Dashboard cache |
+| `LJA_DASHBOARD_PLANS_DIR` | `output/plans` | Where the dashboard looks for `learning_plan_<id>.json` (D7) |
+| `LJA_DASHBOARD_QUIZZES_DIR` | `output/quizzes` | Where the dashboard looks for `quiz_<id>.json` (PR #52) |
+| `LJA_QUIZ_CATALOGUE` | `../data-fixtures/subject_catalogue.yaml` | Subject titles and handbook synopses for the quiz; skipped if missing (PR #52) |
+| `LJA_EMBED_MODEL` | `nomic-embed-text` | Embedding model for the catalogue competency tagger, always via the OpenAI-compatible endpoint (`ollama pull nomic-embed-text`) |
+| `LJA_EXPORT_SALT` | empty | Key for `lja.export --anonymise`. No default on purpose; empty refuses the run. Keep it out of git |
 | `LJA_RUN_MOODLE_INTEGRATION` | unset | `1` enables the one live-database test |
 
 ### 4.5 Command reference
@@ -403,11 +475,18 @@ Run everything from `python/` with the `lja` environment active.
 |---|---|---|---|
 | `python -m lja.cli [xlsx]` | Load → cluster (cached) → gate → gaps → CSVs | `--source excel\|moodle`, `--mapping`, `--clustering-cache`, `--review-file`, `--allow-unconfirmed`, `--refresh-clustering`, `--extra-instructions`, `--gaps-out`, `--clusters-out`, threshold overrides | 0 ok; 2 gate blocked |
 | `python -m lja.review` | Confirm/reject clusters | `--cluster <id or prefix>`, `--state`, `--note` (required to reject), `--clustering-cache`, `--review-file` | |
-| `python -m lja.plan [xlsx] STUxxxx` | Grounded learning plan for one student | `--source`, `--out-dir`, `--max-attempts`, `--extra-instructions` | 0 ok; 1 never grounded; 2 precondition (no cache, rejected cluster) |
-| `python -m lja.dashboard` | Serve the dashboard | `--excel-path`, `--clustering-cache`, `--host`, `--port`, `--absolute-floor`, `--absolute-ceiling` | 1 if cache missing |
+| `python -m lja.plan [xlsx] STUxxxx` | Grounded learning plan for one student | `--source`, `--clustering-cache`, `--review-file`, `--out-dir`, `--max-attempts`, `--extra-instructions` | 0 ok; 1 never grounded; 2 precondition (no cache, rejected cluster) |
+| `python -m lja.strategy [xlsx] STUxxxx` | Grounded study strategy, one entry per gap | Same as `lja.plan` | 0 ok or no gap; 1 never grounded; 2 precondition |
+| `python -m lja.quiz [xlsx] STUxxxx` (PR #52) | Grounded practice quiz per gap, with a blind educator review | Same as `lja.plan`, plus `--catalogue`, `--items-per-gap`, `--format multiple_choice\|written\|mixed`, `--skip-educator-review` | 0 ok or no gap; 1 never grounded; 2 precondition |
+| `python -m lja.export [xlsx] --out DIR` | Three research CSVs and a manifest from the cached run; no LLM | `--source`, `--clustering-cache`, `--anonymise` | 0 ok; 2 no cache or empty salt |
+| `python -m lja.grounding_audit` | The IOLG-121 audit: plans for a fixed ten students with every attempt recorded, plus evidence pairs | | |
+| `python -m lja.dashboard` | Serve the dashboard | `--excel-path`, `--clustering-cache`, `--host`, `--port`, `--absolute-floor`, `--absolute-ceiling`; `LJA_DASHBOARD_PLANS_DIR` for plans | 1 if cache missing |
 | `python -m lja.data.synth_generator src.xlsx --add N --out f.xlsx` | Add synthetic students to the supplied workbook, with planted gaps | `--planted-gap-silos`, `--seed`, `--no-llm-feedback` | |
-| `python -m lja.data.catalogue_generator catalogue.yaml --students N --out f.xlsx` (PR #24) | Generate a cohort with per-competency ability and ground truth; optional Moodle fixtures | `--seed`, `--competency-sd`, `--planted-gap-*`, `--moodle-out` | |
-| `python -m lja.data.catalogue_verify truth.json --gaps gap_report.csv` (PR #24) | Score a run against ground truth | `--clustering`, `--min-recall` | 1 if below recall |
+| `python -m lja.data.catalogue_generator catalogue.yaml --students N --out f.xlsx` | Generate a cohort with per-competency ability, programs and ground truth; optional Moodle fixtures | `--seed`, `--competency-sd`, `--planted-gap-*`, `--program-selection`, `--latent-share`, `--moodle-out` | |
+| `python -m lja.data.catalogue_verify truth.json --gaps gap_report.csv` | Score a run against ground truth | `--clustering`, `--min-recall` | 1 if below recall |
+| `python -m lja.data.catalogue_draft catalogue.yaml --subject CODE "Title" YEAR …` | Have the LLM draft synthetic subjects in the catalogue's structure | `--out` | |
+| `python -m lja.data.handbook --year 2026 --prefix CSE … --out raw.yaml` | Crawl real subjects and SILOs from the La Trobe handbook (1 request/s, disk-cached) | `--prefix` | |
+| `python -m lja.data.competency_tagger raw.yaml --out tagged.yaml` | Group SILOs into competencies with embeddings and k-means; the LLM only labels | `--k`, `--traits` | |
 | `python moodle_probe.py` | Web-services connectivity check | reads `MOODLE_URL`, `MOODLE_TOKEN` | |
 | `python -m pytest -q` | Tests | `--cov=lja` | |
 | `ruff check .` | Lint | | |
@@ -416,12 +495,15 @@ Run everything from `python/` with the `lja` environment active.
 
 | Check | Expected |
 |---|---|
-| `python -m pytest -q` | `195 passed, 1 skipped` (counts will drift; zero failures is the criterion) |
+| `python -m pytest -q` | `261 passed, 1 skipped` on `main` at 2 Oct (335 on the PR #52 branch; counts will drift; zero failures is the criterion) |
 | `ruff check .` | `All checks passed!` |
 | `python -m lja.cli <xlsx>` with a confirmed review | Prints a cluster table, then `N gap rows, M persistent-gap students`; `output/gap_report.csv` exists |
 | `python -m lja.dashboard` then `curl -s localhost:8000/ \| grep -c 'STU0'` | 150 |
 | `curl -s localhost:8000/cohort/at-risk` | 404 (deliberate, §3.7 D11) |
 | `python -m lja.plan <xlsx> STU0003` | `.json` and `.md` in `output/plans/`, grounding summary printed |
+| `python -m lja.strategy <xlsx> STU0003` | `.json` and `.md` in `output/strategies/`; the persistent entry names two subjects |
+| `python -m lja.export <xlsx> --out output/export` | Four files; `competencies.csv` has 750 rows and `students.csv` 150 on the supplied workbook, with no LLM call |
+| `curl -s localhost:8000/run \| grep -c LJA_GAP_` | 7 (one row per threshold) |
 
 ---
 
@@ -443,26 +525,39 @@ LearningJourneyAssistant/
 │   │   ├── config.py            ALL env vars. Add a setting here and in .env.example, nowhere else
 │   │   ├── cli.py               pipeline command                      (347 lines)
 │   │   ├── plan.py              learning-plan command                 (173)
+│   │   ├── strategy.py          study-strategy command                (120)
+│   │   ├── quiz.py              practice-quiz command (PR #52)        (188)
+│   │   ├── export.py            research export, no LLM               (265)
+│   │   ├── grounding_audit.py   the IOLG-121 ten-plan audit           (282)
 │   │   ├── review.py            staff gate: models, transitions, CLI  (333)
-│   │   ├── llm/                 base.py Protocol · factory.py · anthropic_client.py · openai_compatible_client.py · grounding.py
+│   │   ├── llm/                 base.py Protocol · factory.py · anthropic_client.py · openai_compatible_client.py · grounding.py · embeddings.py
 │   │   ├── data/                excel_loader.py · moodle_loader.py · sql.py · loading.py · synth_generator.py
-│   │   │                        catalogue*.py + moodle_emitters.py (PR #24)
-│   │   ├── model/               silo_clustering.py · gap_detection.py · gap_evidence.py · learning_plan.py
-│   │   └── dashboard/           app.py (routes) · stats.py · __main__.py · templates/*.html · static/{style.css,sort.js}
-│   ├── tests/                   21 files, one per module, all offline
-│   └── output/                  gitignored: caches, review file, CSVs, plans
+│   │   │                        catalogue.py · catalogue_generator.py (585) · catalogue_verify.py · catalogue_draft.py · moodle_emitters.py
+│   │   │                        handbook.py (crawl) · competency_tagger.py (embeddings + k-means)
+│   │   ├── model/               silo_clustering.py · gap_detection.py · gap_evidence.py · learning_plan.py · study_strategy.py (379)
+│   │   │                        silo_quality.py (532) · quiz.py (732, PR #52)
+│   │   └── dashboard/           app.py (routes, 1,032) · run_info.py · stats.py · __main__.py · templates/ (21 files; _macros.html holds the tile and scrollbox macros)
+│   │                            static/{style.css, sort.js, scrollbox.js, chartzoom.js}
+│   ├── tests/                   30 files, 273 test functions, all offline; tests/validation/cases.csv is the IOLG-110 worksheet
+│   └── output/                  gitignored: caches, review file, CSVs, plans, strategies, quizzes, export
 ├── sql/                         moodle_attainment_extraction.sql (Queries 1–6), lja_reader DDL, README with the join gotchas
 ├── data-fixtures/               the supplied workbook, criterion→SILO map, subject_catalogue.yaml, .mbz sample
+│                                reference-run/ (cache, review file, plans; plus Sui Lung's review verdicts) · README-handbook-cohort.md
+│                                handbook/ is gitignored: La Trobe's content, regenerated in minutes
 ├── devenv/                      bootstrap.sh · seed.sh · env.sh · fixtures/ (rubric marking scripts)
 └── docs/
     ├── adr/                     0001 relative gap detection · 0002 no-embedding clustering
     ├── meetings/actions.md      the actions register (A-nn); read this before re-deciding anything
     ├── sprint-plan.md, *.pdf    sprint plans (Rev 5 PDF is binding), pipeline and UML PDFs (Aug; regenerate)
-    ├── lecture_summaries/       W1–W7 course guidance
-    └── handover/                this document
+    ├── lecture_summaries/       W1–W10 course guidance
+    ├── Sprint 5 evidence:       validation-worksheet.md (IOLG-110) · grounding-audit.md (IOLG-121) · security-evidence.md (IOLG-111)
+    │                            compliance-checklist.md (IOLG-117) · rebuild-check.md (IOLG-118) · uat-checklist.md (IOLG-130)
+    │                            risk-register.md (IOLG-125) · cluster-review-sprint5.md (IOLG-124/133) · export-schema.md + export-sample.ipynb (IOLG-120)
+    ├── sprints/sprint-5/        the raw evidence behind those: plan/evidence pairs, scanner logs, preflight and UAT transcripts
+    └── handover/                this document, the User Document and the learning-plan traceability note
 ```
 
-**Rule of thumb.** A new setting goes in `config.py` and `.env.example`. A new data source goes in `lja/data/` and returns `LjaDataset`. A new LLM provider implements `LLMClient` and is wired in `factory.py`. A new generated artefact gets its own command and its own `ReferenceCheck` list. A new dashboard view is a route in `app.py`, a template, and a `TestClient` test. Every one of these has an existing example to copy.
+**Rule of thumb.** A new setting goes in `config.py` and `.env.example`. A new data source goes in `lja/data/` and returns `LjaDataset`. A new LLM provider implements `LLMClient` and is wired in `factory.py`. A new generated artefact gets its own command and its own `ReferenceCheck` list. A new dashboard view is a route in `app.py`, a template, and a `TestClient` test; a new count is a `tile` and a list page that a test proves agree. Every one of these has an existing example to copy.
 
 ### 5.2 Routine operations
 
@@ -472,8 +567,10 @@ LearningJourneyAssistant/
 | Re-cluster from scratch | `--refresh-clustering`. Existing review decisions survive for any cluster whose membership is unchanged (id is a hash of members). | When the model or prompt changes |
 | Review new clusters | `python -m lja.review`, then re-run the pipeline. Rejected clusters need a `--note`; the note is printed as rework instructions. | After any re-clustering |
 | Swap the LLM | Edit `.env`; nothing else. Then re-cluster and re-review, because clustering output is model-dependent. Record the model in the ticket (A-29 asks for it in the cache too). | As governance allows |
+| Regenerate the per-student artefacts | After a pipeline run, `lja.plan`, `lja.strategy` and (PR #52) `lja.quiz` for the students who need them; each is one or two LLM calls per student and nothing re-runs them for you. Point `LJA_DASHBOARD_PLANS_DIR` and `LJA_DASHBOARD_QUIZZES_DIR` at the results. | After any pipeline run |
+| Export for the department | `python -m lja.export … --out output/export [--anonymise]`; keep `manifest.json` with the CSVs, it is what makes two exports comparable. | Each semester |
 | Restart the dashboard | It has no reload; kill and rerun `python -m lja.dashboard`. | After any pipeline run |
-| Rotate secrets | Replace `ANTHROPIC_API_KEY` / `MOODLE_TOKEN` / `PGPASSWORD` in `.env`; revoke the old one at the provider. Never paste a token into a ticket or chat. | On any suspected exposure; each semester |
+| Rotate secrets | Replace `ANTHROPIC_API_KEY` / `MOODLE_TOKEN` / `PGPASSWORD` in `.env`; revoke the old one at the provider. Never paste a token into a ticket or chat. `LJA_EXPORT_SALT` is different: rotating it breaks the link between old and new exports, so keep one salt per study and store it like a key. | On any suspected exposure; each semester |
 | Clear generated state | `rm -rf python/output/` removes caches, CSVs and plans **and the review file**. Back up `*.review.json` first. | Rarely |
 | Back up | `python/output/*.review.json`, `data-fixtures/criterion_silo_map_*.csv`, `.env` (encrypted). Everything else is regenerable or in git. | Before upgrades |
 
@@ -506,13 +603,13 @@ To change protection rules you need repository admin; the settings and the reaso
 
 **Add an LLM provider.** Implement the three methods of `LLMClient` in `lja/llm/<provider>_client.py`. `complete_structured` must return a validated schema instance or raise; never return free text. Add the provider name to `factory.get_llm_client()` and the settings to `config.py`. Test with fake SDK objects, as both existing clients do.
 
-**Add a generated artefact (study strategies, quizzes).** Follow `learning_plan.py` exactly: a Pydantic schema with `extra="forbid"`; a `*Context` dataclass whose `known_*` properties define the vocabulary; a list of `ReferenceCheck`s including a regex scan of every prose field; a generate loop that quotes grounding errors back and fails closed; its own `python -m lja.<name>` command that respects the review gate. The tender says quizzes are "most likely to look plausible while quietly not being grounded", which is why this discipline is not optional.
+**Add a generated artefact.** Follow `learning_plan.py`, or better `study_strategy.py` and `quiz.py` (PR #52), which are the two later copies of the same pattern: a Pydantic schema with `extra="forbid"`; a `*Context` dataclass whose `known_*` properties define the vocabulary; a list of `ReferenceCheck`s including a regex scan of every prose field, filed per competency where the artefact is per gap; a generate loop that quotes grounding errors back and fails closed; its own `python -m lja.<name>` command built on `build_plan_context()` that respects the review gate and exits 0 without an LLM call when the student has nothing to act on. If the dashboard shows it, the page reads the JSON from a directory setting and never generates. The tender says quizzes are "most likely to look plausible while quietly not being grounded", which is why this discipline is not optional, and §3.10 records the limit grounding cannot cross.
 
-**Add a dashboard view.** A route in `app.py` returning a template that extends `base.html` (so the review banner appears); compute from `dataset`, `gaps` and `clustering` passed to `create_app`, never from the LLM; a `TestClient` test in `test_dashboard.py`. PR #23 (strengths) and PR #25 (clusters) are worked examples. Cohorts are registered in `_COHORTS`.
+**Add a dashboard view.** A route in `app.py` returning a template that extends `base.html` (so the review banner appears); compute from `dataset`, `gaps` and `clustering` passed to `create_app`, never from the LLM; a `TestClient` test in `test_dashboard.py`. Every count is a `tile` that links to a list page, membership is decided in `app.py` and a test in `test_dashboard_lists.py` proves the list holds what the tile counted. Long tables go in the `scrollbox` macro; charts come before lists and plot the same rows. The subject, assessment and `/run` pages in PR #43 are the worked examples. Cohorts are registered in `_COHORTS` (five today: `all`, `persistent-gap`, `priority-1`, `-2`, `-3`).
 
 **Change a threshold.** Change the default in `config.py` and the comment in `.env.example`, and update ADR 0001's status from "Proposed" only when the owner has ratified the number on data with ground truth (`catalogue_verify` gives recall against planted gaps). `test_thresholds_are_configuration_not_constants` will catch a hardcoded literal.
 
-**Scale clustering past ~50 SILOs.** See §3.9 item 4 and ADR 0002's review triggers. The catalogue generator (PR #24) produces the test data; `catalogue_verify` scores pairwise precision/recall of any clustering against the catalogue's competency tags.
+**Scale clustering past ~50 SILOs.** See §3.9 item 4 and ADR 0002's review triggers. The catalogue generator produces the test data, and the handbook crawl supplies real SILOs at scale; `catalogue_verify` scores pairwise precision/recall of any clustering against the catalogue's competency tags.
 
 ### 5.6 Troubleshooting
 
@@ -524,8 +621,13 @@ To change protection rules you need repository admin; the settings and the reaso
 | Empty LLM content, `finish_reason=length` | Reasoning model spent the budget thinking | Raise `LJA_OPENAI_MAX_TOKENS`; confirm the server honours `response_format` |
 | `400` from Anthropic mentioning temperature | `claude-opus-4-8` rejects sampling params | Use `LJA_ANTHROPIC_EFFORT` / `LJA_ANTHROPIC_THINKING` |
 | "JSON error" after a very long wait | Server hung; timeout misreported (A-30) | Check the Ollama/LM Studio process; there is no `LJA_OPENAI_TIMEOUT` yet |
+| `lja.plan`, `lja.strategy` or `lja.export` exits 2: `No clustering cache at output/silo_clustering.json` right after the quick start | The quick start read the reference cache but wrote nothing under `output/` (UAT-01) | Pass the same `--clustering-cache ../data-fixtures/reference-run/silo_clustering.json` to the artefact command |
+| `lja.export --anonymise` exits 2 | `LJA_EXPORT_SALT` is empty | Set a salt in `.env`; never commit it |
+| `lja.strategy` or `lja.quiz` prints one line and writes nothing | The student has no isolated or persistent gap | Nothing to fix; exit 0 is correct |
+| Quiz written without educator notes | The review pass never grounded; it is a warning | Re-run, or review the questions by hand; `--skip-educator-review` to skip the call deliberately |
 | Dashboard exits 1 at start | No clustering cache | Run `lja.cli` first, or point `--clustering-cache` at the reference run (PR #22) |
-| Dashboard charts blank | No internet for the CDN | Vendor Chart.js (A-20) or connect |
+| Dashboard charts blank | No internet for the CDN | Vendor Chart.js and d3 (A-20) or connect |
+| Banner says a cluster was rejected but not which | Known gap (UAT-02) | Run `lja.cli`; the CLI names the rejected cluster and prints the rework note |
 | `KeyError` in `compute_gaps` | A SILO in the dataset is in no cluster | Cache is stale for this dataset; `--refresh-clustering` |
 | `ValueError: unmapped criterion` on `--source moodle` | `criterion_silo_map` CSV lacks a row | Add the mapping row; it is required, not best-effort |
 | Query 2 returns 0 rows | Wrong table prefix, or `grading_instances.status != 1` | Set `LJA_MOODLE_TABLE_PREFIX` (`m_` in devenv); check `reload_fixture.sh` ran |
@@ -556,6 +658,13 @@ Things a maintainer should know are known. Each has an owner in the actions regi
 | 14 | Root `environment.yml` is a stale machine-specific export; `python/environment.yml` is the real one | repo root | delete it |
 | 15 | Untracked report files in the repo root (`*.html`, sprint reports, `temp`) | repo root | move under `docs/sprints/` or delete before the handover zip |
 | 16 | Jira epics triplicated (IOLG-63–77) | Jira | A-34 |
+| 17 | Review banner reports a count, not the rejected cluster's name | `dashboard/templates/base.html` | UAT-02 |
+| 18 | `lja.export` has no staff-gate check; plans and strategies warn on pending rather than block | `export.py`, `plan.py`, `strategy.py` | compliance SE-5 |
+| 19 | Quick start's cache path differs from the bare artefact commands | root `README.md`, `python/README.md` | UAT-01, IOLG-114 |
+| 20 | Quiz answer key is unverifiable; the blind reviewer defaults to the same model | `model/quiz.py` (PR #52) | §3.10 |
+| 21 | d3 and d3-cloud also from the CDN, unpinned to a minor | `dashboard/templates/silos.html` | A-20 |
+| 22 | The architecture and use-case diagrams predate the Sprint 5 commands and pages | `docs/handover/diagrams/01-*.mmd`, `02-*.mmd` | this document |
+| 23 | `/run` reconstructs the command from argv; a dashboard embedded by another caller gets no command section | `dashboard/run_info.py` | — |
 
 ### 5.8 The Moodle production path: what an operator must know
 
@@ -570,7 +679,7 @@ Stated plainly because the owner asked for it. LJA reads rubric fills **directly
 
 ### 5.9 Documentation that is known to be stale
 
-Fix these in the README truth pass (IOLG-114):
+IOLG-114 (PR #27) landed the handover set, but the four README items below were checked again on 2 Oct and are still present. Fix them in the next README pass, together with UAT-01:
 
 - `python/README.md` "Not yet written" still lists the staff confirmation workflow; `review.py` implements it and `cli.py` enforces it.
 - `python/README.md` says plans do not consult review states; `plan.py` does since IOLG-108.
@@ -589,14 +698,14 @@ Tests were written before or with the code, derived from the acceptance criteria
 | Level | What | Where | Automated |
 |---|---|---|---|
 | Unit | Every module in `lja/` except `config.py`, `factory.py`, `catalogue_draft.py` and the two `__main__` entry points | `python/tests/test_<module>.py` | Yes, CI |
-| Component / CLI | `plan.py` gate behaviour with the pipeline monkeypatched | `test_plan_cli.py` | Yes, CI |
-| Integration | Dashboard routes via FastAPI `TestClient` over in-memory data; generator → workbook → loader → `compute_gaps` end to end; SQL Query 2 against a live Moodle | `test_dashboard.py`, `test_catalogue_generator.py`, `test_moodle_loader.py::test_integration_loads_seeded_subject` | Yes; live DB test skipped unless enabled |
+| Component / CLI | `plan.py`, `strategy.py` and (PR #52) `quiz.py` gate behaviour with the pipeline monkeypatched; `export.py` end to end on an in-memory dataset | `test_plan_cli.py`, `test_strategy_cli.py`, `test_quiz_cli.py`, `test_export.py` | Yes, CI |
+| Integration | Dashboard routes via FastAPI `TestClient` over in-memory data, including every list page against its tile; generator → workbook → loader → `compute_gaps` end to end; SQL Query 2 against a live Moodle | `test_dashboard.py` (38), `test_dashboard_priority.py` (11), `test_dashboard_lists.py` (13), `test_catalogue_generator.py`, `test_moodle_loader.py::test_integration_loads_seeded_subject` | Yes; live DB test skipped unless enabled |
 | Regression | Bugs found against live models: empty content on `finish_reason=length`, `json_schema` rejected by a server, a thinking block arriving before the text block, `Average Total` leaking into subject totals | client and loader tests | Yes, CI |
 | Static | ruff E/F/I; gitleaks full history; pip-audit | CI | Yes |
-| Acceptance (UAT) | S1–S6, D1–D10 walked with the project owner from a clean clone | `docs/uat-checklist.md` (planned) | No, manual, 4/5 Oct |
-| Validation | Seven hand-worked gap-detection cases; ten plans read for invented claims; six security evidence results; clean-machine rebuild | IOLG-110, IOLG-121, IOLG-111, IOLG-118 | No, manual, Sprint 5 |
+| Acceptance (UAT) | S1–S6, D1–D10 walked with the project owner from a clean clone | `docs/uat-checklist.md`: S1–S6 run locally on 28 Sep as preliminary evidence (§6.5); live review 4/5 Oct | No, manual |
+| Validation | Seven hand-worked gap-detection cases, now also a pinned test; ten plans audited by machine and pre-reviewed; six security evidence results; clean-machine rebuild preflight | `test_validation_cases.py` over `tests/validation/cases.csv`; `docs/grounding-audit.md`; `docs/security-evidence.md`; `docs/rebuild-check.md` | Cases yes; the rest manual (§6.5) |
 
-Suite size on 26 Sep 2026: 188 test functions, 196 collected items (parametrisation), 195 pass, 1 skipped (live Moodle), 1.7 s. Coverage on the core modules (`gap_detection`, `silo_clustering`, `grounding`, `learning_plan`, `review`) is 98–100%; the headline figure is lower because `cli.py` and `dashboard/__main__.py` have no direct tests.
+Suite size on 2 Oct 2026: 30 files, 273 test functions, 261 pass, 1 skipped (live Moodle), 2.9 s on `main`; 335 pass on the PR #52 branch. At 0.1 (26 Sep) it was 195 passing. Coverage on the core modules (`gap_detection`, `silo_clustering`, `grounding`, `learning_plan`, `review`) is 98–100%; the headline figure is lower because `cli.py` and `dashboard/__main__.py` have no direct tests.
 
 ### 6.2 User-story test table
 
@@ -604,22 +713,25 @@ Suite size on 26 Sep 2026: 188 test functions, 196 collected items (parametrisat
 |---|---|---|---|---|
 | **E1** Semantic clustering | `test_silo_clustering.py` (7): complete coverage accepted; missing, duplicated and unknown SILO rejected; retry recovers from a bad first attempt; gives up after max attempts. `test_grounding.py` (12). | Live runs against `gemma4`, `qwen3-vl:30b`, `qwen3.5-35b` recorded in `python/README.md` | Cluster labels shown to the owner (IOLG-124) | Unit yes; quality no |
 | **E2** Staff gate | `test_review.py` (8): pending→confirmed, reject requires note, settled decisions cannot flip directly, state survives reload, gate reports pending and rejected. `test_plan_cli.py` (3 of 4). `test_cli.py` (3): stale cache detection. | `test_dashboard.py` banner tests (3) | S5 | Yes |
-| **E3** Relative gap detection | `test_gap_detection.py` (14): median/unscaled MAD; relative gap flagged although it is a pass; uniformly weak still gets gaps (floor); uniformly strong gets none (ceiling); flat profile and too-few-competencies fall back and say so; persistent/isolated split; thresholds are configuration. `test_gap_evidence.py` (10). | `test_catalogue_generator.py::test_truth_clustering_runs_the_real_gap_detector`; `catalogue_verify` planted-gap recall (32/33 on 500 students) | Validation worksheet, seven cases (IOLG-110) | Unit yes; ratification no |
-| **E4** Grounded plan | `test_learning_plan.py` (17): invented SILO, subject, assessment, competency, strength and wrong student all rejected; codes invented inside prose caught; every problem reported in one error; retry with errors quoted; build fails when no attempt grounds. | First live run recorded (35 s, 3.8k in / 0.4k out) | Grounding audit of ten plans (IOLG-121) | Unit yes; audit no |
+| **E3** Relative gap detection | `test_gap_detection.py` (14): median/unscaled MAD; relative gap flagged although it is a pass; uniformly weak still gets gaps (floor); uniformly strong gets none (ceiling); flat profile and too-few-competencies fall back and say so; persistent/isolated split; thresholds are configuration. `test_gap_evidence.py` (10). `test_validation_cases.py`: the seven IOLG-110 profiles (28 rows) with hand-worked expected labels, thresholds pinned. | `test_catalogue_generator.py::test_truth_clustering_runs_the_real_gap_detector`; `catalogue_verify` planted-gap recall (32/33 on 500 students; 227/245 on 3,000) | Validation worksheet, seven cases (IOLG-110), done 28 Sep | Yes; ratification no |
+| **E4** Grounded plan | `test_learning_plan.py` (17): invented SILO, subject, assessment, competency, strength and wrong student all rejected; codes invented inside prose caught; every problem reported in one error; retry with errors quoted; build fails when no attempt grounds. | First live run recorded (35 s, 3.8k in / 0.4k out); ten-plan audit on `claude-opus-4-8`, 10/10 first attempt, 190 s, $0.62 | Grounding audit of ten plans (IOLG-121): machine pass; prose pre-review found concerns in 8 of 10; human sign-off pending | Unit yes; audit machine yes, human no |
 | **S1** Pipeline on workbook | `test_excel_loader.py` (7/8), `test_loading.py` (7) | `test_catalogue_generator.py` round trip | Clean-clone rebuild (IOLG-118) | Partly (`cli.main` untested) |
 | **S2** Pipeline on Moodle | `test_moodle_loader.py` (9), `test_sql.py` (6): prefix substitution, Query 2 is one statement | `test_integration_loads_seeded_subject` (15 fills, env-gated) | UAT S2; IOLG-111 checksum | Yes when enabled |
 | **S3** Learning plan | as E4; `test_plan_cli.py::test_moodle_source_resolves_the_moodle_cache_default` | — | UAT S3 | Yes |
-| **S4** Export | — | — | UAT S4 | Not built |
+| **S4** Export | `test_export.py` (5): three CSVs and manifest, pseudonyms stable under one salt and different under another, empty salt refused, `in_plan` from the plan JSON | UAT S4 local check: 150/750/5 rows, notebook renders | UAT S4 | Yes |
 | **S5** Review changes the banner | `test_dashboard.py`: pending warning, rejected warning, hidden when confirmed | — | UAT S5 | Yes |
 | **S6** Tests pass | the suite | CI on every PR | UAT S6 | Yes |
 | **D1** Cohort list | `test_index_lists_every_student`, `…counts_only_students_with_a_persistent_gap`, `…marks_at_risk_students_link…`, `…table_is_marked_sortable…` | `TestClient` | UAT D1 | Yes |
 | **D2** Drill-down with reason | `…cohort_page_contains_only_its_members`, `…states_what_put_students_in_it`, `…tile_count_and_row_count_agree`, `…unknown_cohort_is_404…`, `…at_risk_cohort_is_not_registered_yet` | `TestClient` | UAT D2 | Yes |
 | **D3** Understanding chart | `…student_detail_shows_its_gaps`, `…worst_classification_renders_first`; `test_dashboard_stats.py` (8) | `TestClient` | UAT D3 | Yes |
-| **D4** Strengths | PR #23 tests | — | UAT D4 | PR open |
+| **S7** Study strategy | `test_study_strategy.py` (19): one entry per gap, none for a strength, per-competency grounding of subjects, assessments and SILOs, persistent needs two subjects and interleaving or spacing, isolated needs feedback review, closed technique list; `test_strategy_cli.py` (6) | Three live runs recorded, all first attempt | — | Yes |
+| **S8** Practice quiz | On the PR #52 branch: `test_quiz.py` and `test_quiz_cli.py`, one test per grounding and shape rule, the written-task rule, the educator review's checks, the gate and the fail-closed exit; `test_dashboard.py` renders a quiz and its empty state | Two live runs recorded (§3.10) | Staff review of the questions, not yet done | Yes, on the branch |
+| **D4** Strengths | `…lists_proficient_competencies_under_strengths`, `…ordered_strongest_relative_position_first`, `…index_strength_count_matches_proficient_competencies` | `TestClient` | UAT D4 | Yes |
 | **D5** Gaps with evidence | `…shows_per_subject_evidence_and_trend`, `…flags_future_subjects_for_an_at_risk_gap`, `…honest_empty_state…`, `…never_flags_future_subjects_for_a_non_gap` | `TestClient` | UAT D5 | Yes |
-| **D6** Progress | — | — | UAT D6 | Not built |
-| **D7** Next actions | — | — | UAT D7 | Not built |
-| **D8** Student picker | PR #23 tests | — | UAT D8 | PR open |
+| **D6** Progress | `…shows_progress_across_subjects_in_year_order`, `…marks_single_subject_competency_as_insufficient`, `…progress_empty_state_without_evidence` | `TestClient` | UAT D6 | Yes |
+| **D7** Next actions | `…renders_generated_learning_plan`, `…shows_plan_empty_state_when_file_is_missing`, `…without_plans_directory_is_safe` | `TestClient` over a plan JSON in `tmp_path` | UAT D7 | Yes |
+| **D8** Student picker | `…header_picker_lists_every_student_on_every_page` | `TestClient` | UAT D8 | Yes |
+| **D11** Priority groups, `/run`, lists | `test_dashboard_priority.py` (11): group membership from the classifier's outputs, ordering by lowest flagged mark, `/run` thresholds and provenance; `test_dashboard_lists.py` (13): each list equals its tile | `TestClient` | — | Yes |
 | **D9** Unreviewed-AI banner | as S5; on the PR #25 branch the banner tests also assert it links to `/clusters` | — | UAT D9 | Yes |
 | **D10** Traceability | `…states_what_put_students_in_it`; `classification_basis` asserted in `test_gap_detection.py` | — | UAT D10: pick any number, name its source record | Yes |
 
@@ -639,21 +751,27 @@ ruff check .
 
 See §3.2 and §5.4. The security job checks out full history so a secret that was committed and later "removed" is still found; a full-history scan was confirmed clean on 24 Aug 2026 and the job's value is that it stays that way. Coverage XML is uploaded as an artifact on every run, including failed ones.
 
-### 6.5 Manual validation planned for Sprint 5 (⚠ *TO FILL with results*)
+### 6.5 Manual validation in Sprint 5: what was done and what is still open
 
-| Activity | Ticket | Owner | Evidence file (planned) | Result |
+Status at 2 Oct 2026. All evidence files are on `main`.
+
+| Activity | Ticket | Owner | Evidence | Result |
 |---|---|---|---|---|
-| Seven hand-worked gap-detection cases against the engine | IOLG-110 | Anup | `docs/validation-worksheet.md` | ⚠ |
-| Ten learning plans read for invented claims and tone | IOLG-121 | Istiaque / Anup | `docs/grounding-audit.md` | ⚠ |
-| Six security evidence results (role creation, `UPDATE` denied, 15 fills readable, `pg_dump` checksum unchanged, probe function list, CI scan output) | IOLG-111 | Anup / Ayesha | `docs/compliance-checklist.md` | ⚠ |
-| Clean-machine rebuild by a non-author, `script`-logged | IOLG-118 | Anup | `docs/sprints/sprint-5/rebuild-<date>.log` | ⚠ |
-| UAT checklist S1–S6, D1–D10 walked with the owner | IOLG-127, IOLG-129 | Sui Lung / Ayesha | `docs/uat-checklist.md` | ⚠ |
+| Seven hand-worked gap-detection cases against the engine | IOLG-110 | Anup | `docs/validation-worksheet.md`; `tests/validation/cases.csv`; `test_validation_cases.py` | **Done 28 Sep.** 28 rows across seven profiles (the brief said 30; the profiles add to 28), expected labels worked by hand with the arithmetic shown, and pinned as a test so a local `.env` cannot change the answers. All pass. |
+| Ten learning plans read for invented claims and tone | IOLG-121 | Istiaque / Anup | `docs/grounding-audit.md`; `docs/sprints/sprint-5/grounding-audit/` (plans, evidence pairs, `machine-audit.csv`, `assisted-review.md`) | **Machine audit done 28 Sep:** ten fixed students, `claude-opus-4-8`, 10/10 grounded on the first attempt, no retries, 45.5k tokens in, 15.8k out, 190 s, $0.62. **Assisted prose pre-review** found concerns in eight plans (G01–G10): feedback attributed to the wrong assessment, a summary counting two persistent gaps where there is one, claims of progress or of missing work the evidence does not contain. **Human sign-off pending** (the review table's cells are still Pending). |
+| Six security evidence results | IOLG-111 | Anup / Ayesha | `docs/security-evidence.md`; `docs/sprints/sprint-5/security-evidence/ci-scanners-2026-09-28.txt` | **All six observed 28 Sep** on the dev instance (PostgreSQL 17.11, Moodle 5.2.2, prefix `m_`): role and grants created; `UPDATE m_user` denied; 15 fills readable; data-only dump checksum identical before and after a run; probe token authorises 429 functions against 4 needed (not least-privilege; the production path does not use it); gitleaks 67 commits, no leaks; pip-audit no known vulnerabilities. Review by Anup and Ayesha pending before Done. |
+| Tender compliance checklist migrated with evidence | IOLG-117 | Anup | `docs/compliance-checklist.md` | **Done 28 Sep:** all 40 original items under the eight headings; snapshot 9 Done, 30 Open, 1 Deferred. The Open items are mostly missing historical proof (before-first-push scans, the five-PR split), not missing controls. |
+| Staff review of the AI cluster labels | IOLG-124, IOLG-133 | Sui Lung / Istiaque | `docs/cluster-review-sprint5.md`; `data-fixtures/reference-run/silo_clustering.review.sui-lung.json` | **Done 26 Sep, landed 2 Oct.** Of the five reference-run clusters: four Agree, one Disagree (Object-Oriented Design and Implementation). Both SILOs the AI flagged as vague were agreed vague. The verdicts are in a separate review file so the all-confirmed reference run keeps working offline. |
+| Project risk register re-scored | IOLG-125 | Sui Lung | `docs/risk-register.md` | **Done 27 Sep, row 1 refreshed 2 Oct** with the IOLG-111 evidence. Twelve rows; the three highest residuals are Definition of Done not applied uniformly (12), thresholds unratified and over-flagging (16), and clustering not scaling past one call (16). |
+| Clean-machine rebuild by a non-author, `script`-logged | IOLG-118 | Anup | `docs/rebuild-check.md`; `docs/sprints/sprint-5/rebuild/local-preflight-2026-09-28.txt` | **Not performed.** The available environment was an assisted Mac workspace, not a fresh Ubuntu Codespace, and no log was fabricated. Four preflight findings recorded (§4.3). The Jira ticket is In Review, which overstates this. |
+| UAT checklist S1–S6 (system rows) | IOLG-130, IOLG-129 | Anup / Ayesha | `docs/uat-checklist.md`; `docs/sprints/sprint-5/uat/` | **Preliminary local run 28 Sep**, live tester pending: S1 pass (750 rows, byte-identical to the reference report); S2 blocked (no Docker); S3 and S4 pass with the explicit cache flag, bare commands exit 2 (UAT-01); S5 **fails** the naming criterion (UAT-02); S6 pass (258 at the time). The combined checklist with Sui Lung's D1–D10 rows is to be landed for the review. |
+| UAT D1–D10 walked with the owner | IOLG-127 | Sui Lung | `docs/uat-checklist.md` (combined) | ⚠ *Live review 4/5 Oct.* |
 
 ---
 
 ## 7. Usability trial results
 
-⚠ *No usability trial has been run yet.* The trial is scheduled as part of the Sprint 5 review with the project owner on 4/5 October 2026. This section sets out who will test, what they will do, what is already known from owner feedback, and the table to fill. It is framed as the project owner's roadmap because that is what the results are for.
+⚠ *No usability trial with the project owner has been run yet.* The trial is scheduled as part of the Sprint 5 review on 4/5 October 2026. This section sets out who will test, what they will do, what is already known from owner feedback and from the team's own preliminary runs, and the table to fill. It is framed as the project owner's roadmap because that is what the results are for.
 
 ### 7.1 Participants and method
 
@@ -680,14 +798,16 @@ These shaped the build and should be re-tested in the trial:
 
 ### 7.3 Results (⚠ *TO FILL at the review*)
 
+The team's own preliminary results from 28 Sep are in the S rows so the review starts from them rather than rediscovers them; the owner's verdicts replace them. Two findings are already logged: **UAT-01** (bare artefact commands exit 2 after the quick start; documentation, routed to IOLG-114) and **UAT-02** (the banner does not name the rejected cluster; S5 fails on the dashboard path). Sui Lung's cluster-label review (R3) is complete and summarised in §6.5.
+
 | ID | Story | Result | Tester | Time | What they found | What they recommended |
 |---|---|---|---|---|---|---|
-| S1 | Pipeline on workbook | | | | | |
-| S2 | Pipeline on Moodle | | | | | |
-| S3 | Learning plan | | | | | |
-| S4 | Export | | | | | |
-| S5 | Review changes banner | | | | | |
-| S6 | Tests pass | | | | | |
+| S1 | Pipeline on workbook | pass (preliminary) | Anup, local, 28 Sep | | 750 gap rows, byte-identical to the reference report | |
+| S2 | Pipeline on Moodle | blocked (preliminary) | Anup, local, 28 Sep | | No Docker daemon; live test skipped | Run at the review from the devenv |
+| S3 | Learning plan | pass with friction (preliminary) | Anup, local, 28 Sep | | Bare command exits 2 (UAT-01); passes with the cache flag; no new generation without a provider | Carry the cache flag through the docs |
+| S4 | Export | pass with friction (preliminary) | Anup, local, 28 Sep | | Same UAT-01; 150/750/5 rows; notebook renders | |
+| S5 | Review changes banner | **fail** (preliminary) | Anup, local, 28 Sep | | Banner shows a count, not the cluster name (UAT-02); CLI names it | Amend the banner, or revise the criterion |
+| S6 | Tests pass | pass (preliminary) | Anup, local, 28 Sep | | 258 passed, 1 skipped at the time | |
 | D1 | Cohort list | | | | | |
 | D2 | Cohort drill-down | | | | | |
 | D3 | Understanding chart | | | | | |
@@ -698,7 +818,7 @@ These shaped the build and should be re-tested in the trial:
 | D8 | Student picker | | | | | |
 | D9 | Unreviewed-AI banner | | | | | |
 | D10 | Traceability | | | | | |
-| R3 | Cluster label review (per cluster, owner's comment) | | | | | |
+| R3 | Cluster label review (per cluster, owner's comment) | 4 Agree, 1 Disagree (team review) | Sui Lung, 26 Sep | | OO Design cluster disagreed; both vague flags agreed | Owner to confirm or overrule at the review |
 
 ### 7.4 Recommendations already on the table (team-sourced, pre-trial)
 
@@ -706,8 +826,10 @@ Recorded here so the trial can confirm or reject them rather than rediscover the
 
 - Viewer-adjustable histogram bins (A-18) and gap thresholds with a re-evaluate control (A-27), with an explicit "you are exploring sensitivity, not setting policy" guard.
 - A competency lens: a `/competencies` index, competency tree, assessment leverage and the students per competency (`LJA_WP_competency-lens.md`).
-- Recommended next actions on the student page from the learning plan (D7).
+- Name the rejected cluster in the review banner (UAT-02).
 - A confirmation UI for the staff gate instead of the CLI.
+- Whether staff want the practice quiz at all, and if so which format policy (`mixed`, `written`, `multiple_choice`) and which reviewer model (§3.10).
+- Which relative-gap cutoff to ratify, now that the 3,000-student sensitivity table exists (§3.9 item 2), and whether the priority groups are the right way to present the result.
 
 ### 7.5 Roadmap for the project owner (⚠ *to be finalised from 7.3*)
 
@@ -721,23 +843,25 @@ This chapter records what was descoped, what was deferred, and the late suggesti
 
 ### 8.1 Descoped
 
-- **Adaptive quiz generation (R8).** Never started, by plan. The tender called it the first descope candidate: highest complexity-to-value, and "most likely to look plausible while quietly not being grounded". If it is built, it must follow the learning-plan pattern in §5.5 exactly: every question must cite the SILO and assessment it targets, and the grounding checks must include the answer key.
-- **Study-strategy recommendations (IOLG-123).** Optional in Sprint 5; cut if not started by 30 Sep. Same pattern as above; the cheapest next generated artefact because `PlanContext` already carries everything it needs.
+- **Adaptive quiz generation (R8), as specified.** Descoped by plan as the first candidate: highest complexity-to-value, and "most likely to look plausible while quietly not being grounded". A thin slice was built late in Sprint 5 (PR #52, §3.10) following the learning-plan pattern, with every question citing the SILO and assessment it targets. What remains descoped is the part the tender was worried about: the grounding checks cannot include the answer key, because nothing in the input can verify it. The slice is a staff tool until that changes.
+- **Study-strategy recommendations (IOLG-123).** Built (PR #26, merged 28 Sep). No longer descoped.
 - **Feedback attribution layer and evidence panel.** Not built because 45 of the workbook's feedback comments are templated strings. Needs the sanitised bespoke feedback extract the owner offered, and a re-identification review before it is used.
-- **Threshold sensitivity chart.** Dropped from Sprint 5. `catalogue_verify` gives the numbers; a chart over `LJA_GAP_RELATIVE_GAP_CUTOFF` ∈ {−0.5, −1.0, −1.5, −2.0} against planted-gap recall is a two-hour task once the generator is merged.
+- **Threshold sensitivity chart.** Dropped from Sprint 5 as a chart; the numbers now exist as a table (§3.9 item 2, three cutoffs on 3,000 students) and `/run` bins every flagged mark in 5-point steps. A chart over `LJA_GAP_RELATIVE_GAP_CUTOFF` against planted-gap recall is still a two-hour task.
 
 ### 8.2 Deferred, with the reason
 
-- **Embedding pre-pass for clustering.** Deviation recorded in ADR 0002. Reconsider now: the 52-SILO failure hit the ADR's own trigger. The tagger and embedding client already exist on branch `IOLG-113/handbook-crawl` (k-means over `nomic-embed-text` embeddings, LLM-written labels) and were split out only pending the owner's consent to use handbook content.
-- **Handbook crawl of real La Trobe SILOs.** Same branch. Needs the owner's ruling on committing crawled content; the crawl itself regenerates in minutes from the sitemap.
+- **Embedding pre-pass for the pipeline's clustering.** Deviation recorded in ADR 0002, and the 52-SILO failure hit the ADR's own trigger. The tagger and embedding client are now on `main` (PR #29, D18) and have grouped 1,436 real SILOs in 64 seconds, but they feed the catalogue's ground truth, not `cluster_silos()`. Wiring them into the pipeline, with the staff gate unchanged, is the next clustering work package.
+- **Handbook crawl of real La Trobe SILOs.** Code on `main` (PR #29); the crawled data (`data-fixtures/handbook/`) stays gitignored pending the owner's ruling on committing it. It regenerates in minutes from the sitemap. The 100-subject, 5,000-student cohort in `data-fixtures/README-handbook-cohort.md` is built from it.
 - **Multi-subject Moodle extraction.** The loader works for one seeded subject. Generalising it is mostly fixture work (the catalogue generator's `--moodle-out` emits per-subject frameworks and a rubric-marking JSON) plus removing the hardcoded assessment weight.
-- **Gap co-occurrence graph and trajectory model (IOLG-106).** Deferred until per-competency ability data exists (PR #24).
-- **Research export (R7, IOLG-120).** Mandatory in the tender and still open at the time of writing: `python -m lja.export` with three CSVs, a manifest, and `--anonymise` using salted stable pseudonyms (`LJA_EXPORT_SALT`).
-- **Progress view (D6) and next actions (D7).** Open tickets IOLG-107 and IOLG-122.
+- **Gap co-occurrence graph and trajectory model (IOLG-106).** Still To Do on the board with no branch. The per-competency ability data it was waiting for now exists (the catalogue generator), so the blocker is time, not data.
+- **Quiz answer-key verification.** Either real course material as a source to check against, or an independent reviewer model with rejection on disagreement (§3.10). Also: strategies are not yet shown on the dashboard.
+- **Dashboard over the Moodle source.** The dashboard still takes `--excel-path` only; the loaders are shared, so this is plumbing in `dashboard/__main__.py`.
 
 ### 8.3 Late suggestions and engineering follow-ups
 
-- Vendor and pin Chart.js (A-20). Add `LJA_OPENAI_TIMEOUT` (A-30). Record provider and model in the clustering cache (A-29). Add `reviewed_by`/`reviewed_at` to the review file (§3.8).
+- Vendor and pin Chart.js and d3 (A-20). Add `LJA_OPENAI_TIMEOUT` (A-30). Record provider and model in the clustering cache (A-29). Add `reviewed_by`/`reviewed_at` to the review file (§3.8).
+- Name the rejected cluster in the banner (UAT-02). Carry the cache flag through the quick start (UAT-01). Give `lja.export` a staff-gate check (SE-5).
+- Resolve the ten prose findings of the grounding pre-review in the plan prompt (attribute feedback to one assessment; never claim progress or missing work the evidence does not show), then regenerate and have Anup sign off.
 - Authentication and a per-role view (student sees self; coordinator sees cohort). Today there is none, which is fine for `127.0.0.1` and synthetic data and for nothing else.
 - Pseudonymise at ingest (owner FR-1.5) before any real data touches a cloud provider.
 - A confirmation UI for the staff gate; today it is a CLI.
@@ -753,7 +877,7 @@ Roughly $200 per month for a small managed instance; a maintenance allowance of 
 
 ### 8.5 Decisions the project owner still holds
 
-At-risk rule (or none); ratified gap thresholds; LLM provider governance; availability of real de-identified attainment data; course maps for the CS, IT and Cyber degrees; the institutional competency framework, if any; consent to commit crawled handbook content; the export field set; the licence for the repository.
+At-risk rule (or none); ratified gap thresholds, now with a sensitivity table to choose from; LLM provider governance; availability of real de-identified attainment data; course maps for the CS, IT and Cyber degrees; the institutional competency framework, if any; consent to commit crawled handbook content; the export field set (asked 23 Sep, still open); whether students may ever see a quiz before staff review, and which format policy; the licence for the repository.
 
 ---
 
@@ -775,15 +899,22 @@ At-risk rule (or none); ratified gap thresholds; LLM provider governance; availa
 | Rubric fill | The level a marker selected for one criterion on one submission, plus their remark. Only in the database. |
 | Reference run | A committed clustering cache, review file and plans so the system runs without an LLM (PR #22). |
 | `LjaDataset` | The in-memory dataset every loader produces and every stage consumes. |
+| Priority group | 1st: at least one competency below the absolute floor. 2nd: no floor breach but a persistent gap. 3rd: isolated gaps only. Combines existing classifications; adds no threshold (D14). |
+| Lowest gap | A flagged student's lowest flagged attainment, with its MAD position where the relative rule decided it; the ordering key within a priority group. |
+| Study strategy | One entry per gap saying how to study it, using techniques from a closed, evidence-based list (`lja.strategy`). |
+| Practice quiz | Questions per gap, each tied to one SILO and one assessment of the student; multiple choice or a written task with marking points (`lja.quiz`, PR #52). |
+| Educator review | The quiz's blind second pass: the model answers each question without the key and the code compares (§3.10). Shown as educator-only notes. |
+| Pseudonym | In the export, an HMAC-SHA256 of the student id keyed on `LJA_EXPORT_SALT`; stable under one salt, irreversible without it. |
+| Competency tagger | Embeddings plus k-means over a catalogue's SILOs, labelled by the LLM; produces the generator's ground truth (D18). |
+| Subject catalogue | The YAML that drives the generator: subjects, SILOs with competency tags, assessments, programs, and (from the handbook) each subject's synopsis. |
 
 ## Appendix B. Metrics reference
 
 This appendix defines every figure the system calculates or displays: its formula, its inputs, where it is calculated, where it is shown, and the thresholds it depends on. Pass/fail checks such as clustering coverage and grounding are not metrics; they are described in §3.
 
-**Where each metric lives.** Most metrics are on `main`. Two groups are not yet merged, and are labelled where they appear:
+**Where each metric lives.** Every metric in this appendix is on `main` at 2 Oct 2026 (the catalogue evaluation metrics in B.6 merged in PR #24, the outcome-quality metrics in B.5 in PR #28, the priority groups and the flagged-mark histogram in PR #43).
 
-- **PR #24** (IOLG-113, subject catalogue generator): the evaluation metrics for generated cohorts in B.6.
-- **Branch `feature/silo-quality-views`** (not yet in a pull request): the outcome-quality metrics in B.5.
+**For the reasoning behind these rules,** with flowcharts and one worked student per priority group, see the User Document, Chapters 2 to 4. This appendix is the formal definition; that document is the explanation.
 
 **Conventions.** Scores and attainments are percentages from 0 to 100. Weights are fractions. "Gap" means a classification of either *persistent gap* or *isolated gap*.
 
@@ -804,9 +935,12 @@ This appendix defines every figure the system calculates or displays: its formul
 | Future subjects sharing a competency | list | `gap_evidence.py` | Student page, plans | main |
 | Gap and strength counts | count | `lja/dashboard/app.py` | Student list, student page | main |
 | Cohort statistics and histogram | % (2 dp), count | `lja/dashboard/stats.py` | Dashboard home and cohort pages | main |
-| SILO and subject quality, gap rate, health | %, count | `lja/model/silo_quality.py` | `/silos` page | branch |
-| Competency progression and delta | % points | `silo_quality.py` | `/competency/<slug>` page | branch |
-| Planted-gap recall, unplanted flags, clustering precision and recall | %, count | `lja/data/catalogue_verify.py` | Command-line output | PR #24 |
+| Priority group, lowest gap, below-floor count | label, %, count | `lja/dashboard/app.py` | Students page, cohort pages, `/run` | main |
+| Flagged-mark histogram | count per 5-point bin | `app.py` | `/run` | main |
+| SILO and subject quality, gap rate, health | %, count | `lja/model/silo_quality.py` | `/silos` page and its lists | main |
+| Competency progression and delta | % points | `silo_quality.py` | `/competency/<slug>` page | main |
+| Cohort gap rate and proficient rate per competency | % | `lja/export.py` | `cohort.csv` | main |
+| Planted-gap recall, unplanted flags, clustering precision and recall | %, count | `lja/data/catalogue_verify.py` | Command-line output | main |
 
 ### B.2 Figures supplied in the workbook
 
@@ -902,7 +1036,17 @@ The 5-point band is "a reasoned starting point, not a measured threshold" (code 
 
 **Highlighted students.** On the student list, a student's link is shown in the persistent-gap colour when they have at least one persistent gap. The underlying style is named `at-risk` for historical reasons; it is not the at-risk cohort below.
 
-**Cohorts.** *All students*, and *Students with a persistent gap*: at least one competency classified *persistent gap*. An *at-risk* cohort is deliberately not defined, because its threshold is a team decision (action A-01); a test asserts it is absent.
+**Cohorts.** *All students*, *Students with a persistent gap* (at least one competency classified *persistent gap*), and the three priority groups below. An *at-risk* cohort is deliberately not defined, because its threshold is a team decision (action A-01); a test asserts it is absent.
+
+**Priority groups** (`app.py`, IOLG-134). A student is *flagged* when any competency is classified a gap. Flagged students are placed in exactly one group by rules the classifier already applied, with no new threshold:
+
+| Group | Rule |
+|---|---|
+| 1st | At least one competency classified on the *absolute floor* basis (attainment below 50) |
+| 2nd | Not 1st, and at least one *persistent gap* |
+| 3rd | Not 1st or 2nd: *isolated gaps* only |
+
+**Lowest gap** is the student's lowest attainment among their gap competencies; where the relative rule decided it, its position in MAD units is shown beside it. Within a group, students are ordered by lowest gap ascending. **Below floor** is the count of a student's competencies on the absolute-floor basis. The `/run` histogram bins every flagged competency's attainment in 5-point steps from 0 to 100 and colours the bins under the floor.
 
 **Cohort statistics** (`summarise()` in `lja/dashboard/stats.py`), over the students' average totals:
 
@@ -922,7 +1066,7 @@ All are rounded to two decimal places. A statistic that is undefined, such as th
 
 ### B.5 Outcome-quality metrics
 
-*Branch `feature/silo-quality-views`, not yet in a pull request.* Calculated in `lja/model/silo_quality.py` and shown on the `/silos` and `/competency/<slug>` pages.
+Calculated in `lja/model/silo_quality.py` and shown on the `/silos` page, its filtered lists (`/silos/list/<all|flagged|orphan|unassessed|vague>`), and the `/competency/<slug>` pages.
 
 **Per SILO.**
 
@@ -967,7 +1111,7 @@ Qualifiers such as *basic* or *general* are deliberately not classed as vague. T
 
 ### B.6 Evaluation metrics for generated cohorts
 
-*PR #24.* Calculated by `python -m lja.data.catalogue_verify`, which compares a gap report against the answer key the generator writes (`<workbook>.truth.json`). These measure the system, not a student. The generator's own parameters are described in `data-fixtures/README-handbook-cohort.md`.
+Calculated by `python -m lja.data.catalogue_verify`, which compares a gap report against the answer key the generator writes (`<workbook>.truth.json`). These measure the system, not a student. The generator's own parameters are described in `data-fixtures/README-handbook-cohort.md`. The dashboard never reads the truth file's answer key; `/run` reads only its seed and parameters.
 
 | Metric | Definition |
 |---------------------------|-------------------------------------------------------------------------|
@@ -1005,8 +1149,18 @@ Unplanted flags are not automatically false positives: every generated student h
 | Actions register | `docs/meetings/actions.md` | Every A-nn cited above |
 | Sprint 4 report and Sprint 5 plan | `sprint4-report-sprint5-plan-2026-09-23.md` | Verified points, handover requirements |
 | Sprint 5 briefs | `sprint5-briefs/` | UAT rows, security evidence steps |
+| Validation worksheet | `docs/validation-worksheet.md` | IOLG-110: seven profiles worked by hand |
+| Grounding audit | `docs/grounding-audit.md`, `docs/sprints/sprint-5/grounding-audit/` | IOLG-121: ten plans, machine results, assisted pre-review, evidence pairs |
+| Security evidence | `docs/security-evidence.md`, `docs/sprints/sprint-5/security-evidence/` | IOLG-111: the six checks and the scanner log |
+| Compliance checklist | `docs/compliance-checklist.md` | IOLG-117: 40 tender items with evidence |
+| Rebuild check | `docs/rebuild-check.md`, `docs/sprints/sprint-5/rebuild/` | IOLG-118: why the clean rebuild has not run, and preflight findings |
+| UAT checklist and findings | `docs/uat-checklist.md`, `docs/sprints/sprint-5/uat/` | IOLG-130, IOLG-129: S1–S6 preliminary results, UAT-01 and UAT-02 |
+| Risk register | `docs/risk-register.md` | IOLG-125: twelve rows re-scored |
+| Cluster review | `docs/cluster-review-sprint5.md`, `data-fixtures/reference-run/silo_clustering.review.sui-lung.json` | IOLG-124/133: staff verdicts on the five clusters |
+| Export schema and sample | `docs/export-schema.md`, `docs/export-sample.ipynb` | IOLG-120: every column of the export, a notebook that reads one |
+| Large cohort | `data-fixtures/README-handbook-cohort.md` | IOLG-113: how the 100-subject, 5,000-student cohort is built and why |
 | Bundle READMEs | `README.md`, `python/README.md`, `sql/README.md`, `devenv/README.md`, `data-fixtures/README.md` | Detail behind §4 and §5 |
-| Lecture summaries | `docs/lecture_summaries/` | Course guidance on handover format |
+| Lecture summaries | `docs/lecture_summaries/` | Course guidance on handover format (W1–W10) |
 
 ## Appendix D. Change log
 
@@ -1014,3 +1168,5 @@ Unplanted flags are not automatically false positives: every generated student h
 |---|---|---|---|
 | 0.1 | 26 Sep 2026 | Allan Campton (drafted with Claude Code) | First draft from the codebase and documentation at `main` `ac75a8e` plus open PRs #22–#25 |
 | 0.2 | 27 Sep 2026 | Allan Campton (drafted with Claude Code) | Added Appendix B, Metrics reference; former Appendices B and C are now C and D. Added Figure 5b and the pointer to the learning-plan traceability document. |
+| 0.3 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | Companion-document row and Appendix B now point at the User Document, which holds the explanation and worked examples behind the classification rules. |
+| 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8` (24 pull requests merged since 0.1's baseline) plus open PRs #25 and #52. New §3.10 on the generated-artefact family and the practice quiz; decisions D14–D18; threat model, limitations, configuration, commands, repository map, troubleshooting, debt register and test tables updated; §6.5 now records the Sprint 5 validation results and what is still open; §7.3 pre-filled with the team's preliminary UAT results; §8 and Appendix B reconciled with what is merged; Appendix C lists the Sprint 5 evidence files. The §3 diagrams were not re-rendered (debt item 22). |
