@@ -205,9 +205,10 @@ synthetic cohort no such ordering surfaces the planted gaps (62 of 371 in the
 top 371 by lowest mark) — a finding about the method, not something the page
 can fix.
 
-**This run (`/run`).** Provenance for the numbers on every other page: the
+**Provenance (`/run`).** How the numbers on every other page were made: the
 command that started the dashboard (reconstructed from argv), when, the git
-hash of the code, the workbook, clustering cache and review file, input
+hash of the code, the workbook, clustering cache and review file, the
+`python -m lja.cli` command that reproduces the same numbers as files, input
 counts, the classification rules as an ordered list with this run's values,
 and a parameters table with one row per `LJA_GAP_*` threshold showing the
 value used, the code default, the environment variable and the CLI flag, with
