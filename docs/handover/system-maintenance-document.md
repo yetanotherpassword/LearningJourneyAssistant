@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.4 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
+| **Status** | DRAFT 0.5 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
 | **Date** | 2 October 2026 |
-| **Describes** | `main` at `cd98ce8` (2 Oct 2026, after PR #49) plus the two open code pull requests, #25 (clusters page) and #52 (practice quiz), which are labelled where they matter. PR #48 is this document's own branch. |
+| **Describes** | `main` at `cd98ce8` (2 Oct 2026, after PR #49) plus the open code pull requests #25 (clusters page), #52 (practice quiz) and the IOLG-106 trajectory branch this revision ships on, labelled where they matter. PR #48 holds the previous revision of this document. |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
 | **Project owner** | Dr Scott Mann |
 | **Team** | Allan Campton (architecture, data model, gap engine), Ayesha Mosaddeque (CI, security scanning, Moodle extraction), Istiaque Bhuiyan (LLM layer, grounding, generation), Anup Tumbalam Gooty (QA, acceptance verification), Sui Lung Tang (risk, dashboard views) |
@@ -47,6 +47,7 @@ The problem it addresses, from the tender: students "lack a reliable way to unde
 | Dashboard: cohort list, statistics, cohort drill-down, per-student gaps with evidence, unreviewed-AI banner | Working |
 | Dashboard: strengths view and student picker | Working (IOLG-112, PR #23) |
 | Dashboard: progress across subjects; recommended next actions from the learning plan | Working (IOLG-107, PR #33; IOLG-122, PR #35) |
+| Trajectory: declared subject sequence, subject chain on every gap card, configurable stable band | Built on the IOLG-106 branch (§3.11) |
 | Dashboard: priority groups, `/run` provenance page, `/glossary`, every count tile links to its list, chart enlarge, bounded scroll boxes | Working (IOLG-134, PR #43) |
 | Dashboard: outcome quality (`/silos`), competencies, subjects and assessments pages, competency traceability diagram | Working (IOLG-132, PR #28; PR #43) |
 | Dashboard: competency clusters page linked from the banner | Open PR #25 |
@@ -103,6 +104,7 @@ The stories below are the ones the team agreed for the Sprint 5 user acceptance 
 | **D9** | any user | to know when the AI grouping is unreviewed, and click through to see which clusters | I do not trust an unreviewed report | R6 | IOLG-116, IOLG-131 | Done; click-through in PR #25 branch |
 | **D10** | staff | to name the source record behind any number | the dashboard is auditable | R5 | IOLG-83 | Done |
 | **D11** | staff | flagged students split into priority groups by rules the pipeline already applies, with the run's provenance and a glossary on the dashboard | a tile never says a number without saying why | R5 | IOLG-134 | Done (added in 0.4; not in the UAT checklist) |
+| **D12** | student | each gap's subjects shown in the order my degree intends, with the ones I have not sat yet marked, and the page saying which rule ordered them | I know where this weakness is assessed next and can prepare | R5 | IOLG-106 | Built, IOLG-106 branch (added in 0.5; not in the UAT checklist) |
 
 Adaptive quiz generation (R8) was descoped by plan and then built as a thin slice late in Sprint 5 (S8, PR #52). It is deliberately not a complete R8: see §3.10 and §8.1.
 
@@ -248,6 +250,8 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 
 **D17. The export pseudonymises with a keyed HMAC and refuses to run without a key.** `--anonymise` maps each student id to an HMAC-SHA256 pseudonym keyed on `LJA_EXPORT_SALT`, so the same student lines up across exports taken with the same salt while the mapping cannot be reversed without it. An empty salt exits 2 rather than keying on `""`, which would be stable but guessable. `manifest.json` records source, git commit, cache and the seven thresholds so two exports can be diffed knowing they came from the same pipeline. *Privacy (owner NFR-2); research use (R7).* Limitation: the export has no staff-gate check of its own (compliance item SE-5).
 
+**D19. Progress is order, not time, and the order is declared** (IOLG-106). The workbook has no dates, so the only honest meaning of progress is position in the intended subject sequence. That sequence is configuration (`LJA_SUBJECT_SEQUENCE`), where the owner's course map (FR-1.7) goes when supplied, with the year digit in the subject code as the documented fallback and "unknown" when neither applies. Every trajectory carries a `basis` saying which rule ordered it, as every gap carries a `classification_basis`, and the stable band that separates improving from stable from declining is `LJA_TREND_STABLE_BAND`, shown on `/run` with the gap thresholds. The subjects ahead of a student are listed as where the competency is assessed next and labelled "prepare", never "avoid": subject choice is an academic decision whose rules the system does not hold. *Traceability (R5); the tender guardrail that mastery estimates are formative.* Limitation: two or three points per competency is an ordering, not a slope, and nothing here extrapolates.
+
 **D18. Embeddings are used for the catalogue's competency tags, not yet for the pipeline's clustering.** The 52-SILO failure (§3.9) hit ADR 0002's review trigger. The answer built in IOLG-113 is `competency_tagger.py`: embed every SILO (`nomic-embed-text` through the OpenAI-compatible endpoint), spherical k-means, and ask the chat model only to label each cluster in batches of 20. It tagged 1,436 real SILOs in 64 seconds. It produces the generator's ground truth; `cluster_silos()` in the pipeline is still a single LLM call. Swapping the pipeline over is the deferred decision in §8.2. *Scalability, deliberately staged.*
 
 ### 3.8 Threat model
@@ -287,7 +291,7 @@ Each decision names the quality it serves. Scalability, flexibility, usability a
 4. **Single-call clustering does not scale.** At 52 SILOs (a realistic multi-subject catalogue) the 30B model failed coverage on all three attempts and was aborted after 7m43s. The embedding tagger (D18) shows the alternative works at 1,436 SILOs, but it is wired to the catalogue, not to `cluster_silos()`. Options for the pipeline remain: a stronger model, chunking by year level or subject pair with a merge pass, a repair pass, or the embedding pre-pass (ADR 0002's review trigger).
 5. **Rubric fills need database access** (D3). Only the Moodle path is affected.
 6. **Moodle loading is proven for one subject** (CSE1IOI, 5 students × 3 criteria), and the loader hardcodes assessment weight 1.0 and no early/hurdle flags.
-7. **No timestamps in the workbook**, so "progress" means position in the declared subject sequence, not time; `future_subjects` is always empty on the three-subject fixture.
+7. **No timestamps in the workbook**, so "progress" means position in the declared subject sequence (D19), not time. On the three-subject fixture every student has sat all three subjects, so no gap card shows a subject ahead; the "ahead" case appears on the generated cohorts.
 8. **Charts need internet** (CDN). **No auth.** **No confirmation UI** (review is CLI-only). **Dashboard reads Excel only** (no `--source moodle` there yet).
 9. **Feedback text is templated**: 45 unique strings across 1,650 rows. Feedback analysis features were not built for that reason; the owner flagged that bespoke feedback carries re-identification risk.
 10. **Docs drift.** Parts of `python/README.md` predate the review gate and the plan command's review awareness (§5.9 lists what to fix).
@@ -323,6 +327,26 @@ Three commands generate something for one student. They are one family (D16): sa
 First live runs, 2 Oct 2026, `qwen/qwen3-vl-30b` via LM Studio on the reference run, STU0003 (one persistent gap, one isolated): multiple choice only grounded on the first attempt in 17 s, four questions; the mixed policy produced four written tasks (every gap SILO for this student is a doing SILO) with five marking points each, grounded on the second attempt because the first omitted the required `kind` field; the second-marker pass found every model answer meets its marking points. Both review calls were under 10 s. The limit showed up immediately: a question marking "composition" for a car and its wheels, with "aggregation" as the tempting distractor, which a tutor could reasonably mark the other way, and the blind review by the same model agreed with it at high confidence. A model reviewing its own questions shares its own blind spots, so point the reviewer at a different model family where one is available.
 
 **Closing the gap** means one of two things, neither built: feed real course material (lecture notes, tutorial questions, rubric criteria text) so a question can be checked against a source, or run the blind pass on an independent model and reject on disagreement. Until then the quiz is a staff tool, not a student one.
+
+### 3.11 Trajectory: a competency across the subject sequence
+
+`lja/model/trajectory.py` (IOLG-106) places the per-subject evidence behind one competency verdict in the order the degree intends the subjects to be taken, with the subjects the student has not sat yet ahead of them. It answers the two questions a gap card raises: is this weakness recurring as the student moves through the sequence, and where is it assessed next. It is the thing the owner described on 11 August as "gap in first year, consequence in third year".
+
+| Type | Holds |
+|---|---|
+| `SubjectSequence` | The declared order, parsed from `LJA_SUBJECT_SEQUENCE`. `position(code)` returns a `SequencePosition` with a `source`: *declared sequence* for a listed subject, *year digit* for one placed by the digit in its code, *unknown* otherwise. Declared subjects sort first, then year-digit ones by year, then unknown ones alphabetically. |
+| `TrajectoryPoint` | One subject in the competency: its source, year level, whether the student has sat it, the per-subject attainment (the same figure as the gap card's evidence table) and observation count. |
+| `Trajectory` | The points in order; `delta` (last ordered subject sat minus first, one decimal place) and `label` (improving, stable, declining, insufficient evidence); `basis` (which source ordered the subjects sat: declared sequence, year digit, mixed, none); the band in force. `taken` and `ahead` are the two halves. |
+
+`compute_trajectory(dataset, clustering, student_id, competency_label)` builds one; `compute_trajectories()` builds them for a list of (student, competency) pairs, the gap report's own grain. `describe_trend()` in `gap_evidence.py`, which the dashboard, the plan context, the export and the outcome-quality progressions all call, is now a thin alias over the same ordering and band, so every trend word on every page and in every file is computed one way.
+
+**Rules.** A subject the student has sat but with no result touching this competency's SILOs is *taken*, not ahead. An unknown student has nothing ahead. Only ordered subjects take part in the trend; fewer than two is *insufficient evidence*. The band test is strict: a delta exactly equal to the band is stable.
+
+**On the dashboard.** Each gap card carries the subject chain under the trend line: taken subjects as plain chips with their attainment, subjects ahead as amber dashed chips marked "ahead · prepare" (the marker appears only on a gap, because "prepare for" is advice about a weakness, not a remark about a strength), and an "order:" note giving the basis. The existing "flag for intervention" sentence now lists the subjects ahead in sequence order and says the first is where it comes up next. The progress table's columns follow the same order. `/run` has a "Subject order for progress and trends" table showing the declared sequence, the band, and how many of this run's subjects fell back to the year digit; `/glossary` defines *trajectory and subject sequence*.
+
+**Not a prediction.** With two or three points per competency the trajectory is an ordering, not a slope, and nothing extrapolates. The subjects ahead are where the competency is assessed next, which is the moment to prepare; they are never advice about what to enrol in (D19). Enrolment data from Moodle would make "ahead" a fact rather than an inference from the program; that is a loader extension, not built.
+
+Tests: `test_trajectory.py` (17): sequence parsing, declared order beating the digit, the fallback and the unknown case, band boundaries, the band as configuration, a student who skipped a subject, each basis value, taken-without-result, unknown student. `test_dashboard.py` adds five: chain order and the ahead marker, the year-digit basis when nothing is declared, no marker on a strength, `/run` and `/glossary`.
 
 ---
 
@@ -455,6 +479,8 @@ All configuration is environment variables, read in exactly one place: `python/l
 | `LJA_GAP_MIN_COMPETENCIES` | `4` | Fewer → absolute fallback, recorded in the basis column |
 | `LJA_GAP_MIN_SPREAD` | `1.0` | MAD below this = flat profile → fallback. Read ADR 0001 before changing. |
 | `LJA_GAP_FALLBACK_PROFICIENT` | `65.0` | Proficient/developing split on the fallback path |
+| `LJA_SUBJECT_SEQUENCE` | `CSE1OOF,CSE2ALG,CSE3CAP` | The intended order of subjects (§3.11). Where the owner's course map goes. An unlisted subject falls back to its year digit |
+| `LJA_TREND_STABLE_BAND` | `5.0` | First-to-last difference, in points, inside which a trend is stable. Unratified (A-01) |
 | `PGHOST` / `PGPORT` / `PGDATABASE` / `PGUSER` / `PGPASSWORD` | `localhost` / `5432` / `moodle` / `lja_reader` / empty | Moodle path |
 | `LJA_MOODLE_TABLE_PREFIX` | `mdl_` | devenv uses `m_` |
 | `MOODLE_URL` / `MOODLE_TOKEN` | — | `moodle_probe.py` only |
@@ -534,7 +560,7 @@ LearningJourneyAssistant/
 │   │   ├── data/                excel_loader.py · moodle_loader.py · sql.py · loading.py · synth_generator.py
 │   │   │                        catalogue.py · catalogue_generator.py (585) · catalogue_verify.py · catalogue_draft.py · moodle_emitters.py
 │   │   │                        handbook.py (crawl) · competency_tagger.py (embeddings + k-means)
-│   │   ├── model/               silo_clustering.py · gap_detection.py · gap_evidence.py · learning_plan.py · study_strategy.py (379)
+│   │   ├── model/               silo_clustering.py · gap_detection.py · gap_evidence.py · trajectory.py (IOLG-106) · learning_plan.py · study_strategy.py (379)
 │   │   │                        silo_quality.py (532) · quiz.py (732, PR #52)
 │   │   └── dashboard/           app.py (routes, 1,032) · run_info.py · stats.py · __main__.py · templates/ (21 files; _macros.html holds the tile and scrollbox macros)
 │   │                            static/{style.css, sort.js, scrollbox.js, chartzoom.js}
@@ -648,8 +674,8 @@ Things a maintainer should know are known. Each has an owner in the actions regi
 | 4 | `pip-audit` non-blocking; `E501` ignored | `ci.yml`, `pyproject.toml` | A-12, A-13 |
 | 5 | Performance-band cut points (50/60/70/80) duplicated in three modules | `moodle_loader.py`, `catalogue_generator.py`, `synth_generator.py` | — |
 | 6 | Feedback-band cut points (50/65/80) in two places | `synth_generator.py`, `moodle_emitters.py` | — |
-| 7 | `_STABLE_BAND_PCT = 5.0` trend band reasoned, not measured | `gap_evidence.py` | — |
-| 8 | Year level parsed from the subject code (`CSE1OOF` → 1) | `gap_evidence.py` | — |
+| 7 | Trend band reasoned, not measured. *Now `LJA_TREND_STABLE_BAND`, configuration shown on `/run` (IOLG-106); the value is still unratified* | `config.py` | A-01 |
+| 8 | Year level parsed from the subject code (`CSE1OOF` → 1). *Now the documented fallback behind `LJA_SUBJECT_SEQUENCE`, and each card says when it was used (IOLG-106); the remaining debt is that no course map has been supplied* | `trajectory.py` | FR-1.7 |
 | 9 | `lja.review --clustering-cache` not source-aware | `review.py` | — |
 | 10 | Moodle loader hardcodes weight 1.0, no early/hurdle | `moodle_loader.py` | — |
 | 11 | SQL Query 6 carries legacy 50/65 thresholds, annotated divergent | `sql/` | — |
@@ -729,6 +755,7 @@ Suite size on 2 Oct 2026: 30 files, 273 test functions, 261 pass, 1 skipped (liv
 | **D4** Strengths | `…lists_proficient_competencies_under_strengths`, `…ordered_strongest_relative_position_first`, `…index_strength_count_matches_proficient_competencies` | `TestClient` | UAT D4 | Yes |
 | **D5** Gaps with evidence | `…shows_per_subject_evidence_and_trend`, `…flags_future_subjects_for_an_at_risk_gap`, `…honest_empty_state…`, `…never_flags_future_subjects_for_a_non_gap` | `TestClient` | UAT D5 | Yes |
 | **D6** Progress | `…shows_progress_across_subjects_in_year_order`, `…marks_single_subject_competency_as_insufficient`, `…progress_empty_state_without_evidence` | `TestClient` | UAT D6 | Yes |
+| **D12** Trajectory | `test_trajectory.py` (17): parsing, fallback, boundaries, skipped subject, basis values; `test_dashboard.py`: `…subject_chain_in_sequence_order_with_the_ahead_subject_marked`, `…order_came_from_the_year_digit_when_nothing_is_declared`, `…only_offered_for_a_gap_not_a_strength`, `…run_page_shows_the_declared_sequence…`, `…glossary_defines_trajectory` | `TestClient` | — | Yes, on the branch |
 | **D7** Next actions | `…renders_generated_learning_plan`, `…shows_plan_empty_state_when_file_is_missing`, `…without_plans_directory_is_safe` | `TestClient` over a plan JSON in `tmp_path` | UAT D7 | Yes |
 | **D8** Student picker | `…header_picker_lists_every_student_on_every_page` | `TestClient` | UAT D8 | Yes |
 | **D11** Priority groups, `/run`, lists | `test_dashboard_priority.py` (11): group membership from the classifier's outputs, ordering by lowest flagged mark, `/run` thresholds and provenance; `test_dashboard_lists.py` (13): each list equals its tile | `TestClient` | — | Yes |
@@ -853,7 +880,7 @@ This chapter records what was descoped, what was deferred, and the late suggesti
 - **Embedding pre-pass for the pipeline's clustering.** Deviation recorded in ADR 0002, and the 52-SILO failure hit the ADR's own trigger. The tagger and embedding client are now on `main` (PR #29, D18) and have grouped 1,436 real SILOs in 64 seconds, but they feed the catalogue's ground truth, not `cluster_silos()`. Wiring them into the pipeline, with the staff gate unchanged, is the next clustering work package.
 - **Handbook crawl of real La Trobe SILOs.** Code on `main` (PR #29); the crawled data (`data-fixtures/handbook/`) stays gitignored pending the owner's ruling on committing it. It regenerates in minutes from the sitemap. The 100-subject, 5,000-student cohort in `data-fixtures/README-handbook-cohort.md` is built from it.
 - **Multi-subject Moodle extraction.** The loader works for one seeded subject. Generalising it is mostly fixture work (the catalogue generator's `--moodle-out` emits per-subject frameworks and a rubric-marking JSON) plus removing the hardcoded assessment weight.
-- **Gap co-occurrence graph and trajectory model (IOLG-106).** Still To Do on the board with no branch. The per-competency ability data it was waiting for now exists (the catalogue generator), so the blocker is time, not data.
+- **Trajectory model (IOLG-106).** Built on its own branch (§3.11): declared sequence, subject chain on the gap card, configurable band, basis label. What remains is the owner's course map to put in `LJA_SUBJECT_SEQUENCE` (FR-1.7, still a decision he holds), Moodle enrolments as the source of "ahead" on the production path, and the gap co-occurrence graph the ticket's epic once mentioned, which was never specified.
 - **Quiz answer-key verification.** Either real course material as a source to check against, or an independent reviewer model with rejection on disagreement (§3.10). Also: strategies are not yet shown on the dashboard.
 - **Dashboard over the Moodle source.** The dashboard still takes `--excel-path` only; the loaders are shared, so this is plumbing in `dashboard/__main__.py`.
 
@@ -907,6 +934,8 @@ At-risk rule (or none); ratified gap thresholds, now with a sensitivity table to
 | Pseudonym | In the export, an HMAC-SHA256 of the student id keyed on `LJA_EXPORT_SALT`; stable under one salt, irreversible without it. |
 | Competency tagger | Embeddings plus k-means over a catalogue's SILOs, labelled by the LLM; produces the generator's ground truth (D18). |
 | Subject catalogue | The YAML that drives the generator: subjects, SILOs with competency tags, assessments, programs, and (from the handbook) each subject's synopsis. |
+| Trajectory | One student's attainment in one competency, subject by subject, in the intended order, with the subjects not yet sat ahead. Order, not time (§3.11). |
+| Subject sequence | The declared order of subjects (`LJA_SUBJECT_SEQUENCE`); unlisted subjects fall back to the year digit in their code, and every trajectory says which rule ordered it. |
 
 ## Appendix B. Metrics reference
 
@@ -931,7 +960,8 @@ This appendix defines every figure the system calculates or displays: its formul
 | Gap classification and basis | label | `gap_detection.py` (`_classify`) | Gap report, student page, cohort chart | main |
 | Subjects evidencing, observations | count | `gap_detection.py` | Gap report | main |
 | Per-subject attainment | % (1 dp) | `lja/model/gap_evidence.py` | Student page evidence panel, plans | main |
-| Trend across subjects | label | `gap_evidence.py` (`describe_trend`) | Student page, plans | main |
+| Trend across subjects | label | `trajectory.py` via `gap_evidence.describe_trend` | Student page, plans, export, outcome-quality progressions | IOLG-106 branch |
+| Trajectory: points in sequence, delta, basis, subjects ahead | list, % points, label | `trajectory.py` | Gap card subject chain, `/run` | IOLG-106 branch |
 | Future subjects sharing a competency | list | `gap_evidence.py` | Student page, plans | main |
 | Gap and strength counts | count | `lja/dashboard/app.py` | Student list, student page | main |
 | Cohort statistics and histogram | % (2 dp), count | `lja/dashboard/stats.py` | Dashboard home and cohort pages | main |
@@ -1012,9 +1042,9 @@ Measured effects: on the supplied workbook, see the ADR. On the 5000-student gen
 
 **Per-subject attainment** (`subject_breakdown()` in `gap_evidence.py`). The same weighted mean as B.3, restricted to one subject, except that **each assessment counts once** even when it covers several of the competency's SILOs. Because B.3 counts once per SILO, per-subject figures need not combine exactly into the overall attainment. *Example:* STU0003's CSE2ALG figure is 64.1% here, and would be 64.0% if counted per SILO. See B.7.
 
-**Year level.** The first digit after the leading letters of a subject code: CSE**2**ALG is year 2. A code without that pattern has no year level, and is never guessed.
+**Subject order** (`SubjectSequence`, IOLG-106). A subject listed in `LJA_SUBJECT_SEQUENCE` takes its place in that list (*declared sequence*). Otherwise its **year level** is the first digit after the leading letters of its code, CSE**2**ALG is year 2, and it sorts after every declared subject, by year (*year digit*). A code with neither has no order (*unknown*), is listed last and takes no part in a trend. Nothing is guessed.
 
-**Trend across subjects** (`describe_trend()`). Take the per-subject attainments of the subjects that have a year level, in year order. If there are fewer than two, the trend is *insufficient evidence*. Otherwise, with $\Delta$ the latest year's attainment minus the earliest year's:
+**Trend across subjects** (`describe_trend()`, now computed by `trajectory.py`). Take the per-subject attainments of the ordered subjects the student has sat, in sequence order. If there are fewer than two, the trend is *insufficient evidence*. Otherwise, with $\Delta$ the last subject's attainment minus the first's, rounded to one decimal place:
 
 | Condition | Trend |
 |------------------------------|------------------------------------------------------------|
@@ -1022,9 +1052,9 @@ Measured effects: on the supplied workbook, see the ADR. On the 5000-student gen
 | $\Delta < -5$ | declining |
 | otherwise | stable |
 
-The 5-point band is "a reasoned starting point, not a measured threshold" (code comment) and has not been ratified.
+The band is `LJA_TREND_STABLE_BAND`, default 5 points, shown on `/run`; a reasoned starting point, not a measured threshold, and not ratified. A trajectory's **basis** records which rule ordered the subjects sat: *declared sequence*, *year digit*, *mixed*, or *none*.
 
-**Future subjects sharing a competency.** Subjects in the competency's cluster in which the student has no results yet. These are candidates to watch, never subjects to avoid.
+**Subjects ahead** (formerly *future subjects sharing a competency*). Subjects in the competency's cluster that the student has not sat, in sequence order, so the first is where the competency is assessed next. A subject the student has sat with no result touching the competency is *taken*, not ahead. These are places to prepare, never subjects to avoid.
 
 **Counts on the student list and student page.**
 
@@ -1130,7 +1160,8 @@ Unplanted flags are not automatically false positives: every generated student h
 | Two ways of counting observations | Overall attainment (B.3) counts once per SILO; per-subject attainment (B.4) counts once per assessment. Displayed per-subject figures can differ slightly from what would combine into the overall figure. | Choose one rule and apply it in both functions |
 | One score, several SILOs | An assessment's single score counts as full evidence for every SILO it covers (B.3) | Confirm with the owner whether per-SILO marks will exist |
 | Gap thresholds | Every value in the B.3 threshold table | Team ratification (action A-01) |
-| Trend band | The ±5 points in B.4 and B.5 | Ratify, or tune on a real multi-year dataset |
+| Trend band | `LJA_TREND_STABLE_BAND`, ±5 points, used in B.4 and B.5 | Ratify, or tune on a real multi-year dataset |
+| Subject order | The declared sequence is the three supplied subjects; every other subject orders by its year digit | The owner's course map (FR-1.7) |
 | Vague and measurable lists | The stem lists in B.5 | Review by teaching staff |
 | Performance band boundaries | Inferred from the supplied data (B.2) | Confirm with the owner |
 | Gap rate meaning | SILO and subject gap rates use each student's overall competency verdict (B.5) | Keep, or define a per-subject verdict |
@@ -1170,3 +1201,4 @@ Unplanted flags are not automatically false positives: every generated student h
 | 0.2 | 27 Sep 2026 | Allan Campton (drafted with Claude Code) | Added Appendix B, Metrics reference; former Appendices B and C are now C and D. Added Figure 5b and the pointer to the learning-plan traceability document. |
 | 0.3 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | Companion-document row and Appendix B now point at the User Document, which holds the explanation and worked examples behind the classification rules. |
 | 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8` (24 pull requests merged since 0.1's baseline) plus open PRs #25 and #52. New §3.10 on the generated-artefact family and the practice quiz; decisions D14–D18; threat model, limitations, configuration, commands, repository map, troubleshooting, debt register and test tables updated; §6.5 now records the Sprint 5 validation results and what is still open; §7.3 pre-filled with the team's preliminary UAT results; §8 and Appendix B reconciled with what is merged; Appendix C lists the Sprint 5 evidence files. The §3 diagrams were not re-rendered (debt item 22). |
+| 0.5 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-106 trajectory model: new §3.11, decision D19, story D12, configuration rows, repository map, debt items 7 and 8 resolved to configuration, §8.2 and Appendix B reconciled. Ships on the IOLG-106 branch. |
