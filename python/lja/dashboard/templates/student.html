@@ -47,6 +47,116 @@
 </p>
 {% endif %}
 
+<h2>Practice quiz</h2>
+{% if quiz %}
+<p class="dek">
+  Written by a language model from this student's own gaps, SILOs, assessments and marker
+  feedback, with the handbook synopsis of each subject as background. Every question is checked
+  to be tied to one of this student's gaps, a SILO of that competency and an assessment that
+  covers it. The checks do <strong>not</strong> confirm the marked answer is correct, so a
+  member of staff should review the answers before a student relies on them.
+</p>
+<p>{{ quiz.introduction }}</p>
+{% if quiz.educator_review %}
+<p class="dek">
+  A second pass answered every multiple-choice question without seeing the key, marked every
+  written model answer against its marking points, and wrote the educator notes under each question.
+  {% if quiz.disagreements %}
+  It <strong>disagreed on question{% if quiz.disagreements|length > 1 %}s{% endif %}
+  {% for i in quiz.disagreements %}{{ i + 1 }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>; check those first.
+  {% else %}
+  It agreed with the author on every question.
+  {% endif %}
+  The educator blocks are a label, not an access control: this dashboard has no logins.
+</p>
+{% endif %}
+
+{% if quiz.subjects %}
+<div class="quiz-subjects">
+  {% for s in quiz.subjects %}
+  <div class="quiz-subject">
+    <div class="quiz-subject-head">
+      <span class="competency-name">{{ s.code }}</span>
+      {% if s.title %}<span class="quiz-subject-title">{{ s.title }}</span>{% endif %}
+      {% if s.year_level %}<span class="badge">year {{ s.year_level }}</span>{% endif %}
+    </div>
+    {% if s.synopsis %}
+    <p class="quiz-synopsis">{{ s.synopsis }}</p>
+    {% else %}
+    <p class="quiz-synopsis dek">No handbook synopsis in the catalogue for this subject.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<ol class="quiz-list">
+  {% for item in quiz.items %}
+  <li class="quiz-item">
+    <div class="quiz-meta">
+      <span class="competency-name">{{ item.competency_label }}</span>
+      <span class="badge {{ item.gap_kind|replace(' ', '-') }}">{{ item.gap_kind }}</span>
+      <span class="dek quiz-refs">{{ item.silo_key }} &middot; {{ item.assessment_key }}</span>
+    </div>
+    {% if item.is_written %}
+    <p class="quiz-stem"><span class="quiz-kind">Written task.</span> {{ item.stem }}</p>
+    <details class="quiz-answer">
+      <summary>Show model answer</summary>
+      <p>{{ item.model_answer }}</p>
+      <p><strong>A good answer must:</strong></p>
+      <ul class="quiz-marking">
+        {% for point in item.marking_points %}
+        <li>{{ point }}</li>
+        {% endfor %}
+      </ul>
+      <p class="dek">{{ item.explanation }}</p>
+    </details>
+    {% else %}
+    <p class="quiz-stem">{{ item.stem }}</p>
+    <ol class="quiz-options" type="A">
+      {% for option in item.options %}
+      <li>{{ option }}</li>
+      {% endfor %}
+    </ol>
+    <details class="quiz-answer">
+      <summary>Show answer</summary>
+      <p><strong>{{ "ABCD"[item.correct_index] }}.</strong> {{ item.options[item.correct_index] }}</p>
+      <p class="dek">{{ item.explanation }}</p>
+    </details>
+    {% endif %}
+    {% set note = quiz.note_for(loop.index0) %}
+    {% if note %}
+    {% set agrees = quiz.agrees(loop.index0) %}
+    <details class="quiz-educator{% if not agrees %} disagree{% endif %}">
+      <summary>
+        <span class="quiz-educator-label">For educator view only</span>
+        {% if item.is_written %}
+        <span class="badge {% if agrees %}proficient{% elif note.marking_verdict == 'partly' %}developing{% else %}persistent-gap{% endif %}">second marker: model answer {{ note.marking_verdict }} the marking points</span>
+        {% elif agrees %}
+        <span class="badge proficient">blind check agrees</span>
+        {% else %}
+        <span class="badge persistent-gap">blind check disagrees: chose {{ "ABCD"[note.chosen_index] }}</span>
+        {% endif %}
+        <span class="dek quiz-refs">{{ note.confidence }} confidence</span>
+      </summary>
+      <div class="quiz-educator-body">
+        <p>{{ note.teaching_explanation }}</p>
+        {% if note.concerns %}
+        <p><strong>Concern:</strong> {{ note.concerns }}</p>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="empty-state">
+  No practice quiz has been generated for this student yet
+  (<code>python -m lja.quiz &lt;xlsx&gt; {{ summary.student_id }}</code>).
+</p>
+{% endif %}
+
 <h2>Strengths</h2>
 {% if strengths %}
 {% call scrollbox(strengths|length, "strengths") %}

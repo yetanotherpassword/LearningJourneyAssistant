@@ -803,3 +803,148 @@ def test_cohort_title_prints_the_floor_in_force_not_a_placeholder() -> None:
     assert "{floor}" not in body
     assert "below the 50% floor" in body
 
+
+
+# --- practice quiz (tender R8) ----------------------------------------------
+
+from lja.model.quiz import QuizDocument, QuizItem, QuizSubject  # noqa: E402
+
+
+def _one_student() -> LjaDataset:
+    return _dataset([StudentSummary(student_id="STU0001", subject_totals={}, average_total=70.0, performance_band="Credit")])
+
+
+def _quiz_document() -> QuizDocument:
+    return QuizDocument(
+        student_id="STU0001",
+        introduction="Two practice questions on data structures; this is practice, not assessment.",
+        items=[
+            QuizItem(
+                competency_label="Data Structures",
+                gap_kind="persistent gap",
+                subject_code="CSE2ALG",
+                silo_key="CSE2ALG:SILO1",
+                assessment_key="CSE2ALG:Assignment 1",
+                kind="multiple_choice",
+                stem="Which linked-list operation is constant time from the head?",
+                options=["Insert at the head", "Find the last node", "Delete by value"],
+                correct_index=0,
+                explanation="Only the head is reachable without traversal. Revisit CSE2ALG:SILO1.",
+            )
+        ],
+        subjects=[
+            QuizSubject(code="CSE2ALG", title="Algorithms and Data Structures", year_level=2, synopsis="Linear structures, trees and graphs."),
+            QuizSubject(code="CSE3CAP"),
+        ],
+    )
+
+
+def test_student_detail_renders_the_quiz_with_subjects_answer_and_caveat(tmp_path) -> None:
+    (tmp_path / "quiz_STU0001.json").write_text(_quiz_document().model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+
+    section = body.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+    assert "this is practice, not assessment" in section
+    assert "Which linked-list operation is constant time from the head?" in section
+    assert "<li>Insert at the head</li>" in section
+    assert "Show answer" in section
+    assert "<strong>A.</strong> Insert at the head" in section
+    assert "Revisit CSE2ALG:SILO1." in section
+    assert "CSE2ALG:SILO1 &middot; CSE2ALG:Assignment 1" in section
+    # Subject info: synopsis where the catalogue had one, an honest note where it did not.
+    assert "Algorithms and Data Structures" in section
+    assert "Linear structures, trees and graphs." in section
+    assert "No handbook synopsis in the catalogue for this subject." in section
+    # The page says what the checks do not cover.
+    assert "do <strong>not</strong> confirm the marked answer is correct" in section
+
+
+def test_student_detail_shows_quiz_empty_state_when_file_is_missing(tmp_path) -> None:
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    assert "No practice quiz has been generated for this student yet" in body
+    assert "python -m lja.quiz" in body
+
+
+def test_student_detail_without_quizzes_directory_is_safe() -> None:
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=None)
+    response = TestClient(app).get("/student/STU0001")
+    assert response.status_code == 200
+    assert "No practice quiz has been generated" in response.text
+
+
+def test_student_detail_shows_educator_block_and_flags_disagreement(tmp_path) -> None:
+    from lja.model.quiz import EducatorNote, EducatorReview
+
+    document = _quiz_document()
+    document.items.append(document.items[0].model_copy(update={"stem": "Second question?", "correct_index": 1}))
+    document = document.model_copy(
+        update={
+            "educator_review": EducatorReview(
+                reviewer="fake",
+                notes=[
+                    EducatorNote(question_index=0, chosen_index=0, marking_verdict=None, confidence="high", teaching_explanation="Head insert needs no traversal."),
+                    EducatorNote(question_index=1, chosen_index=2, marking_verdict=None, confidence="low", teaching_explanation="Delete by value is also linear.", concerns="Two options are defensible."),
+                ],
+            )
+        }
+    )
+    (tmp_path / "quiz_STU0001.json").write_text(document.model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    section = body.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+
+    assert section.count("For educator view only") == 2
+    assert "blind check agrees" in section
+    assert "blind check disagrees: chose C" in section
+    assert "Head insert needs no traversal." in section
+    assert "<strong>Concern:</strong> Two options are defensible." in section
+    assert "disagreed on question 2</strong>; check those first." in " ".join(section.split())
+    assert "a label, not an access control" in section
+
+
+def test_student_detail_quiz_without_review_has_no_educator_block(tmp_path) -> None:
+    (tmp_path / "quiz_STU0001.json").write_text(_quiz_document().model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    body = TestClient(app).get("/student/STU0001").text
+    assert "For educator view only" not in body
+    assert "blind pass" not in body
+
+
+def test_student_detail_renders_a_written_task_with_model_answer_and_second_marker(tmp_path) -> None:
+    from lja.model.quiz import EducatorNote, EducatorReview, QuizItem
+
+    document = _quiz_document()
+    document.items.append(
+        QuizItem(
+            competency_label="Data Structures", gap_kind="persistent gap", subject_code="CSE2ALG",
+            silo_key="CSE2ALG:SILO1", assessment_key="CSE2ALG:Assignment 1", kind="written",
+            stem="Implement insert-at-head for a singly linked list and state its cost.",
+            model_answer="Create a node pointing at the current head and make it the head: O(1).",
+            marking_points=["New node points at old head", "States O(1)"],
+            explanation="A weak answer traverses first. Revisit CSE2ALG:SILO1.",
+        )
+    )
+    document = document.model_copy(
+        update={
+            "educator_review": EducatorReview(
+                reviewer="fake",
+                notes=[
+                    EducatorNote(question_index=0, chosen_index=0, marking_verdict=None, confidence="high", teaching_explanation="Head insert needs no traversal."),
+                    EducatorNote(question_index=1, chosen_index=None, marking_verdict="partly", confidence="medium", teaching_explanation="Mention the empty-list case.", concerns="No marking point covers the empty list."),
+                ],
+            )
+        }
+    )
+    (tmp_path / "quiz_STU0001.json").write_text(document.model_dump_json(), encoding="utf-8")
+    app = create_app(_one_student(), [], SiloClusteringResult(clusters=[]), quizzes_dir=tmp_path)
+    section = TestClient(app).get("/student/STU0001").text.split("<h2>Practice quiz</h2>", 1)[1].split("<h2>Strengths</h2>", 1)[0]
+
+    assert "Written task.</span> Implement insert-at-head" in section
+    assert "Show model answer" in section
+    assert "Create a node pointing at the current head" in section
+    assert "<li>States O(1)</li>" in section
+    assert "second marker: model answer partly the marking points" in section
+    assert "disagreed on question 2</strong>; check those first." in " ".join(section.split())
+    assert "No marking point covers the empty list." in section

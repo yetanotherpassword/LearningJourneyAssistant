@@ -48,6 +48,7 @@ from ..model.gap_detection import (
 )
 from ..model.gap_evidence import describe_trend, future_subjects_sharing_competency, subject_breakdown
 from ..model.learning_plan import LearningPlan
+from ..model.quiz import QuizDocument
 from ..model.silo_clustering import SiloClusteringResult
 from ..model.silo_quality import (
     assess_silos,
@@ -241,6 +242,7 @@ def create_app(
     thresholds: GapThresholds | None = None,
     run_info: RunInfo | None = None,
     plans_dir: Path | None = None,
+    quizzes_dir: Path | None = None,
 ) -> FastAPI:
     """`thresholds` must be the object compute_gaps() was given for `gaps`.
 
@@ -250,6 +252,8 @@ def create_app(
     to GapThresholds() because that is also compute_gaps()'s default.
     `run_info` is the provenance __main__.py collected; None (tests, or an
     embedding caller) leaves the /run page's command section out honestly.
+    `plans_dir` and `quizzes_dir` are where lja.plan and lja.quiz wrote
+    their JSON; None, or a missing file, gives the page's empty state.
     """
     thresholds = thresholds or GapThresholds()
     app = FastAPI(title="LJA Dashboard")
@@ -604,12 +608,22 @@ def create_app(
                     plan_path.read_text(encoding="utf-8")
                 )
 
+        # Practice quiz (tender R8): rendered only from the JSON lja.quiz
+        # wrote, never generated here. The page says what the grounding
+        # checks cover and what they do not (the answer key).
+        quiz = None
+        if quizzes_dir is not None:
+            quiz_path = quizzes_dir / f"quiz_{student_id}.json"
+            if quiz_path.exists():
+                quiz = QuizDocument.model_validate_json(quiz_path.read_text(encoding="utf-8"))
+
         return templates.TemplateResponse(
             request,
             "student.html",
             {
                 "summary": summary,
                 "plan": plan,
+                "quiz": quiz,
                 "strengths": strengths,
                 "gap_details": gap_details,
                 "progress_subjects": progress_subjects,

@@ -627,6 +627,105 @@ rather than the weakest, and its "why" quotes marker feedback but not the studen
 percentages. The other two quote their figures. Both are prompt work, not grounding
 failures.
 
+## Practice quiz — the descoped R8, built as a thin slice over the same pattern
+
+The tender listed an adaptive quiz as the last deliverable and the first descope
+candidate, and the binding plan cut it. `python -m lja.quiz <xlsx> <student id>` is a
+thin slice of it built on the learning-plan pattern, so the next team starts from a
+grounded, tested baseline instead of nothing. It mirrors `lja.strategy` exactly: same
+context (`build_plan_context()`), same `--source`, `--clustering-cache`, `--review-file`,
+`--max-attempts` and `--extra-instructions` options, same staff-review gate (a rejected
+cluster exits 2, a pending one warns), and the same fail-closed loop (never grounds, exit
+1, nothing written). One extra input: `--catalogue` (default
+`../data-fixtures/subject_catalogue.yaml`, skipped if missing) supplies each subject's
+title and handbook synopsis, which the model sees as topic background and the page
+prints beside the questions.
+
+```bash
+python -m lja.quiz ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003
+# writes output/quizzes/quiz_STU0003.json and .md; the dashboard's student page renders the JSON
+
+# offline, from the committed reference run
+R=../data-fixtures/reference-run
+python -m lja.quiz ../data-fixtures/CSE_results_150_students_3_Subjects.xlsx STU0003 \
+    --clustering-cache $R/silo_clustering.json --review-file $R/silo_clustering.review.json
+```
+
+`--items-per-gap` (default 2) sets how many multiple-choice questions each gap competency
+gets. A student with no isolated or persistent gap gets a one-line message and exit 0,
+with no LLM call.
+
+**What the grounding checks guarantee** (`tests/test_quiz.py`, one test per rule): every
+question is filed under one of this student's gaps with the gap engine's own
+classification; its `silo_key` is one of that competency's SILOs, its `assessment_key`
+one of this student's assessments covering that competency, and both belong to the
+`subject_code` it names; every gap gets exactly the requested number of questions and a
+strength gets none; options are 3 or 4, distinct and non-blank, with a valid
+`correct_index`; the stem, options and explanation carry no subject code or SILO key
+the input did not contain. `tests/test_quiz_cli.py` covers the gate, the catalogue
+lookup, the no-gap exit and the fail-closed exit.
+
+**What they do not guarantee, and why this stayed a thin slice.** The only subject
+matter in the input is the SILO wording, the assessment names, the marker's feedback and
+the handbook synopsis. The question, its answer key and its distractors come from the
+model's general knowledge of that topic, which nothing in the pipeline can check. The
+page and the Markdown both say so and ask for staff review of the answers. Closing that
+gap means either feeding real course material (lecture notes, tutorial questions, the
+rubric criteria text) so questions can be checked against a source, or a second
+independent model pass that answers each question blind and rejects any disagreement.
+Neither is built.
+
+**Two kinds of question, and who decides.** A `multiple_choice` item has 3 or 4 options and
+a key; a `written` task has a stem that asks the student to produce something, a
+`model_answer` a tutor would accept, and 2 to 5 `marking_points`. Retrieval practice works
+best when the student has to generate the answer, so written tasks are the better learning
+instrument where the SILO asks for doing; multiple choice is the only kind that self-marks.
+`--format` sets the educator's policy: `multiple_choice`, `written`, or `mixed` (the
+default). Under `mixed` the model chooses per question, inside one rule checked in code
+(`requires_written()`): a SILO whose wording contains a doing verb (implement, design,
+develop, build, analyse, evaluate, explain, apply, solve, write, model, test, debug,
+create, construct, program) must get a written task; identifying, comparing or stating
+SILOs may be either. The prompt tags those SILOs "(written task required)" so the model
+and the validator read the same rule. The page shows a written task with "Show model
+answer" revealing the model answer and the marking points.
+
+**Educator review: a blind second pass.** After the quiz grounds, `lja.quiz` makes one more
+call (skip with `--skip-educator-review`): the model is given every question with its
+options, the SILO wording, the assessment and the synopsis, but **not** the answer key, and
+asked to choose, say how confident it is, write the explanation a tutor would give the
+student (why the answer is right, why the others are wrong, what the question practises
+from the SILO), and flag concerns such as two defensible answers or a level mismatch.
+The code, not the model, compares its choice with the key. For a written task the pass
+acts as a second marker instead: it sees the model answer and the marking points and
+returns `meets`, `partly` or `fails`, with what is missing in `concerns`; anything but
+`meets` is shown as a disagreement. The result is stored as
+`educator_review` in the JSON, rendered under each question on the student page in a
+collapsed block labelled "For educator view only" (a label, not an access control: the
+dashboard has no logins), with a summary line naming any question the blind pass
+disagreed on. A disagreement does not prove either side wrong; it tells the educator which
+question to check first. A review that never grounds is a warning, not a failure: the
+quiz is still written, without notes. Checks: one note per question, a valid choice, a
+non-empty explanation, no invented codes in prose; `tests/test_quiz.py` covers them.
+
+**Synopses.** The handbook crawl (`lja.data.handbook`) always parsed each subject's
+handbook description; it now carries it into the catalogue as `Subject.description`.
+The three supplied subjects in `data-fixtures/subject_catalogue.yaml` have theirs from
+the cached 2026 handbook pages; synthetic subjects have none, and the page says so
+rather than inventing one.
+
+**First live runs** (2026-10-02, `qwen/qwen3-vl-30b` via LM Studio, reference run, STU0003).
+Multiple choice only: one call, 17 s, grounded on the first attempt, four questions across
+one persistent and one isolated gap. It also showed exactly the limit above: a question
+marked "composition" for a car and its wheels and called "aggregation" the tempting
+distractor, which a tutor could reasonably mark the other way; the blind review by the
+same model agreed with it at high confidence. A model reviewing its own questions shares
+its own blind spots, so point the reviewer at a different model family where one is
+available. Mixed policy (the committed artefact): every gap SILO for this student is a
+doing SILO, so all four questions came out as written tasks with model answers and five
+marking points each, grounded on the second attempt (the first omitted the `kind` field,
+which is why that field is required rather than defaulted); the second-marker pass found
+every model answer meets its marking points. Both runs were one review call of under 10 s.
+
 ## Export — structured extract for longitudinal / A/B evaluation
 
 `python -m lja.export` (tender requirement 7) writes the pipeline run out as
@@ -1233,5 +1332,5 @@ before it drives a real intervention: see the module's docstring.
   multi-subject instance hasn't been exercised. Note `lja_criterion_score` is
   **not** materialised — the in-memory `LjaDataset` the loader returns is its
   equivalent for the slice, so there is no staging-table loader to write.
-- Learning-plan / quiz / study-strategy generation — `cluster_silos()` is the
-  first LLM feature built; those are next.
+- A quiz whose answer key is checked against course material — `lja.quiz` grounds
+  every reference but cannot check the answers (see "Practice quiz" above).
