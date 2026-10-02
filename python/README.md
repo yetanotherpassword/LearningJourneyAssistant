@@ -492,9 +492,10 @@ so Sprint 5 can sweep them without editing a `.env` between runs. See `.env.exam
 > would be fitting to an artefact of how the data was generated.
 
 **`sql/moodle_attainment_extraction.sql` Query 6 still carries the legacy 50/65** and is annotated
-as divergent. Running it and running `lja.cli` on the same data will disagree. That is expected
-until Sprint 4 reconciles them — the Moodle path is not wired to code yet, and porting an
-unratified algorithm would mean maintaining two copies of a moving target.
+as divergent. Running it and running `lja.cli` on the same data will disagree. The Moodle path
+is wired through `moodle_loader.py` and the Python engine is the one that runs; Query 6 is kept
+as an annotated legacy until the thresholds are ratified (A-01), because porting an unratified
+algorithm would mean maintaining two copies of a moving target (SMD debt item 11).
 
 ## Learning plans — the first generated artefact, and it fails closed
 
@@ -1321,17 +1322,9 @@ before it drives a real intervention: see the module's docstring.
 
 ## Not yet written
 
-- Staff confirmation workflow for the LLM's SILO clustering (the
-  `confirmed_by_staff` gate that exists conceptually in `sql/`'s
-  `lja_criterion_silo_map` has no equivalent here yet — right now nothing
-  stops an unreviewed clustering from being used). Per `docs/sprint-plan.md`
-  (M2, Sprint 3), MVP scope is a CLI/admin script, not a full UI — and the
-  gate should be advisory (three states: pending/confirmed/rejected), not a
-  hard block on the pipeline; a `rejected` cluster still needs a real
-  rework path (`--extra-instructions` + `--refresh-clustering`, or a manual
-  override), not a silent dead end.
-- Confirmation UI on the dashboard (see "Dashboard" above) — deferred until
-  the CLI/admin version above exists.
+- Confirmation UI on the dashboard. The staff gate exists as a CLI
+  (`python -m lja.review`, see "Staff confirmation gate" above) with three
+  states and a rework path; moving it into the browser is a follow-up.
 - Reload-on-change for `python -m lja.dashboard` — restart the process to
   pick up template/CSS edits; wiring `uvicorn`'s `--reload` through the
   `create_app()` factory pattern is more machinery than this slice needed.

@@ -8,7 +8,7 @@
 #     cd "$MOODLE_DOCKER_WORKDIR"
 #     bin/moodle-docker-compose ps
 #
-# Keep this file in version control so all six of us run the same stack.
+# Keep this file in version control so the whole team runs the same stack.
 # Machine-specific overrides go in a gitignored local.yml, not here.
 
 # Where the moodle-docker tooling and the Moodle codebase live. Single source

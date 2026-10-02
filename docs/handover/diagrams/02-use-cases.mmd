@@ -9,31 +9,50 @@ flowchart TB
         UC2[Cluster SILOs semantically<br/>E1]
         UC3[Review SILO grouping<br/>E2 S5]
         UC4[Detect competency gaps<br/>E3]
-        UC5[View cohort and drill down<br/>D1 D2 D10]
-        UC6[View my understanding, gaps, strengths<br/>D3 D4 D5 D8]
-        UC7[Generate learning plan<br/>E4 S3]
-        UC8[See unreviewed-AI warning<br/>D9]
-        UC9[Export for research<br/>S4]:::planned
-        UC10[View progress and next actions<br/>D6 D7]:::planned
+        UC5[View cohort, priority groups,<br/>drill down · D1 D2 D10 D11]
+        UC6[View my understanding, gaps,<br/>strengths, progress · D3 D4 D5 D6 D8]
+        UC7[Generate learning plan<br/>E4 S3 D7]
+        UC12[Generate study strategy<br/>S7]
+        UC13[Generate practice quiz,<br/>staff review the answers · S8]
+        UC14[See where a gap is assessed next<br/>trajectory · D12]
+        UC8[See unreviewed-AI warning,<br/>open the clusters page · D9]
+        UC15[Audit outcome quality, competencies,<br/>subjects, assessments]
+        UC9[Export for research,<br/>pseudonymised · S4]
+        UC16[Check provenance of every number]
+        UC17[Generate a plan or quiz from the page<br/>opt-in · D13]
+        UC18[Build synthetic cohorts and<br/>score the detector against truth]
         UC11[Run tests / rebuild from clean clone<br/>S6]
+        UC19[Filter 'ahead' by course map;<br/>dashboard over Moodle; sign-in]:::planned
     end
 
     MT --> UC1
     MT --> UC11
+    MT --> UC18
     SC --> UC3
     SC --> UC5
     SC --> UC7
+    SC --> UC13
+    SC --> UC15
+    SC --> UC16
+    SC --> UC17
     ST --> UC6
     ST --> UC7
+    ST --> UC12
+    ST --> UC14
     ST --> UC8
     SC --> UC8
     PO --> UC9
-    ST --> UC10
+    PO --> UC16
+    PO --> UC19
     UC1 -.include.-> UC2
     UC2 -.include.-> UC3
     UC3 -.include.-> UC4
     UC4 -.include.-> UC5
     UC4 -.include.-> UC6
     UC4 -.include.-> UC7
+    UC4 -.include.-> UC12
+    UC4 -.include.-> UC13
+    UC4 -.include.-> UC14
+    UC4 -.include.-> UC9
 
     classDef planned stroke-dasharray: 5 5

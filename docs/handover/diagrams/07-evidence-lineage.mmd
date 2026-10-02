@@ -5,7 +5,7 @@ flowchart TB
 
     subgraph S1["1 · What was assessed"]
         direction LR
-        W["<b>Workbook</b><br/>Results: score, weight, feedback,<br/>SILOs covered per assessment<br/>Assessment Map: SILO wording"]:::data
+        W["<b>Workbook</b> (or Moodle rubric fills)<br/>Results: score, weight, feedback,<br/>SILOs covered per assessment<br/>Assessment Map: SILO wording"]:::data
     end
     subgraph S2["2 · What it is evidence of"]
         direction LR
@@ -17,21 +17,28 @@ flowchart TB
     subgraph S3["3 · Where the student stands"]
         direction LR
         G["<b>gap_report.csv</b><br/>attainment, subjects evidencing,<br/>classification and its <b>basis</b>,<br/>relative position"]:::data
+        T["<b>Trajectory</b><br/>subjects in declared order,<br/>trend and its <b>basis</b>,<br/>subjects ahead"]:::data
+        G --> T
     end
     subgraph S4["4 · What the model is shown"]
         direction LR
-        X["<b>Plan context</b><br/>this student only: gaps, per-subject<br/>evidence, SILO wording,<br/>own scores and feedback"]:::data
+        X["<b>Plan context</b><br/>this student only: gaps, per-subject<br/>evidence, SILO wording,<br/>own scores and feedback<br/>(+ handbook synopsis for a quiz)"]:::data
     end
     subgraph S5["5 · What the student reads"]
         direction LR
-        GR{{"Grounding check<br/>every name must be<br/>in the context"}}:::check
-        P["<b>learning_plan_&lt;id&gt;.json / .md</b><br/>priorities citing named SILOs<br/>and assessments + evidence table"]:::out
+        GR{{"Grounding check<br/>every name must be in the context;<br/>strategy and quiz also per competency"}}:::check
+        P["<b>learning_plan_&lt;id&gt;</b> · what to work on<br/><b>study_strategy_&lt;id&gt;</b> · how to study it<br/><b>quiz_&lt;id&gt;</b> · is it closing<br/>(+ blind educator review; key unverified)"]:::out
         STOP(["fails 3 times:<br/>exit 1, nothing written"]):::check
         GR -->|pass| P
         GR -.->|fail| STOP
+    end
+    subgraph S6["6 · What leaves the system"]
+        direction LR
+        E["<b>export/</b> students · competencies · cohort<br/>+ manifest.json (commit, cache, thresholds)<br/>ids pseudonymised with a keyed HMAC"]:::out
     end
 
     S1 -->|"SILO wording"| S2
     S2 -->|"SILO → competency map, with weighted scores"| S3
     S3 -->|"with this student's own rows"| S4
     S4 -->|"LLM, up to 3 attempts; errors quoted back on retry"| S5
+    S3 -->|"no LLM"| S6

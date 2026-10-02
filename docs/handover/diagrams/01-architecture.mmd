@@ -1,50 +1,57 @@
 flowchart LR
     subgraph Sources
+        direction TB
         X[Excel workbook<br/>data-fixtures/*.xlsx]
         M[(Moodle 5.2 Postgres<br/>read-only role lja_reader)]
+        CAT[subject_catalogue.yaml<br/>from the handbook crawl +<br/>embedding tagger, or hand-written]
     end
     subgraph "lja.data"
-        EL[excel_loader]
-        ML[moodle_loader + sql]
-        LD[loading<br/>--source excel or moodle]
+        direction TB
+        LD[excel_loader · moodle_loader + sql<br/>loading: --source excel or moodle]
+        CG[catalogue_generator → workbook + truth.json<br/>catalogue_verify scores a run against truth]
     end
     DS[[LjaDataset<br/>silos · assessments · results · summaries]]
     subgraph "lja.model"
+        direction TB
         SC[silo_clustering]
-        GD[gap_detection]
-        GE[gap_evidence]
-        LP[learning_plan]
+        GD[gap_detection<br/>+ gap_evidence + trajectory]
+        SQ[silo_quality]
+        GEN3[learning_plan · study_strategy · quiz<br/>one pattern, grounded per competency]
     end
     subgraph "lja.llm"
-        LC{{LLMClient}}
-        AC[AnthropicClient]
-        OC[OpenAICompatibleClient]
+        direction TB
+        LC{{LLMClient<br/>AnthropicClient · OpenAICompatibleClient<br/>embeddings}}
         GR[grounding validator]
     end
-    RV[review<br/>staff gate]
+    RV[review · staff gate<br/>pending · confirmed · rejected]
     subgraph Outputs
-        CSV[clusters.csv · gap_report.csv]
+        direction TB
         CACHE[(silo_clustering.json<br/>+ .review.json)]
-        PL[plans/learning_plan_ID.json + .md]
+        CSV[clusters.csv · gap_report.csv]
+        PL[plans/ · strategies/ · quizzes/]
+        EX[export/ CSVs + manifest.json]
     end
-    DB[lja.dashboard<br/>FastAPI + Jinja2 + Chart.js]
+    DB[lja.dashboard · read-only<br/>students · cohorts · student · outcome quality<br/>competencies · subjects · assessments · clusters<br/>provenance · glossary<br/>Generate button, opt-in → subprocess of lja.plan / lja.quiz]
 
-    X --> EL --> LD
-    M --> ML --> LD
+    CAT --> CG --> X
+    X --> LD
+    M --> LD
     LD --> DS
     DS --> SC
     SC <--> LC
-    LC --> AC
-    LC --> OC
     SC --> GR
-    SC --> CACHE
-    CACHE --> RV
-    RV --> GD
-    DS --> GD --> CSV
-    GD --> GE --> LP
-    LP <--> LC
-    LP --> GR
-    LP --> PL
+    SC --> CACHE --> RV --> GD
+    DS --> GD
+    GD --> CSV
+    GD --> EX
+    DS --> SQ
+    GD --> GEN3
+    GEN3 <--> LC
+    GEN3 --> GR
+    GEN3 --> PL
     DS --> DB
     GD --> DB
+    SQ --> DB
     CACHE --> DB
+    PL --> DB
+    DB -. --allow-generate .-> GEN3

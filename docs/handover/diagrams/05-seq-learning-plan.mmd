@@ -7,6 +7,7 @@ sequenceDiagram
     participant LLM as LLMClient
     participant GR as grounding
 
+    Note over U,GR: lja.strategy and lja.quiz follow this sequence exactly:<br/>their grounding is also per competency, and the quiz adds one blind review call.
     U->>P: python -m lja.plan dataset.xlsx STU0003
     P->>P: require existing clustering cache (never clusters itself)
     P->>RV: reviews for this student's competencies
@@ -15,7 +16,7 @@ sequenceDiagram
     else pending
         P-->>U: warning, continue
     end
-    P->>GE: subject_breakdown, describe_trend, future_subjects_sharing_competency
+    P->>GE: subject_breakdown, describe_trend (trajectory order), future_subjects_sharing_competency
     P->>LP: build_plan_context(student, gaps, dataset)
     loop up to 3 attempts
         LP->>LLM: complete_structured(system, user, LearningPlan)
