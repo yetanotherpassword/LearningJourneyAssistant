@@ -129,7 +129,7 @@ on **3 October 2026**, against source revision
 
 | Student | Claims supported by evidence? | Scores/evidence represented correctly? | Unsupported or invented claim? | Human result | Reviewer notes |
 |---|---|---|---|---|---|
-| STU0003 | Partly | Partly — marks match; some feedback and learning-outcome attributions do not. | Yes — assessment-to-feedback attributions described below. | NEEDS CORRECTION | Anup, 2026-10-03: confirmed G01 and an additional OO Test feedback mismatch. See adjudication below. |
+| STU0003 | Partly | Partly — marks match; some feedback and learning-outcome attributions do not. | Yes — assessment-to-feedback attributions described below. | NEEDS CORRECTION | Anup, 2026-10-03: verdict on the original plan; confirmed G01 and an additional OO Test feedback mismatch. A corrected revision is available below, pending human recheck. |
 | STU0004 | Pending | Pending | Pending | Pending | |
 | STU0022 | Pending | Pending | Pending | Pending | |
 | STU0054 | Pending | Pending | Pending | Pending | |
@@ -160,13 +160,40 @@ and [paired evidence](sprints/sprint-5/grounding-audit/evidence/evidence_STU0003
 This verdict adjudicates the saved plan; it does not establish that the
 identified issues have been corrected or that a revised plan has passed review.
 
+### STU0003 — corrected revision
+
+A [corrected plan dated 3 October 2026](sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.md)
+addresses both confirmed attribution issues:
+
+- **Algorithm comparison:** Section 2 attributes CSE2ALG:SILO4 feedback to
+  the assignment. The exam is linked to Java implementation (SILO3) and
+  performance evaluation (SILO5). The comparison action is now a new practice
+  exercise guided by assignment feedback, rather than a claim about unseen
+  exam questions.
+- **Real-life OO design:** Section 1 attributes CSE1OOF:SILO4 feedback to the
+  exam. The statement shared by the Test and exam is limited to SILO1.
+
+The [revised JSON](sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.json)
+passes `validate_plan()` against the original paired evidence, and
+`render_markdown()` reproduces the revised Markdown exactly. The
+[verification record](sprints/sprint-5/grounding-audit/revisions/2026-10-03/STU0003-verification.json)
+records the source revision, changed fields, and file hashes. The original
+generated plan, evidence, machine results, and generation metadata remain
+available for the audit trail. No regeneration or new LLM API call was made.
+
+**Correction status:** Both confirmed attribution issues have been corrected
+in the dated revision. **Independent human review of that revision: Pending.**
+The human verdict above continues to describe the original plan and is not
+automatically changed to PASS by the structured-reference check.
+
 ## Current conclusion
 
 The automated portion of IOLG-121 passed for all ten fixed students with no retries or grounding failures.
 
-Human review has recorded **one plan requiring correction**, **zero human-approved
-passes**, and **nine pending verdicts**. IOLG-121's independent human review
-remains incomplete.
+Human review of the original audit set has recorded **one plan requiring
+correction**, **zero human-approved passes**, and **nine pending verdicts**.
+STU0003 now has a corrected revision awaiting human recheck. IOLG-121's
+independent human review remains incomplete.
 
 The assisted pre-review demonstrates why the 10/10 structured-reference pass
 must not be read as a 10/10 factual-prose pass. Complete the remaining human
