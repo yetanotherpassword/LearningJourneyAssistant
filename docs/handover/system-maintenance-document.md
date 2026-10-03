@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | DRAFT 0.5 — for team review. Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
+| **Status** | DRAFT 0.7 — for team review (0.6, the generate button, is in open PR #55). Sections marked ⚠ *TO FILL* depend on the 4/5 October review, which has not happened yet. |
 | **Date** | 2 October 2026 |
 | **Describes** | `main` at `cd98ce8` (2 Oct 2026, after PR #49) plus the open code pull requests #25 (clusters page), #52 (practice quiz) and the IOLG-106 trajectory branch this revision ships on, labelled where they matter. PR #48 holds the previous revision of this document. |
 | **Project** | CSE5IDP Industry Development Project, Semester 2 2026, La Trobe University, Group 3 (Jira project IOLG) |
@@ -120,7 +120,7 @@ LJA is a Python 3.12 package (`python/lja/`) that runs in place, not pip-install
 
 *Figure 1: LJA architecture: sources, data layer, LjaDataset, model layer, LLM layer, outputs, dashboard. Source: `docs/handover/diagrams/01-architecture.mmd`.*
 
-Figure 1 was drawn at 0.1 and shows one generated artefact. Since then three more commands sit where `lja.plan` sits, all reading the same `LjaDataset` and the same gap output and none of them re-clustering: `lja.strategy` (study strategies), `lja.quiz` (practice quiz, PR #52) and `lja.export` (research CSVs, no LLM at all). The dashboard renders plans and quizzes from the JSON those commands wrote; it never calls the LLM. The diagram source has not been re-rendered for 0.4.
+Figure 1 was redrawn on 3 October 2026. Three generated-artefact commands sit where `lja.plan` sits, all reading the same `LjaDataset` and the same gap output and none of them re-clustering: `lja.plan`, `lja.strategy` and `lja.quiz`; `lja.export` reads the same and never calls a model. The dashboard renders plans and quizzes from the JSON those commands wrote and never calls a model on a page load; its opt-in Generate button runs the same commands as a subprocess (D20, PR #55).
 
 Two things about this picture matter more than the rest:
 
@@ -148,7 +148,7 @@ Two things about this picture matter more than the rest:
 
 ### 3.3 Use case diagram
 
-Actors and use cases as drawn at 0.1. Dashed use cases were planned or in an open PR at the time; of those, strengths, progress, next actions, study strategies and the export are now on `main`, the clusters page is still PR #25, and the quiz (PR #52) and the priority-group, subject, assessment, `/run` and `/glossary` pages are not drawn at all. The source has not been re-rendered for 0.4.
+Actors and use cases as built, redrawn on 3 October 2026. The one dashed use case is the planned follow-up: filtering "ahead" by a course map, a Moodle-sourced dashboard, and sign-in.
 
 ![Use case diagram: actors and use cases, dashed = planned](diagrams/02-use-cases.png)
 
@@ -162,7 +162,7 @@ The classes below are the ones a maintainer will touch. Field lists are abbrevia
 
 ![Class diagram of the main LJA types](diagrams/03-classes.png)
 
-*Figure 3: Class diagram of the main LJA types. Source: `docs/handover/diagrams/03-classes.mmd`.*
+*Figure 3: Class diagram of the main LJA types, redrawn on 3 October 2026 to include the trajectory, outcome-quality, strategy and quiz types, the grounding report and the dashboard's generator and run record. Source: `docs/handover/diagrams/03-classes.mmd`.*
 
 ### 3.5 Sequence diagrams
 
@@ -182,7 +182,13 @@ The classes below are the ones a maintainer will touch. Field lists are abbrevia
 
 ![Evidence lineage of a learning plan](diagrams/07-evidence-lineage.png)
 
-*Figure 5b: Evidence lineage of a learning plan. Source: `docs/handover/diagrams/07-evidence-lineage.mmd`.*
+*Figure 5b: Evidence lineage, redrawn on 3 October 2026 to cover the three generated artefacts, the trajectory and the export. Source: `docs/handover/diagrams/07-evidence-lineage.mmd`.*
+
+**Generating from the dashboard (D20).** Figure 5d shows the one path by which the dashboard causes a model call: an explicit button, a subprocess of the same command, and a reload from the file.
+
+![Sequence diagram: generating a plan or quiz from the student page](diagrams/16-seq-generate-from-dashboard.png)
+
+*Figure 5d: Generating from the student page (PR #55). Source: `docs/handover/diagrams/16-seq-generate-from-dashboard.mmd`.*
 
 ### 3.6 Data model and file formats
 
@@ -695,7 +701,7 @@ Things a maintainer should know are known. Each has an owner in the actions regi
 | 19 | Quick start's cache path differs from the bare artefact commands | root `README.md`, `python/README.md` | UAT-01, IOLG-114 |
 | 20 | Quiz answer key is unverifiable; the blind reviewer defaults to the same model | `model/quiz.py` (PR #52) | §3.10 |
 | 21 | d3 and d3-cloud also from the CDN, unpinned to a minor | `dashboard/templates/silos.html` | A-20 |
-| 22 | The architecture and use-case diagrams predate the Sprint 5 commands and pages | `docs/handover/diagrams/01-*.mmd`, `02-*.mmd` | this document |
+| 22 | The architecture and use-case diagrams predate the Sprint 5 commands and pages. *Resolved 3 Oct 2026: all eight sources redrawn and rendered via `docs/design/build.sh`* | `docs/handover/diagrams/*.mmd` | — |
 | 23 | `/run` reconstructs the command from argv; a dashboard embedded by another caller gets no command section | `dashboard/run_info.py` | — |
 
 ### 5.8 The Moodle production path: what an operator must know
@@ -711,7 +717,7 @@ Stated plainly because the owner asked for it. LJA reads rubric fills **directly
 
 ### 5.9 Documentation that is known to be stale
 
-IOLG-114 (PR #27) landed the handover set, but the four README items below were checked again on 2 Oct and are still present. Fix them in the next README pass, together with UAT-01:
+Fixed on 3 October 2026 in the documentation refresh: the four README items below, the root README's roadmap (which still called the staff gate and three dashboard views unbuilt), the three August design PDFs (rebuilt from Markdown sources under `docs/design/`, with Word copies), and the §3 diagrams. The list is kept as the record of what was stale. Still open: UAT-01 (the quick start's cache path).
 
 - `python/README.md` "Not yet written" still lists the staff confirmation workflow; `review.py` implements it and `cli.py` enforces it.
 - `python/README.md` says plans do not consult review states; `plan.py` does since IOLG-108.
@@ -1198,6 +1204,8 @@ Unplanted flags are not automatically false positives: every generated student h
 | Large cohort | `data-fixtures/README-handbook-cohort.md` | IOLG-113: how the 100-subject, 5,000-student cohort is built and why |
 | Bundle READMEs | `README.md`, `python/README.md`, `sql/README.md`, `devenv/README.md`, `data-fixtures/README.md` | Detail behind §4 and §5 |
 | Lecture summaries | `docs/lecture_summaries/` | Course guidance on handover format (W1–W10) |
+| Design pages (2.0) | `docs/design/*.md` → `docs/LJA — Data & Algorithm Pipeline.pdf`, `LJA -- Pipeline.pdf`, `LJA — UML Use Case & Sequence Diagrams.pdf` (+ `.docx`) | The August 2026 artifact pages rebuilt from sources on 3 Oct 2026; same diagrams as §3 |
+| Requirements status | `docs/design/requirements-status.md` → `docs/LJA -- Requirements_status.pdf` (+ `.docx`) | Every FR and NFR from the 11 Aug meeting record with its status on `main` |
 
 ## Appendix D. Change log
 
@@ -1208,3 +1216,4 @@ Unplanted flags are not automatically false positives: every generated student h
 | 0.3 | 29 Sep 2026 | Allan Campton (drafted with Claude Code) | Companion-document row and Appendix B now point at the User Document, which holds the explanation and worked examples behind the classification rules. |
 | 0.4 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | Brought up to `main` at `cd98ce8` (24 pull requests merged since 0.1's baseline) plus open PRs #25 and #52. New §3.10 on the generated-artefact family and the practice quiz; decisions D14–D18; threat model, limitations, configuration, commands, repository map, troubleshooting, debt register and test tables updated; §6.5 now records the Sprint 5 validation results and what is still open; §7.3 pre-filled with the team's preliminary UAT results; §8 and Appendix B reconciled with what is merged; Appendix C lists the Sprint 5 evidence files. The §3 diagrams were not re-rendered (debt item 22). |
 | 0.5 | 2 Oct 2026 | Allan Campton (drafted with Claude Code) | IOLG-106 trajectory model: new §3.11 with Figure 5c and the unfiltered-ahead finding, decision D19, story D12, configuration rows, repository map, debt items 7 and 8 resolved to configuration, §8.2 and Appendix B reconciled. Ships on the IOLG-106 branch. |
+| 0.7 | 3 Oct 2026 | Allan Campton (drafted with Claude Code) | Documentation refresh: §3 diagrams redrawn (architecture, use cases, classes, sequences, trust boundaries, lineage) and Figure 5d added; §5.9 stale items fixed; debt item 22 resolved; Appendix C lists the rebuilt design pages and the requirements status. Numbered 0.7 because 0.6 (D20, the generate button) is in PR #55. |

@@ -60,11 +60,12 @@ owner (see each bundle's README for detail):
 - DevSecOps is deliberate: least-privilege API tokens, a read-only `lja_reader`
   DB role, never writing to Moodle tables directly, no admin credentials.
 
-## What it is going to become
+## What it has become, and what is still ahead
 
-The MVP is a thin vertical slice, working end-to-end before anything is
-polished. The extraction → clustering → gap-detection spine runs on the
-Excel path, and a first dashboard slice now renders it live.
+The MVP was built as a thin vertical slice, working end-to-end before anything was
+polished. As of 3 October 2026 the extraction → clustering → gap-detection spine runs on
+both data paths, three grounded artefacts sit on top of it, and the dashboard has fourteen
+pages. The full reference is `docs/handover/system-maintenance-document.md`.
 
 ```
 data-fixtures/CSE_results_*.xlsx  (real data)  ─┐
@@ -72,34 +73,39 @@ data-fixtures/CSE_results_*.xlsx  (real data)  ─┐
 Moodle (production path — sql/, moodle_probe.py) ─┘
 ```
 
-Planned in order (must-haves from the project proposal, sequenced by dependency):
+The must-haves from the project proposal, in the order they were built:
 
-1. ~~**Walking skeleton**~~ — **done for the Excel path**: load → cluster SILOs
-   → detect gaps → CSV report, running against real data with the test suite
-   green in CI.
-2. **Dashboard** — **first slice done** (`python/lja/dashboard/`: FastAPI +
-   Jinja2 + Chart.js) — a student list plus a per-student gap-detail page,
-   rendered live from `compute_gaps()`, not a hardcoded example. Still
-   missing: the other three dashboard views from the proposal (strengths,
-   progress trends — only the gap view exists so far) and multi-subject
-   comparison; see `python/README.md`'s "Dashboard" section.
-3. **Staff confirmation workflow** for the LLM's SILO clustering — right now
-   nothing gates an unreviewed clustering from driving a gap report, unlike
-   the Moodle path's `confirmed_by_staff` design.
-4. **Personalised learning plans & study-strategy recommendations** — LLM
-   features grounded in the gap data, never free-associating (a hard constraint
-   from the proposal: outputs must be grounded in structured subject data).
-   **Learning plans: first slice done** (`python -m lja.plan`, see
-   `python/README.md`'s "Learning plans" section) — every name in the output
-   is validated against the input and the build fails if one isn't there.
-   **Study strategies: done** (`python -m lja.strategy`, IOLG-123).
-5. **Adaptive quiz generation** aligned to identified gaps — last must-have,
-   first descope candidate if the schedule slips, and cut as pre-agreed.
-   **A thin slice exists** (`python -m lja.quiz`): grounded references, staff
-   review of the answers still required; see `python/README.md`.
-6. Stretch: custom Moodle plugin exposing rubric fills as a web service;
-   longitudinal cross-subject tracking; the production Moodle-DB path wired
-   up as an alternative to the Excel loader.
+1. **Walking skeleton** — done on both paths: load → cluster SILOs → staff gate →
+   detect gaps → CSV report, against the supplied workbook (`--source excel`) and a
+   seeded Moodle instance (`--source moodle`, read-only role proven), with the test
+   suite green in CI.
+2. **Staff confirmation workflow** — done (`python -m lja.review`): every cluster is
+   pending until confirmed; a rejected cluster stops the pipeline; the dashboard shows
+   a banner and links to the clusters page.
+3. **Dashboard** — done (`python/lja/dashboard/`): students with priority groups,
+   cohorts, a student page with understanding, strengths, progress along the subject
+   sequence, gaps with evidence and the subject chain, the learning plan and the quiz;
+   outcome quality, competencies, subjects, assessments, clusters; a provenance page
+   that gives the command to reproduce every number; a glossary. Every count links to
+   the list it counts.
+4. **Learning plans and study strategies** — done (`python -m lja.plan`, `lja.strategy`):
+   every name in the output is validated against the student's own records and the
+   command exits without writing if no attempt grounds. Ten plans audited (IOLG-121).
+5. **Adaptive quiz** — a thin slice (`python -m lja.quiz`): grounded references, two
+   question formats, a blind educator review; the answer key cannot be verified and
+   the page says so. Fails for students with many gaps on the local model; per-competency
+   generation is the follow-up.
+6. **Research export** — done (`python -m lja.export`): three CSVs and a manifest,
+   pseudonymised with a keyed HMAC.
+7. **Synthetic cohorts** — done: a catalogue generator with per-competency ability,
+   planted gaps and an answer key; a handbook crawl and embedding tagger for real
+   La Trobe outcomes at scale (100 subjects, 5,000 students reproducible in minutes).
+
+Still ahead: wire the embedding tagger into the pipeline's clustering (single-call
+clustering fails above about 50 SILOs); filter "subjects ahead" by the owner's course
+map; serve a Moodle-sourced run on the dashboard; sign-in; per-competency quiz
+generation; the Moodle plugin that would remove the database credential (tender
+Option 3). The thresholds remain proposals until the project owner ratifies them (A-01).
 
 Guardrails, from the proposal: AI recommendations never override academic
 grading; mastery estimates are formative indicators, not official evaluations;

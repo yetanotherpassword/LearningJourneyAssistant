@@ -5,6 +5,12 @@ not ratified.** See `docs/meetings/actions.md`, action A-01.
 **Date:** 2026-08-26 · **Work package:** WP2 (Jira S3-6) · **Author:** Allan (T1)
 **Supersedes:** the absolute 50/65 classification in `gap_detection.py` and SQL Query 6.
 
+> **Status note, 3 Oct 2026.** Implemented and on `main` since Sprint 3; the Moodle path this
+> ADR calls "not wired until Sprint 4" has been wired since 20 September and runs the same
+> Python engine. SQL Query 6 is still the annotated legacy (SMD debt item 11). The thresholds
+> remain unratified, and a measured sensitivity curve now exists to ratify them from (SMD §3.9
+> item 2). The text below is the record as written on 26 August and is not edited.
+
 > **Note on where this file lives.** `docs/README.md`'s stated convention is that decision
 > records live in the bundle README beside the code they affect; the Sprint 3 runbook §5
 > instructed creating `docs/adr/`. Both cannot be right, and it is action **A-11**. This file

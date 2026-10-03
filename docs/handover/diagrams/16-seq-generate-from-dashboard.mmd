@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor U as Staff member in the browser
+    participant B as student page + generate.js
+    participant D as lja.dashboard (app.py)
+    participant G as dashboard.generate.Generator
+    participant P as subprocess: python -u -m lja.plan / lja.quiz
+    participant F as output/plans or output/quizzes
+
+    Note over D: Buttons exist only when started with --allow-generate.<br/>A page load never calls a model
+    U->>B: press Generate (or Regenerate)
+    B->>D: POST /student/STU0067/generate/quiz
+    alt generation off
+        D-->>B: 403
+    else already running for this student and artefact
+        D-->>B: 409
+    else
+        D->>G: start(kind, student_id)
+        G->>P: the same command a person would type, with this run's<br/>workbook, clustering cache, review file and out-dir
+        D-->>B: 202 + job (state running)
+    end
+    loop every 1.5 s
+        B->>D: GET …/generate/quiz/status
+        D->>G: status(kind, student_id)
+        G-->>D: job: elapsed, output lines so far
+        D-->>B: JSON
+        B->>U: moving bar, elapsed time,<br/>the command's own lines (one per grounding attempt)
+    end
+    P-->>G: exit 0 and the file exists = done, exit 1 never grounded or exit 2 gate blocked = failed
+    alt done
+        B->>D: reload /student/STU0067
+        D->>F: read quiz_STU0067.json
+        D-->>U: page rendered from the file, button now says Regenerate
+    else failed
+        B->>U: "Failed after …" with the output, previous file untouched
+    end

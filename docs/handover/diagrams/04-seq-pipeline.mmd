@@ -11,7 +11,7 @@ sequenceDiagram
 
     U->>CLI: python -m lja.cli dataset.xlsx
     CLI->>LD: load_dataset_for_source(excel)
-    LD-->>CLI: LjaDataset (13 SILOs, 1650 results, 150 students)
+    LD-->>CLI: LjaDataset (supplied workbook: 13 SILOs, 1,650 results, 150 students)
     CLI->>C: exists and covers every SILO and not --refresh-clustering?
     alt cache hit
         C-->>CLI: cached SiloClusteringResult
@@ -26,7 +26,7 @@ sequenceDiagram
         SC-->>CLI: validated result
         CLI->>C: write model_dump_json()
     end
-    CLI->>RV: load_or_create_reviews(cache) then gate_status()
+    CLI->>RV: load_or_create_reviews(review file beside the cache) then gate_status()
     alt any cluster rejected, or pending without --allow-unconfirmed
         RV-->>CLI: blocked
         CLI-->>U: exit 2 with the rework instructions
@@ -34,4 +34,5 @@ sequenceDiagram
         CLI->>GD: compute_gaps(dataset, clustering, GapThresholds)
         GD-->>CLI: list of CompetencyGap
         CLI-->>U: clusters.csv, gap_report.csv, "N gap rows, M persistent-gap students"
+        Note over U,GD: lja.export, lja.plan, lja.strategy and lja.quiz read this cache and review file,<br/>and none of them re-clusters.
     end

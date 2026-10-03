@@ -673,7 +673,7 @@ Every term used on the dashboard, A to Z with a jump list, MAD with a worked exa
 
 **Status of the numbers.** The seven thresholds in §3.2 are the code defaults, configurable per run and shown on the dashboard's Provenance page. They are proposals with measurements behind them, not ratified values; ratifying or replacing them is open action A-01. The formal definition of every metric, with its formula and where it is calculated and shown, is Appendix B of the System Maintenance Document.
 
-**Figures.** Figures 1 to 5 are rendered from the explainer page "From SILOs to Priority Groups" (29 Sep 2026); Figures 6 to 17 are dashboard screenshots. All are under `docs/handover/diagrams/` as files 11 to 14.
+**Figures.** Figures 1 to 5 are rendered from the explainer page "From SILOs to Priority Groups" (29 Sep 2026); Figure 5b is drawn from the 100-subject cohort; Figures 6 to 17 are dashboard screenshots. All are under `docs/handover/diagrams/` as files 11 to 15. The system diagrams that the SMD and the design pages share are files 01 to 09 and 16 in the same folder, redrawn on 3 October 2026.
 
 ## Appendix B. Open items in this draft
 
