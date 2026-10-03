@@ -1,0 +1,255 @@
+{
+  "work_item": "IOLG-121",
+  "review_date": "2026-10-03",
+  "review_type": "AI-assisted comparison; not independent human sign-off",
+  "original_source_revision": "b4ccebd098e6be8ec0cab336e1e65f7575706b6a",
+  "original_audit_artifacts_unchanged": true,
+  "plans_reviewed": 10,
+  "plans_revised": 8,
+  "plans_retained_without_change": 2,
+  "generation_api_calls": 0,
+  "results": [
+    {
+      "student_id": "STU0003",
+      "findings_addressed": [
+        "G01",
+        "Additional OO Test attribution"
+      ],
+      "changed_fields": [
+        "priorities[0].evidence",
+        "priorities[1].evidence",
+        "priorities[1].actions"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0003.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0003.json": "48a0635e342ef6c06e9e65df579215fa2f4ef7994741128f40494f8b9107d178",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0003.md": "d741d64e324430e57c78888f0146080a775f640f77500a2b0ed53c20dd03c3ba",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0003.json": "7c377f5ebad06b24981181d21502988e1fb26f3a88dd37e69a4ee7a4fbd7ab20",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.json": "21c91d778facdd9dceecadb511ddfdf13f7d46db48c4ea69cc5a60438e63dd67",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.md": "e2ac0e3ebb2864e8cc463a1d3aa85cda0f717eb0053cbb1e5185516ef7c7c47d"
+      }
+    },
+    {
+      "student_id": "STU0004",
+      "findings_addressed": [
+        "G02"
+      ],
+      "changed_fields": [
+        "summary"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0004.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0004.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0004.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0004.json": "84f02ba83137e6b15dfee2e46ce9746e94d4ee2d2b29f722e48422b61884398a",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0004.md": "3575299733ff1b558bece1030bf6fe772f6d2e66f73071f820eaa1fa2c58401d",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0004.json": "12b89ea5d350572d01a89ef215108afb4cb303ecaec5003fb89817d57fee8167",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0004.json": "045559315bb1d6fbd9fe60803875cd467449b595cfd3c2651fd904667227497c",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0004.md": "6857f81086f1c9d8a16330bcf370d36d82f6d28cb453295fc9a63432e9af803a"
+      }
+    },
+    {
+      "student_id": "STU0022",
+      "findings_addressed": [
+        "G03",
+        "G04"
+      ],
+      "changed_fields": [
+        "summary",
+        "priorities[1].evidence"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0022.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0022.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0022.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0022.json": "3204f33eaa2ffb76443f4c476153118c6f3a798016ecd7ed068ff74342c35b8e",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0022.md": "a3b907fde3ffbad57a008034e6d7aaf53b3aa578e087fd03503b295ebb70306e",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0022.json": "c65fccc96a04f2663344c068025ba5b53e9457a5caed9533b21fe9def55e292a",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0022.json": "1c5656a0c8c4bf69149c6d5744c438884420fce69600b329609f9dfab16cd7de",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0022.md": "4626da2b4adfbc28a9ab1c27877fcff9327ea0b41795ce642ba93003b430277d"
+      }
+    },
+    {
+      "student_id": "STU0054",
+      "findings_addressed": [
+        "G05",
+        "Related ALG Test attribution"
+      ],
+      "changed_fields": [
+        "priorities[1].actions",
+        "priorities[3].evidence"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0054.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0054.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0054.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0054.json": "d2c3d961df7e75b1a7d797662979d3ecafb07b01b3c4580c45db8e08fcdff57e",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0054.md": "a742290f8d1194b4e6ebc48d0ac9772ff7d335acd3325ffb68a3e9e30ce5ee30",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0054.json": "d30c73fdb714fe76e6379fdeb2c0fb7d53fcb29718dab366dc91dc4ff51fce7d",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0054.json": "c1d8fd1abc78eb825d706845f39803a9b175fdaf961c6a5d48e44cc6de294fd2",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0054.md": "24ba20bf10113b7570d3d2f57c2c49e244b6f7e1ad8c78e5ca7fd81634d64592"
+      }
+    },
+    {
+      "student_id": "STU0055",
+      "findings_addressed": [
+        "G06",
+        "Related assessment attribution and universal-feedback wording"
+      ],
+      "changed_fields": [
+        "summary",
+        "priorities[0].actions",
+        "priorities[1].actions",
+        "priorities[2].evidence"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0055.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0055.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0055.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0055.json": "50246ba09690a1563628b6595b7f04e324c81dfd3b062756bc73a68a61c2bae1",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0055.md": "16c9b5e086c2e1567f8c0b07f21484b06179a30f48426a2cb76d68739dd5ca6f",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0055.json": "e2dce76c7b59c1f5372ce7272a57b4c436f1e2e5ebeee74777776bd1b5681063",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0055.json": "87372bad625c9678d69120276d4c938a7c946a46a9db8f932738ce55b281cf42",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0055.md": "b5eba8395972c41bb26a7e54dbc488447878b9361977d52daab96592931e695a"
+      }
+    },
+    {
+      "student_id": "STU0067",
+      "findings_addressed": [
+        "G07"
+      ],
+      "changed_fields": [
+        "summary"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0067.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0067.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0067.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0067.json": "7b5b4a89297955092f1b4df60fc00fbd9b132ea86401246348d7dd75fa4b946e",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0067.md": "84c9ce1d15f843062cede0a87bec0844cb0f984a774c036c6d2784e50bfec24e",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0067.json": "738a4c0f45fb5d20649c8a593b1ac7bee9286edfa45bf4a9c93506403d2f2918",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0067.json": "2d8ef1316d26603fe7e8582b18d0d77e06fa40769c129f91c5843160c4f4bb3f",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0067.md": "6f94faac47b82c69165777f50f656f0a74d1def69f75834608eb03b97de3fd2c"
+      }
+    },
+    {
+      "student_id": "STU0075",
+      "findings_addressed": [],
+      "changed_fields": [],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0075.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0075.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0075.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "No concern identified; original plan retained",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0075.json": "b2188e7706f88e4a6f2912241499995f848d6b326b2bb01cafd80ac9e1e40000",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0075.md": "5a7ba6ed6d0b0bc8c3a02f6b6f272695f43040d8782febacf4128482d1b610c9",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0075.json": "950deae5e8aa1c5fd302e56bdcdce5055807b4ad7a93dbc2f0d29e2edffac452"
+      }
+    },
+    {
+      "student_id": "STU0001",
+      "findings_addressed": [],
+      "changed_fields": [],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0001.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0001.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0001.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "No concern identified; original plan retained",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0001.json": "662775febb4191a9f0689d3c369a4352dbfab00010aeea29573af2e9cf67de0a",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0001.md": "dc8d1f1a6161d1e2d789b563f3916290563d1f11e27716995a413af3d206e693",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0001.json": "f7ab67e3abed71a0deb3b1c69301f9b29df63ca18a3e86f69d7a014689c768e1"
+      }
+    },
+    {
+      "student_id": "STU0005",
+      "findings_addressed": [
+        "G08",
+        "G09"
+      ],
+      "changed_fields": [
+        "priorities[0].actions",
+        "priorities[1].actions",
+        "priorities[2].actions"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0005.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0005.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0005.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0005.json": "978edd92acd40008a11d594f907c25bff81fd3f9db2140caa22c825b87e29d15",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0005.md": "af892c001086fb56fee8689c9c46cb29785091fa3de315c766904db1cef7255e",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0005.json": "2c9e30c73eeb40064320057da0ea2c44abb381ea8bd5765531e50dc7037909bd",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0005.json": "8d7e557046745acd8873ba0f53e5f77ddea51801e6ae361f12ae25960243ea3f",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0005.md": "624cdfee81a1db8ac495a182697302aed5b0a63c201500c18434701315b529b1"
+      }
+    },
+    {
+      "student_id": "STU0007",
+      "findings_addressed": [
+        "G10"
+      ],
+      "changed_fields": [
+        "priorities[0].actions"
+      ],
+      "plan_json": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0007.json",
+      "plan_markdown": "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0007.md",
+      "evidence": "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0007.json",
+      "structured_grounding": "PASS",
+      "structured_relationship_checks": "PASS",
+      "markdown_matches_json": true,
+      "assisted_review": "Corrections prepared; no remaining concern identified",
+      "human_review_of_this_version": "Pending",
+      "sha256": {
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0007.json": "7cb5060ad254059b61981a5b4ca0c8dcb60f201224a10cbbb9c4e20d8d3183f4",
+        "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0007.md": "b4b69f6f0b7b1d93103a57773022a687fbb0131c272a1925706d6c500d2b756f",
+        "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0007.json": "dd3d9bbaf49b3e63aecf9c6d9d106f2209ce664f88b0edbac934a3436d502492",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0007.json": "d06bd0a6422148c4ff7f962fe77b9a9781a6964e2df6441fea4895b9c39d67e6",
+        "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0007.md": "c47f5c643b8470b8fbd0273830df3d52d9aba848bc1c64ef58403bb554ef03d4"
+      }
+    }
+  ]
+}

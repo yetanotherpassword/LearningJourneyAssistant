@@ -1,0 +1,22 @@
+{
+  "work_item": "IOLG-121",
+  "student_id": "STU0003",
+  "revision_date": "2026-10-03",
+  "original_source_revision": "b4ccebd098e6be8ec0cab336e1e65f7575706b6a",
+  "human_adjudication_commit": "88ec95b",
+  "method": "Edited saved plan prose against unchanged paired evidence; no regeneration or LLM API call.",
+  "changed_fields": [
+    "priorities[0].evidence",
+    "priorities[1].evidence",
+    "priorities[1].actions"
+  ],
+  "grounding_validation": "PASS",
+  "markdown_matches_rendered_json": true,
+  "human_review_of_revision": "Pending",
+  "sha256": {
+    "docs/sprints/sprint-5/grounding-audit/plans/learning_plan_STU0003.json": "48a0635e342ef6c06e9e65df579215fa2f4ef7994741128f40494f8b9107d178",
+    "docs/sprints/sprint-5/grounding-audit/evidence/evidence_STU0003.json": "7c377f5ebad06b24981181d21502988e1fb26f3a88dd37e69a4ee7a4fbd7ab20",
+    "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.json": "21c91d778facdd9dceecadb511ddfdf13f7d46db48c4ea69cc5a60438e63dd67",
+    "docs/sprints/sprint-5/grounding-audit/revisions/2026-10-03/learning_plan_STU0003.md": "e2ac0e3ebb2864e8cc463a1d3aa85cda0f717eb0053cbb1e5185516ef7c7c47d"
+  }
+}

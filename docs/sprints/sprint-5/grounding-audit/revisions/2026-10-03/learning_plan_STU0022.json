@@ -1,0 +1,51 @@
+{
+  "student_id": "STU0022",
+  "summary": "You have a solid, consistent profile across all your competencies, sitting in the 71-78% range. Your capstone work in Project Management, Industry Standards, and Technical Communication is strongest. Data Structures and Algorithms (71.5%) and Object-Oriented Design and Implementation (73.5%) are flagged as gaps relative to this stronger profile. These classifications come from weighted scores and profile thresholds. Marker feedback provides a focus for study: clearer reasoning, tighter technical precision, and more complete testing or reflection. Use this feedback to guide practice in justification, testing, and evaluation.",
+  "priorities": [
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE1OOF",
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Assignment",
+        "CSE2ALG:Central examination",
+        "CSE2ALG:Test"
+      ],
+      "evidence": "This is your persistent gap at 71.5% (CSE1OOF 73.5%, CSE2ALG 71.0%), stable across subjects. Your lowest score here was CSE2ALG:Central examination at 70.0%, and across all three CSE2ALG assessments markers repeatedly asked for clearer reasoning, better technical precision and more complete testing or reflection.",
+      "actions": "Revisit the CSE2ALG:Central examination and CSE2ALG:Assignment feedback and, for each algorithm or data structure choice you made, write a short justification comparing it against an alternative (CSE2ALG:SILO4). Re-attempt a searching/sorting implementation in Java (CSE2ALG:SILO3) and add explicit performance measurements to evaluate it (CSE2ALG:SILO5), documenting your test cases to address the 'more complete testing' comment."
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "subject_codes": [
+        "CSE1OOF"
+      ],
+      "assessment_keys": [
+        "CSE1OOF:Central examination",
+        "CSE1OOF:Practical demonstration",
+        "CSE1OOF:Test"
+      ],
+      "evidence": "This is an isolated gap at 73.5%, evidenced only by CSE1OOF. Your CSE1OOF:Practical demonstration (71.0%) and CSE1OOF:Test (72.0%) were your two lowest OO results, followed by CSE1OOF:Central examination (73.0%). Their feedback asks for clearer reasoning, improved technical precision, and more complete testing or reflection.",
+      "actions": "Re-work the CSE1OOF:Practical demonstration task, this time designing a small real-life program (CSE1OOF:SILO4) and explicitly noting where you reuse code through inheritance or composition (CSE1OOF:SILO3). Review the CSE1OOF:Central examination feedback and practise writing analysis/design/implementation reasoning that shows how objects combine data structure and behaviour (CSE1OOF:SILO1), adding test cases and reflection to each solution."
+    }
+  ],
+  "strengths_to_build_on": [
+    "Project Management",
+    "Industry Standards Application",
+    "Technical Communication and Documentation"
+  ]
+}
