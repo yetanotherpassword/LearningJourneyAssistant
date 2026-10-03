@@ -186,14 +186,31 @@ in the dated revision. **Independent human review of that revision: Pending.**
 The human verdict above continues to describe the original plan and is not
 automatically changed to PASS by the structured-reference check.
 
+### Assisted review of all ten pairs — 3 October 2026
+
+The [full comparison and correction register](sprints/sprint-5/grounding-audit/revisions/2026-10-03/review.md)
+now covers all ten students. Eight plans have dated corrected versions;
+STU0075 and STU0001 retain their original versions because no concern was
+identified in the assisted comparison. The register links the current plan
+for each student and describes each correction.
+
+All ten selected versions pass structured grounding and rendering checks
+against their saved evidence. The
+[verification record](sprints/sprint-5/grounding-audit/revisions/2026-10-03/review-verification.json)
+also checks the competency/subject/assessment relationships and confirms that
+the original audit artifacts are unchanged. These assisted results do not
+replace the independent human verdicts in the table above.
+
 ## Current conclusion
 
 The automated portion of IOLG-121 passed for all ten fixed students with no retries or grounding failures.
 
 Human review of the original audit set has recorded **one plan requiring
 correction**, **zero human-approved passes**, and **nine pending verdicts**.
-STU0003 now has a corrected revision awaiting human recheck. IOLG-121's
-independent human review remains incomplete.
+The assisted review of all ten pairs is complete, with corrected versions for
+eight students and no change proposed for two. Human review of these current
+versions remains pending, so IOLG-121's independent human review remains
+incomplete.
 
 The assisted pre-review demonstrates why the 10/10 structured-reference pass
 must not be read as a 10/10 factual-prose pass. Complete the remaining human

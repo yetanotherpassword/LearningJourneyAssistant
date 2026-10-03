@@ -1,0 +1,76 @@
+{
+  "student_id": "STU0054",
+  "summary": "You're working across some challenging subjects, and right now several competencies are sitting in the gap range, all closely bunched in the low-to-mid 40s. The good news is that the marker feedback is consistent and specific, which gives you a clear map of exactly what to revise. Let's focus on the foundational skills first, since strengthening data structures and object-oriented design will support your capstone work too. These are formative signals to guide your study, not a verdict on you.",
+  "priorities": [
+    {
+      "competency_label": "Industry Standards Application",
+      "silo_keys": [
+        "CSE3CAP:SILO2"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Final written Project Report",
+        "CSE3CAP:Assignment: Sprint Project management reports"
+      ],
+      "evidence": "This is your lowest attainment at 43.5%, evidenced only in CSE3CAP. Both the Final written Project Report (43.0%) and Sprint Project management reports (44.0%) flagged gaps in industry standard technical solutions in software or cybersecurity practice.",
+      "actions": "Revisit the marker feedback on CSE3CAP:Assignment: Final written Project Report and identify where your solution departed from industry standards. Then re-attempt a small technical solution focused on CSE3CAP:SILO2, applying a recognised standard or best-practice pattern, and check it against published industry guidelines before submitting."
+    },
+    {
+      "competency_label": "Data Structures and Algorithms",
+      "silo_keys": [
+        "CSE1OOF:SILO2",
+        "CSE2ALG:SILO1",
+        "CSE2ALG:SILO2",
+        "CSE2ALG:SILO3",
+        "CSE2ALG:SILO4",
+        "CSE2ALG:SILO5"
+      ],
+      "subject_codes": [
+        "CSE1OOF",
+        "CSE2ALG"
+      ],
+      "assessment_keys": [
+        "CSE2ALG:Assignment",
+        "CSE2ALG:Central examination",
+        "CSE2ALG:Test"
+      ],
+      "evidence": "This is a persistent, stable gap at 43.9% across CSE1OOF (47.8%) and CSE2ALG (43.2%). Your CSE2ALG:Central examination (42.0%) and CSE2ALG:Assignment (42.0%) both flagged identifying, implementing and evaluating data structures and sorting/searching algorithms.",
+      "actions": "Re-work the problems from CSE2ALG:Assignment, practising implementing searching and sorting algorithms in Java (CSE2ALG:SILO3) on small, well-tested examples first. Use the CSE2ALG:Test feedback to consolidate identifying suitable data structures (CSE2ALG:SILO2). Use the CSE2ALG:Assignment feedback for practice comparing algorithm choices (CSE2ALG:SILO4), then revisit encapsulation in CSE1OOF:SILO2."
+    },
+    {
+      "competency_label": "Project Management",
+      "silo_keys": [
+        "CSE3CAP:SILO1"
+      ],
+      "subject_codes": [
+        "CSE3CAP"
+      ],
+      "assessment_keys": [
+        "CSE3CAP:Assignment: Sprint Project management reports"
+      ],
+      "evidence": "Project Management sits at 44.0%, evidenced only in CSE3CAP. The Sprint Project management reports (44.0%) specifically flagged advanced project management during substantive development implementation.",
+      "actions": "Revisit the feedback on CSE3CAP:Assignment: Sprint Project management reports and re-draft one sprint report focused on CSE3CAP:SILO1, making planning, tracking and risk decisions explicit with evidence, and seek early feedback before the next milestone."
+    },
+    {
+      "competency_label": "Object-Oriented Design and Implementation",
+      "silo_keys": [
+        "CSE1OOF:SILO1",
+        "CSE1OOF:SILO3",
+        "CSE1OOF:SILO4"
+      ],
+      "subject_codes": [
+        "CSE1OOF"
+      ],
+      "assessment_keys": [
+        "CSE1OOF:Assignment",
+        "CSE1OOF:Central examination",
+        "CSE1OOF:Practical demonstration"
+      ],
+      "evidence": "At 47.6% in CSE1OOF, this is your closest gap to passing. The CSE1OOF:Central examination (48.0%), CSE1OOF:Assignment (49.0%), and CSE1OOF:Practical demonstration (44.0%) all flagged object-oriented design for real-life problems (CSE1OOF:SILO4) and code reuse (CSE1OOF:SILO3). The exam feedback also names combining data and behaviour through object-oriented modelling (CSE1OOF:SILO1).",
+      "actions": "Use the CSE1OOF:Central examination feedback to practise object-oriented design of a small real-life problem (CSE1OOF:SILO4), then refactor it to apply code sharing and reuse (CSE1OOF:SILO3). Re-attempt the CSE1OOF:Practical demonstration style tasks, explaining your design decisions to strengthen CSE1OOF:SILO1."
+    }
+  ],
+  "strengths_to_build_on": []
+}
