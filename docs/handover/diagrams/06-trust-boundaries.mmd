@@ -1,23 +1,30 @@
 flowchart LR
     subgraph Workstation["Operator workstation (trusted)"]
-        CLI[lja.cli / lja.plan / lja.review]
-        DASH[lja.dashboard 127.0.0.1:8000]
-        FILES[(output/ .env)]
+        CLI[lja.cli · lja.review · lja.plan<br/>lja.strategy · lja.quiz · lja.export]
+        DASH[lja.dashboard 127.0.0.1:8000<br/>read-only; Generate button only with --allow-generate]
+        GEN[dashboard.generate<br/>subprocess of lja.plan / lja.quiz]
+        FILES[(output/ · .env · export/<br/>LJA_EXPORT_SALT)]
+        TOOLS[lja.data.handbook · competency_tagger<br/>catalogue_generator]
     end
     subgraph Local["Local network"]
         MOODLE[(Moodle Postgres)]
-        OLLAMA[Ollama / LM Studio]
+        OLLAMA[Ollama / LM Studio<br/>chat + embeddings]
     end
     subgraph Internet
         ANTH[Anthropic API]
-        CDN[jsDelivr CDN]
+        CDN[jsDelivr CDN<br/>chart.js · d3]
+        HB[handbook.latrobe.edu.au<br/>public, 1 request/s]
         GH[GitHub + Actions]
     end
     BROWSER[Browser]
     CLI -- SELECT as lja_reader --> MOODLE
-    CLI -- SILO text, gap context --> OLLAMA
-    CLI -- SILO text, gap context + API key --> ANTH
+    CLI -- SILO text, gap context, marker feedback --> OLLAMA
+    CLI -- the same + API key --> ANTH
+    TOOLS -- SILO text for embeddings --> OLLAMA
+    TOOLS -- crawl --> HB
     BROWSER --> DASH
-    BROWSER -- chart.js --> CDN
+    BROWSER -- POST generate --> DASH
+    DASH -. opt-in .-> GEN --> CLI
+    BROWSER -- chart.js, d3 --> CDN
     FILES --- CLI
     FILES --- DASH

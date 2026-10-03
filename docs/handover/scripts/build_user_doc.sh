@@ -3,7 +3,7 @@
 # Run from docs/handover/. Needs pandoc, and a Python with lxml (e.g. PYTHON=/usr/bin/python3).
 set -euo pipefail
 PY="${PYTHON:-python3}"
-pandoc user-document.md -o user-document.docx --toc --toc-depth=2 --resource-path=.
+pandoc user-document.md -o user-document.docx --toc --toc-depth=2 --resource-path=. --reference-doc=scripts/reference.docx
 "$PY" scripts/fix_pandoc_docx.py user-document.docx
 
 # PDF: via HTML and headless Chrome, so the contents list and the equations are

@@ -1,7 +1,32 @@
 # LJA — Documents bundle
 
-Project documents that are not code: slides, reports, and (as they accumulate)
-sprint artefacts.
+Project documents that are not code: the handover set, design pages, Sprint 5
+evidence, sprint plans and meeting records. Refreshed 3 October 2026.
+
+## Start here
+
+| Path | Purpose |
+| --- | --- |
+| [`handover/system-maintenance-document.md`](handover/system-maintenance-document.md) (+ `.docx`, `.pdf`) | **The reference.** Architecture, design decisions, deployment, maintenance, testing, validation results, future work, and Appendix B defining every metric. Rebuild with `handover/scripts/build_smd.sh`. |
+| [`handover/user-document.md`](handover/user-document.md) (+ `.docx`, `.pdf`) | For people who use the dashboard: how outcomes become competencies and marks become priority groups, how to produce the data, and every page with a screenshot. Rebuild with `handover/scripts/build_user_doc.sh`. |
+| [`handover/learning-plan-traceability.md`](handover/learning-plan-traceability.md) | One real claim from a learning plan traced back to the workbook, and why that matters. |
+| [`handover/diagrams/`](handover/diagrams/) | Mermaid sources (`*.mmd`) and their PNG/SVG renders for every architecture, class, sequence and lineage figure, plus the dashboard screenshots. Edit the `.mmd`, then `design/build.sh` re-renders. |
+| [`design/`](design/) | Sources for the three design pages below and the requirements status; `design/build.sh` builds their PDF and Word copies into this folder. |
+| `adr/` | 0001 relative gap detection (thresholds unratified, A-01); 0002 no-embedding clustering (its review trigger has been hit; see SMD §8.2). |
+
+## Sprint 5 evidence
+
+| Path | Ticket | What it records |
+| --- | --- | --- |
+| `validation-worksheet.md` | IOLG-110 | Seven hand-worked gap-detection profiles, also pinned as a test |
+| `grounding-audit.md`, `sprints/sprint-5/grounding-audit/` | IOLG-121 | Ten plans: machine audit 10/10, assisted prose review, human sign-off pending |
+| `security-evidence.md`, `sprints/sprint-5/security-evidence/` | IOLG-111 | The six security checks, observed on the dev instance |
+| `compliance-checklist.md` | IOLG-117 | All 40 tender items with evidence |
+| `rebuild-check.md`, `sprints/sprint-5/rebuild/` | IOLG-118 | Why the clean rebuild has not run, and four preflight findings |
+| `uat-checklist.md`, `sprints/sprint-5/uat/` | IOLG-130, IOLG-129 | S1–S6 preliminary results, findings UAT-01 and UAT-02 |
+| `risk-register.md` | IOLG-125 | Twelve risks re-scored |
+| `cluster-review-sprint5.md` | IOLG-124, IOLG-133 | Staff verdicts on the five reference-run clusters |
+| `export-schema.md`, `export-sample.ipynb` | IOLG-120 | Every export column; a notebook that reads one |
 
 ## Contents
 
@@ -14,10 +39,13 @@ sprint artefacts.
 | `LJA_Sprint_Plan_A-C_rev3.pdf` | Rev 3 of the same plan under its earlier A/B/C naming. Kept for its §1 Jira terminology mapping and §4 **seven-epic structure** (E1–E7), which the board does not currently follow — see action A-34. |
 | [`meetings/`](meetings/) | Meeting agendas and the **running actions register**. `meetings/sprint-3-agenda.md` collects everything from Sprint 3 implementation that needs a team decision; `meetings/actions.md` tracks the outcomes and outlives any single meeting. |
 | `TradeShow/Learning_Journey_Assistant_-_Trade_Show_Deck.pptx` | Trade show booth deck. Draft — needs more content, and should be re-cut from the live demo once the walking skeleton runs. |
-| [Pipeline architecture diagram](https://claude.ai/code/artifact/3c9d410a-f89e-4bdb-bfe5-38acb3cf6c9a) ([PDF](<LJA — Data & Algorithm Pipeline.pdf>)) | Six-stage data-flow diagram (Moodle/Excel → extraction → mapping → gap detection → LLM layer → dashboard) plus a field-level "zoom" showing exactly which Moodle/Excel fields feed `lja_criterion_score`. |
-| [UML use case & sequence diagrams](https://claude.ai/code/artifact/1e066a27-42dc-45dc-9e5d-22a6e1f9b1ec) ([PDF](<LJA — UML Use Case & Sequence Diagrams.pdf>)) | Who interacts with the system (built vs. planned use cases, visually distinguished) and two sequence diagrams for code that actually runs: the CLI pipeline, and the SILO coverage-validation failure it was built to catch. |
+| `LJA — Data & Algorithm Pipeline.pdf` / `.docx` | **Version 2.0, 3 Oct 2026**, built from `design/data-and-algorithm-pipeline.md`. Seven stages with owning code and status, what the gap engine does, where the Moodle score comes from, trust boundaries, and what changed since the 11 August page. |
+| `LJA -- Pipeline.pdf` / `.docx` | **Version 2.0, 3 Oct 2026**, from `design/cli-pipeline.md`. What one `lja.cli` run does, the commands that read what it wrote, and timings. |
+| `LJA — UML Use Case & Sequence Diagrams.pdf` / `.docx` | **Version 2.0, 3 Oct 2026**, from `design/uml-use-case-and-sequence.md`. Actors and use cases as built, the class view, and three sequence diagrams: the pipeline, the artefact family, generating from the dashboard. |
+| `LJA -- Requirements_for_SILO_analysis.pdf` | The team's record of the 11 August 2026 meeting with the project owner: FR-1 to FR-9, NFR-1 to NFR-8, open questions. **A source document, left as written.** |
+| `LJA -- Requirements_status.pdf` / `.docx` | **New, 3 Oct 2026**, from `design/requirements-status.md`: every FR and NFR above with its status on `main` and where to look. |
 
-**On the two diagram entries above:** the live link is a Claude Artifact — private by default, use its share menu if the whole team needs access without going through whoever generated it, and it stays interactive/re-renderable. The PDF alongside each is a static export committed to this folder, so the repo has a copy that doesn't depend on claude.ai access. If they go stale relative to the code, regenerate rather than hand-edit either one — a hand-edited PDF has no source to keep in sync.
+**On the three design pages:** the August 2026 versions were Claude Artifacts printed to PDF, with no source in the repository; their links are retired. The 2.0 versions have Markdown sources under `design/` and embed the handover diagrams, so a change to a `.mmd` file flows into the SMD, the User Document and these pages from one place. Regenerate with `design/build.sh`; do not hand-edit the PDF or Word copies.
 
 ## Conventions
 
@@ -27,18 +55,16 @@ sprint artefacts.
 - Keep decision records in the bundle READMEs next to the code they affect
   (that is where the architecture reasoning currently lives — devenv, python,
   sql, data-fixtures). This folder is for outward-facing documents.
-  **Pending change:** WP2 (S3-6) is briefed to create `docs/adr/` for the
-  relative-gap-detection decision, which cuts against this convention. Either
-  ADRs become the home for cross-cutting algorithm decisions and this bullet is
-  narrowed to bundle-local ones, or WP2's record belongs in `python/README.md`.
-  Decide when WP2 lands rather than ending up with both.
+  Cross-cutting algorithm decisions live in `docs/adr/` (0001, 0002); the
+  numbered design decisions D1 to D20 are in the SMD §3.7. Bundle READMEs keep
+  the bundle-local reasoning.
 
-## Expected additions
+## Still expected
 
-- Sprint review notes and the backlog snapshot per sprint.
-- The filled-in project compliance checklist from the proposal (privacy,
-  security risk, testing protocols) — cheap to complete now, and the
-  DevSecOps evidence the project owner flagged as a differentiator.
-- Final handover document, including the plainly-stated caveat that rubric
-  fills are read directly from the database because the Web Services API does
-  not expose them.
+- The live UAT results from the 4/5 October review (into `uat-checklist.md`
+  and SMD §7.3), and the re-scored risk register from the retrospective.
+- The clean-machine rebuild transcript (IOLG-118).
+- Anup's human sign-off on the ten-plan grounding audit (IOLG-121).
+
+Done since this list was written: the compliance checklist (`compliance-checklist.md`),
+the handover documents (`handover/`), and the plainly stated rubric-fills caveat (SMD §3.7 D3 and §5.8).

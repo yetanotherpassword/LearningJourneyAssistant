@@ -92,18 +92,54 @@ classDiagram
     }
     ReviewStore *-- ClusterReview
 
-    class LearningPlan {
-        +student_id
-        +summary
-        +list~PlanPriority~ priorities
-        +strengths_to_build_on
+    class SubjectSequence {
+        +declared tuple
+        +position(code) SequencePosition
+        +from_config()
     }
+    class Trajectory {
+        +points TrajectoryPoint[]
+        +delta
+        +label
+        +basis declared|year digit|mixed|none
+        +taken() ahead()
+    }
+    class SubjectQuality {
+        +subject_code
+        +health
+        +gap_rate
+        +issues
+    }
+
     class PlanContext {
         +competencies
         +silo_text
         +assessments
         +known_*()
     }
+    class LearningPlan {
+        +student_id
+        +summary
+        +list~PlanPriority~ priorities
+        +strengths_to_build_on
+    }
+    class StudyStrategy {
+        +student_id
+        +list~StrategyEntry~ entries
+        +techniques from a closed list
+    }
+    class QuizDocument {
+        +quiz Quiz
+        +educator_review EducatorReview
+        +disagreements()
+    }
+    class QuizItem {
+        +kind multiple_choice|written
+        +competency_label silo_key assessment_key
+        +options correct_index
+        +model_answer marking_points
+    }
+    QuizDocument *-- QuizItem
     class GroundingReport {
         +artefact
         +problems
@@ -118,12 +154,40 @@ classDiagram
         +require_unique
     }
 
+    class Generator {
+        +GenerateConfig config
+        +start(kind, student_id) Job
+        +status(kind, student_id) Job
+        +command(kind, student_id) list
+    }
+    class Job {
+        +kind student_id command
+        +state running|done|failed
+        +lines
+        +returncode
+    }
+    Generator *-- Job
+    class RunInfo {
+        +command started_at code_version
+        +excel_path clustering_cache review_file
+        +environment
+    }
+
     LjaDataset --> SiloClusteringResult : cluster_silos(client, dataset)
     SiloClusteringResult --> ReviewStore : load_or_create_reviews()
     LjaDataset --> CompetencyGap : compute_gaps(dataset, clustering, thresholds)
     GapThresholds --> CompetencyGap
+    CompetencyGap --> Trajectory : compute_trajectory()
+    SubjectSequence --> Trajectory
+    LjaDataset --> SubjectQuality : assess_silos()
     CompetencyGap --> PlanContext : build_plan_context()
     PlanContext --> LearningPlan : generate_learning_plan(client)
+    PlanContext --> StudyStrategy : generate_strategy(client)
+    PlanContext --> QuizDocument : generate_quiz() then review_quiz()
     LearningPlan ..> GroundingReport : validate_plan()
+    StudyStrategy ..> GroundingReport : validate_strategy()
+    QuizDocument ..> GroundingReport : validate_quiz() validate_review()
     SiloClusteringResult ..> GroundingReport : _validate_coverage()
     ReferenceCheck --> GroundingReport
+    Generator ..> LearningPlan : subprocess lja.plan
+    Generator ..> QuizDocument : subprocess lja.quiz

@@ -10,7 +10,9 @@ Two deliberate design choices, not just "add noise":
    real pipeline (cluster_silos + compute_gaps) against the output and
    checking whether it recovers exactly the planted students as a
    persistent gap is a real correctness check on the whole system, not just
-   "did it run." See the CLI's --verify flag.
+   "did it run." The planted ids are printed at the end; compare them with
+   the gap report (there is no --verify flag here; catalogue_verify does that
+   for the catalogue generator).
 2. Feedback text comes from an LLM-generated bank of varied templates (one
    LLM call for ~24 templates, not one call per row), sampled per row and
    filled in with that row's actual SILO text. Scott called the supplied
@@ -126,7 +128,7 @@ def generate_synthetic_students(
     rng: random.Random,
 ) -> tuple[list[ResultRow], list[StudentSummary], list[str]]:
     """Returns (new result rows, new student summaries, ids of planted-gap
-    students) -- the third element is the ground truth for --verify.
+    students) -- the third element is the ground truth to check against.
     """
     new_results: list[ResultRow] = []
     new_summaries: list[StudentSummary] = []
@@ -317,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
 
     write_extended_workbook(args.source_xlsx, args.out, dataset, new_results, new_summaries)
     print(f"Wrote combined workbook: {args.out}")
-    print(f"Planted-gap student IDs (ground truth for --verify): {planted_ids}")
+    print(f"Planted-gap student IDs (ground truth; compare with gap_report.csv): {planted_ids}")
 
     return 0
 
